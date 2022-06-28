@@ -1,5 +1,7 @@
 # clang-tools
 
+[![codecov](https://codecov.io/gh/shenxianpeng/clang-tools-pip/branch/master/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/shenxianpeng/clang-tools-pip) [![Python application](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-build.yml/badge.svg)](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-build.yml)
+
 ## Install
 
 ### Install `clang-tools` with pip

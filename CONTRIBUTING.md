@@ -27,7 +27,6 @@ sudo python3 main.py --install true --version 13
 ### Test
 
 ```bash
-cd tests
 # run test
 pytest
 # run test with code covarege

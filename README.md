@@ -1,11 +1,12 @@
 # clang-tools
-[![PyPI](https://img.shields.io/pypi/v/clang-tools)](https://pypi.org/project/clang-tools/)[![Python test](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml/badge.svg)](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml)[![codecov](https://codecov.io/gh/shenxianpeng/clang-tools-pip/branch/master/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/shenxianpeng/clang-tools-pip) 
 
-Install clang-tools (clang-format, clang-tidy) with pip.
+[![PyPI](https://img.shields.io/pypi/v/clang-tools)](https://pypi.org/project/clang-tools/) [![Python test](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml/badge.svg)](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml) [![codecov](https://codecov.io/gh/shenxianpeng/clang-tools-pip/branch/master/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/shenxianpeng/clang-tools-pip) 
+
+Install clang-tools binaries (clang-format, clang-tidy) with pip.
 
 ## Install
 
-Install `clang-tools` with pip
+Install `clang-tools` command with pip
 
 ```bash
 $ sudo pip install clang-tools
@@ -22,7 +23,7 @@ optional arguments:
   -i INSTALL, --install INSTALL
                         Install clang-tools with specific version. default is 12.
 ```
-For example, install clang-tools version 13
+Use `clang-tools` command to install version 13 binaries.
 
 ```bash
 $ sudo clang-tools --install 13

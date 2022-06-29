@@ -22,7 +22,7 @@ optional arguments:
   -i INSTALL, --install INSTALL
                         Install clang-tools with specific version. default is 12.
 ```
-For example 
+For example, install clang-tools version 13
 
 ```bash
 $ sudo clang-tools --install 13

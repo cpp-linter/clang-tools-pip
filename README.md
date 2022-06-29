@@ -2,7 +2,7 @@
 
 [![codecov](https://codecov.io/gh/shenxianpeng/clang-tools-pip/branch/master/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/shenxianpeng/clang-tools-pip) [![Python application](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml/badge.svg)](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml)
 
-Install clang-tools <sub><sup>(clang-format & clang-tidy)</sup></sub> with pip.
+Install clang-tools (clang-format, clang-tidy) with pip.
 
 ## Install
 

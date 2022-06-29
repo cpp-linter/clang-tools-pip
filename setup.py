@@ -5,7 +5,7 @@ with open("README.md", "r") as file:
 
 setup(
     name="clang_tools",
-    version = "0.0.1",
+    version="0.0.1",
     description="Install clang-tools (clang-format, clang-tidy) with pip",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -13,7 +13,7 @@ setup(
     author_email="xianpeng.shen@gmail.com",
     keywords=["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format"],
     license="MIT License",
-    packages = find_packages(),
+    packages=find_packages(),
     project_urls={
         "Source": "https://github.com/shenxianpeng/clang-tools-pip",
         "Tracker": "https://github.com/shenxianpeng/clang-tools-pip/issues"

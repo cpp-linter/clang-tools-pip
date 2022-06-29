@@ -17,18 +17,25 @@ When you're finished with the changes, create a pull request, also known as a PR
 Install `clang-tools` from source code
 
 ```bash
-git clone git@github.com:shenxianpeng/clang-tools-pip.git
+$ git clone git@github.com:shenxianpeng/clang-tools-pip.git
 # Need root permission
-sudo python3 setup.py install
+$ sudo python3 setup.py install
 # Install clang-tools version 13
-sudo python3 main.py --install true --version 13
+$ sudo python3 main.py --install true --version 13
 ```
 
 ### Test
 
 ```bash
 # run test
-pytest
+$ pytest
 # run test with code covarege
-coverage run -m pytest
+$ coverage run -m pytest
+```
+
+## Code format
+
+```bash
+# check code format with flake8
+$ flake8 .
 ```

@@ -1,12 +1,12 @@
 import os
 import shutil
-from clang_tools.util import check_os, download_file, unpack_file
+from clang_tools.util import check_install_os, download_file, unpack_file
 
 TEST_REPO = "https://github.com/cpp-linter/cpp-linter-action"
 
-def test_check_os():
-    system = check_os()
-    assert system in ("linux", "windos", "macosx")
+def test_check_install_os():
+    install_os = check_install_os()
+    assert install_os in ("linux", "windos", "macosx")
 
 def test_download_file():
     url = f"{TEST_REPO}/blob/master/README.md"

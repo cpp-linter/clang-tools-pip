@@ -5,13 +5,13 @@ Install clang-tools (clang-format, clang-tidy) with pip.
 
 ## Install
 
-### Install `clang-tools` with pip
+Install `clang-tools` with pip
 
 ```bash
 $ sudo pip install clang-tools
 ```
 
-### Usage
+## Usage
 
 ```bash
 $ sudo clang-tools --help

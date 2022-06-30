@@ -56,17 +56,17 @@ jobs:
       with:
         python-version: "3.8"
     - name: Install on Windows
-      if: ${{ matrix.os }} == "windows-latest"
+      if: matrix.os == 'windows-latest'
       run: |
         pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
         clang-tools --install ${{ matrix.version }}
     - name: Install on Linux
-      if: ${{ matrix.os }} == "ubuntu-latest"
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
         sudo clang-tools --install ${{ matrix.version }}
     - name: Install on MacOS
-      if: ${{ matrix.os }} == "macos-latest"
+      if: matrix.os == 'macos-latest'
       run: |
         pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
         clang-tools --install ${{ matrix.version }} --directory .

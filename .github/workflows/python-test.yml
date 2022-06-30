@@ -57,9 +57,14 @@ jobs:
       with:
         python-version: "3.8"
     - name: Install dependencies
+      run: python -m pip install --upgrade pip
+    - name: Install on windows
+      if: ${{ matrix.os }} == " windows-latest"
       run: |
-        python -m pip install --upgrade pip
+        pip install .
+        clang-tools --install ${{ matrix.version }}
+    - name: Install on Linux or MacOS
+      if: ${{ matrix.os }} != " windows-latest"
+      run: |
         sudo pip install .
-    - name: Install clang-tools
-      run: |
         sudo clang-tools --install ${{ matrix.version }}

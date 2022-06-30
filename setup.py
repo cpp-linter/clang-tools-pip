@@ -27,7 +27,7 @@ setup(
         "Natural Language :: English",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX :: Linux",
-        "Operating System :: MacOS"
+        "Operating System :: MacOS",
         "Programming Language :: Python :: 3.8",
         "Topic :: Software Development :: Build Tools",
     ],

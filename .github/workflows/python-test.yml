@@ -41,14 +41,14 @@ jobs:
         curl -Os https://uploader.codecov.io/latest/linux/codecov
         chmod +x codecov
         ./codecov -t ${CODECOV_TOKEN}
-  test:
+  install:
     strategy:
       matrix:
         version: [ 3.9, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12.0.1, 13, 14 ]
         directory: ["", "."]
         os: [ linux, macosx, windows ]
-      runs-on: ${{ matrix.runner }}
-      steps:
-      - name: Install clang-tools
-        run: |
-          sudo clang-tools --install ${{ matrix.version }} --directory ${{ matrix.directory }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+    - name: Install clang-tools
+      run: |
+        sudo clang-tools --install ${{ matrix.version }} --directory ${{ matrix.directory }}

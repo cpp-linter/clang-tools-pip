@@ -6,6 +6,8 @@ import platform
 
 def check_install_os() -> string:
     os = platform.system().lower()
+    if os == "darwin":
+        os = "macosx"
     return os
 
 

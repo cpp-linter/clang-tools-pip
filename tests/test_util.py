@@ -2,7 +2,7 @@ import os
 import shutil
 from clang_tools.util import check_install_os, download_file, unpack_file
 
-TEST_REPO = "https://github.com/cpp-linter/cpp-linter-action"
+TEST_REPO = "https://github.com/shenxianpeng/clang-tools-pip"
 
 
 def test_check_install_os():
@@ -20,10 +20,10 @@ def test_download_file():
 
 
 def test_unpack_file():
-    url = f"{TEST_REPO}/archive/refs/tags/v1.4.4.tar.gz"
+    url = f"{TEST_REPO}/archive/refs/tags/v0.1.0.tar.gz"
     file_name = "test_file.tar.gz"
     download_file(url, file_name)
     status = unpack_file(file_name)
     assert status == 0
     os.remove(file_name)
-    shutil.rmtree("cpp-linter-action-1.4.4")
+    shutil.rmtree("clang-tools-pip-0.1.0")

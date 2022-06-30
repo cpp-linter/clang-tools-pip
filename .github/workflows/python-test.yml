@@ -58,7 +58,7 @@ jobs:
     - name: Install on windows
       # if: ${{ matrix.os }} == " windows-latest"
       run: |
-        pip install clang-tools
+        pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
         clang-tools --install ${{ matrix.version }}
     # - name: Install on Linux or MacOS
     #   if: ${{ matrix.os }} != " windows-latest"

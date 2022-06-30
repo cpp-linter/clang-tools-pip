@@ -51,7 +51,6 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
     - name: Set up Python 3.8
       uses: actions/setup-python@v3
       with:
@@ -61,10 +60,10 @@ jobs:
     - name: Install on windows
       if: ${{ matrix.os }} == " windows-latest"
       run: |
-        pip install .
+        pip install clang-tools
         clang-tools --install ${{ matrix.version }}
     - name: Install on Linux or MacOS
       if: ${{ matrix.os }} != " windows-latest"
       run: |
-        sudo pip install .
+        sudo pip install clang-tools
         sudo clang-tools --install ${{ matrix.version }}

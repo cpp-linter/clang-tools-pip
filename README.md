@@ -16,17 +16,21 @@ $ sudo pip install clang-tools
 
 ```bash
 $ sudo clang-tools --help
-usage: clang-tools [-h] [-i INSTALL]
+usage: clang-tools [-h] [-i INSTALL] [-d DIRECTORY]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i INSTALL, --install INSTALL
                         Install clang-tools with specific version. default is 12.
+  -d DIRECTORY, --directory DIRECTORY
+                        The directory where is the clang-tools install.
 ```
 Use `clang-tools` command to install version 13 binaries.
 
 ```bash
 $ sudo clang-tools --install 13
+# Or install to a specified directory
+$ sudo clang-tools --install 13 --directory .
 
 $ clang-format-13 --version
 clang-format version 13.0.0

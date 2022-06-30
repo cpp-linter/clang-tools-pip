@@ -12,19 +12,18 @@ def main() -> int:
         help="Install clang-tools with specific version. default is 12.",
     )
 
-    # parser.add_argument(
-    #     "-d",
-    #     "--directory",
-    #     default="/usr/bin/",
-    #     help="The directory where is the clang-tools install.",
-    # )
+    parser.add_argument(
+        "-d",
+        "--directory",
+        default="",
+        help="The directory where is the clang-tools install.",
+    )
     args = parser.parse_args()
 
-    install_version = args.install
-    # install_dir = args.directory
+    version = args.install
+    directory = args.directory
 
-    if install_version:
-        install_clang_tools(install_version)
+    install_clang_tools(version, directory)
 
 
 if __name__ == '__main__':

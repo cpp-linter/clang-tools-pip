@@ -20,14 +20,16 @@ setup(
     },
     classifiers=[
         # https://pypi.org/pypi?%3Aaction=list_classifiers
-        "Development Status :: 1 - Planning",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
         "Intended Audience :: Information Technology",
         "Natural Language :: English",
-        "Operating System :: OS Independent",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS"
         "Programming Language :: Python :: 3.8",
-        "Topic :: Utilities",
+        "Topic :: Software Development :: Build Tools",
     ],
     entry_points={
         "console_scripts": [

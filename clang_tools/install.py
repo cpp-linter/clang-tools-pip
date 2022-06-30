@@ -35,9 +35,12 @@ def clang_tidy_exist(version) -> bool:
 
 def clang_tools_binary_url(tool, version) -> string:
     install_os = check_install_os()
-    url = f"https://github.com/muttleyxd/clang-tools-static-binaries/releases/ \
-    download/master-208096c1/{tool}-{version}_{install_os}-amd64".replace(" ", "")
-    return url
+    base_url = "https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-208096c1"
+    if install_os == "windows":
+        download_url = f"{base_url}/{tool}-{version}_{install_os}-amd64.exe".replace(" ", "")
+    else:
+        download_url = f"{base_url}/{tool}-{version}_{install_os}-amd64".replace(" ", "")
+    return download_url
 
 
 def install_clang_format(version, directory) -> None:

@@ -13,6 +13,11 @@ on:
     paths:
       - '**.py'
   workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'The test branch name'
+        required: true
+        default: 'main'
 
 permissions:
   contents: read
@@ -58,15 +63,15 @@ jobs:
     - name: Install on Windows
       if: matrix.os == 'windows-latest'
       run: |
-        pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
+        pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.event.inputs.branch_name }}
         clang-tools --install ${{ matrix.version }} --directory .
     - name: Install on Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-        sudo pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
+        sudo pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.event.inputs.branch_name }}
         sudo clang-tools --install ${{ matrix.version }}
     - name: Install on MacOS
       if: matrix.os == 'macos-latest'
       run: |
-        pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
+        pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.event.inputs.branch_name }}
         clang-tools --install ${{ matrix.version }} --directory .

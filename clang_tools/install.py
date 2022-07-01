@@ -77,7 +77,10 @@ def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
         shutil.move(old_file_name, f"{install_dir}/{new_file_name}")
         os.chmod(os.path.join(install_dir, new_file_name), 0o755)
     except PermissionError:
-        raise SystemExit("You don't have permission. Try to run with the appropriate permissions.")
+        raise SystemExit(
+            f"Don't have permission to install {new_file_name} to {install_dir}. \
+            Try to run with the appropriate permissions."
+        )
 
 
 def install_clang_tools(version, directory) -> None:

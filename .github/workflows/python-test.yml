@@ -60,18 +60,11 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.8"
-    - name: Install on Windows
-      if: matrix.os == 'windows-latest'
+    - name: Installation testing
       run: |
         pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.event.inputs.branch_name }}
-        clang-tools --install ${{ matrix.version }} --directory .
-    - name: Install on Linux
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.event.inputs.branch_name }}
-        sudo clang-tools --install ${{ matrix.version }}
-    - name: Install on MacOS
-      if: matrix.os == 'macos-latest'
-      run: |
-        pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.event.inputs.branch_name }}
-        clang-tools --install ${{ matrix.version }} --directory .
+        clang-tools --install ${{ matrix.version }}
+        which clang-format-${{ matrix.version }}
+        clang-format-${{ matrix.version }} --version
+        which clang-tidy-${{ matrix.version }}
+        clang-tidy-${{ matrix.version }} --version

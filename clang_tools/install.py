@@ -2,6 +2,7 @@ import string
 import subprocess
 import shutil
 import os
+import sys
 from posixpath import basename
 from clang_tools.util import check_install_os
 from clang_tools.util import download_file
@@ -64,17 +65,19 @@ def install_clang_tidy(version, directory) -> None:
 def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
     """Move download clang-tools binary and move to bin dir with right permission."""
     if directory:
-        clang_tools_dir = directory
+        install_dir = directory
     else:
         install_os = check_install_os()
-        if install_os in ['linux', 'macosx']:
-            clang_tools_dir = "/usr/bin"
-        elif install_os == "windows":
-            clang_tools_dir = "C:/bin"
-        else:
-            raise Exception(f"Not support {install_os}")
-    shutil.move(old_file_name, f"{clang_tools_dir}/{new_file_name}")
-    os.chmod(os.path.join(clang_tools_dir, new_file_name), 0o777)
+        if install_os not in ['linux', 'macosx', 'windows']:
+            raise SystemExit(f"Not support {install_os}")
+        install_dir = os.path.dirname(sys.executable)
+    try:
+        if not os.path.isdir(install_dir):
+            os.makedirs(install_dir)
+        shutil.move(old_file_name, f"{install_dir}/{new_file_name}")
+        os.chmod(os.path.join(install_dir, new_file_name), 0o755)
+    except PermissionError:
+        raise SystemExit("You don't have permission. Try to run with the appropriate permissions.")
 
 
 def install_clang_tools(version, directory) -> None:

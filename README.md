@@ -9,13 +9,13 @@ Install clang-tools binaries (clang-format, clang-tidy) with pip.
 Install `clang-tools` command with pip
 
 ```bash
-$ sudo pip install clang-tools
+$ pip install clang-tools
 ```
 
 ## Usage
 
 ```bash
-$ sudo clang-tools --help
+$ clang-tools --help
 usage: clang-tools [-h] [-i INSTALL] [-d DIRECTORY]
 
 optional arguments:
@@ -28,9 +28,9 @@ optional arguments:
 Use `clang-tools` command to install version 13 binaries.
 
 ```bash
-$ sudo clang-tools --install 13
+$ clang-tools --install 13
 # Or install to a specified directory
-$ sudo clang-tools --install 13 --directory .
+$ clang-tools --install 13 --directory .
 
 $ clang-format-13 --version
 clang-format version 13.0.0
@@ -42,3 +42,10 @@ LLVM (http://llvm.org/):
   Default target: x86_64-unknown-linux-gnu
   Host CPU: skylake
 ```
+
+## Supported versions
+
+|    verions   | 14 | 13 | 12.0.1 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3.9 |
+|:------------:|:--:|:--:|:------:|:--:|:--:|:--:|:-:|:-:|:-:|:-:|:-:|:-:|:---:|
+| clang-format |  ✔️ |  ✔️ | ✔️ |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+|  clang-tidy  |  ❌ |  ✔️ | ✔️ |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |

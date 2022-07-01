@@ -13,11 +13,11 @@ on:
     paths:
       - '**.py'
   workflow_dispatch:
-    inputs:
-      branch_name:
-        description: 'Test against to branch'
-        required: true
-        default: 'main'
+    # inputs:
+    #   branch_name:
+    #     description: 'Test against to branch'
+    #     required: true
+    #     default: 'main'
 
 permissions:
   contents: read
@@ -59,9 +59,14 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.8"
+    - name: Install clang-tools of pull_request event
+      if: github.event_name == 'pull_request'
+      run: pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.head_ref }}
+    - name: Install clang-tools of push event
+      if: github.event_name == 'push'
+      run: pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.ref }}
     - name: Installation testing
       run: |
-        pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.event.inputs.branch_name }}
         clang-tools --install ${{ matrix.version }}
         which clang-format-${{ matrix.version }}
         clang-format-${{ matrix.version }} --version

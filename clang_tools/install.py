@@ -2,6 +2,7 @@ import string
 import subprocess
 import shutil
 import os
+import sys
 from posixpath import basename
 from clang_tools.util import check_install_os
 from clang_tools.util import download_file
@@ -67,14 +68,14 @@ def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
         install_dir = directory
     else:
         install_os = check_install_os()
-        if install_os in ['linux', 'macosx']:
-            username = os.environ.get('USER')
-            install_dir = os.path.join("/home", username, ".local/bin")
-        elif install_os in ['windows']:
-            install_dir = os.getcwd()
+        
+        if install_os in ['linux', 'macosx', 'windows']:
+           install_dir = os.path.dirname(sys.executable)
         else:
             raise SystemExit(f"Not support {install_os}")
     try:
+        if not os.path.isdir(install_dir):
+            os.makedirs(install_dir)
         shutil.move(old_file_name, f"{install_dir}/{new_file_name}")
         os.chmod(os.path.join(install_dir, new_file_name), 0o755)
     except PermissionError:

@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       branch_name:
-        description: 'The test branch name'
+        description: 'Test against to branch'
         required: true
         default: 'main'
 

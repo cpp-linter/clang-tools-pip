@@ -9,14 +9,17 @@ def check_install_os() -> string:
     os = platform.system().lower()
     if os == "darwin":
         os = "macosx"
+    if os not in ['linux', 'macosx', 'windows']:
+        raise SystemExit(f"Not support {os}")
     return os
 
 
-def download_file(url, file_name) -> None:
+def download_file(url, file_name) -> tuple:
     try:
-        urllib.request.urlretrieve(url, file_name)
-    except HTTPError:
+        ret = urllib.request.urlretrieve(url, file_name)
+    except ValueError:
         raise SystemExit(f"Not found {file_name}, exit!")
+    return ret
 
 
 def unpack_file(file_name) -> int:

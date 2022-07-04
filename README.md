@@ -46,7 +46,22 @@ LLVM (http://llvm.org/):
 
 ## Supported versions
 
+### clang-format
+
 |    verions   | 14 | 13 | 12.0.1 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3.9 |
 |:------------:|:--:|:--:|:------:|:--:|:--:|:--:|:-:|:-:|:-:|:-:|:-:|:-:|:---:|
-| clang-format |  ✔️ |  ✔️ | ✔️ |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-|  clang-tidy  |  ❌ |  ✔️ | ✔️ |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+|     Linux    |  ✔️ |  ✔️ |    ✔️   |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+|    Windows   |  ✔️ |  ✔️ |    ✔️   |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+|     macOS    |  ✔️ |  ✔️ |    ✔️   |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+
+### clang-tidy
+
+|    verions   | 14 | 13 | 12.0.1 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3.9 |
+|:------------:|:--:|:--:|:------:|:--:|:--:|:--:|:-:|:-:|:-:|:-:|:-:|:-:|:---:|
+|     Linux    |  ❌ |  ✔️ |    ✔️   |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+|    Windows   |  ✔️ |  ✔️ |    ✔️   |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+|     macOS    |  ✔️ |  ✔️ |    ✔️   |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+
+Know issue: clang-tidy version 14 has Segmentation fault (core dumped).
+
+Thanks to the project [clang-tools-static-binaries](https://github.com/muttleyxd/clang-tools-static-binaries) for all the binaries.

@@ -9,8 +9,8 @@ def parse_args(args):
     parser.add_argument(
         "-i",
         "--install",
-        default="12",
-        help="Install clang-tools with specific version. default is 12.",
+        default="13",
+        help="Install clang-tools with specific version. default is 13.",
     )
 
     parser.add_argument(

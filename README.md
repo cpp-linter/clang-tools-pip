@@ -1,6 +1,7 @@
 # clang-tools
 
-[![PyPI](https://img.shields.io/pypi/v/clang-tools)](https://pypi.org/project/clang-tools/) [![Python test](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml/badge.svg)](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml) [![codecov](https://codecov.io/gh/shenxianpeng/clang-tools-pip/branch/master/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/shenxianpeng/clang-tools-pip) [![Platfrom](https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue)](https://pypi.org/project/clang-tools/)
+[![PyPI](https://img.shields.io/pypi/v/clang-tools)](https://pypi.org/project/clang-tools/) [![Python test](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml/badge.svg)](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml) [![codecov](https://codecov.io/gh/shenxianpeng/clang-tools-pip/branch/master/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/shenxianpeng/clang-tools-pip) [![Platfrom](https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue)](https://pypi.org/project/clang-tools/) ![PyPI - Downloads](https://img.shields.io/pypi/dw/clang-tools)
+
 
 Install clang-tools binaries (clang-format, clang-tidy) with pip.
 
@@ -45,7 +46,21 @@ LLVM (http://llvm.org/):
 
 ## Supported versions
 
-|    verions   | 14 | 13 | 12.0.1 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3.9 |
-|:------------:|:--:|:--:|:------:|:--:|:--:|:--:|:-:|:-:|:-:|:-:|:-:|:-:|:---:|
-| clang-format |  ✔️ |  ✔️ | ✔️ |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-|  clang-tidy  |  ❌ |  ✔️ | ✔️ |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+### clang-format
+| Version | 14 | 13 | 12.0.1 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3.9 |
+|:-------:|:--:|:--:|:------:|:--:|:--:|:--:|:-:|:-:|:-:|:-:|:-:|:-:|:---:|
+|  Linux  |  ✔️ |  ✔️ | ✔️  |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+| Windows |  ✔️ |  ✔️ | ✔️  |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+|  macOS  |  ✔️ |  ✔️ | ✔️  |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+
+### clang-tidy
+
+| Version | 14 | 13 | 12.0.1 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3.9 |
+|:-------:|:--:|:--:|:------:|:--:|:--:|:--:|:-:|:-:|:-:|:-:|:-:|:-:|:---:|
+|  Linux  |  ❌ |  ✔️ | ✔️  |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+| Windows |  ✔️ |  ✔️ | ✔️  |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+|  macOS  |  ✔️ |  ✔️ | ✔️  |  ✔️ |  ✔️ |  ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |  ✔️  |
+
+Know issue: clang-tidy version 14 has Segmentation fault (core dumped).
+
+Thanks to the project [clang-tools-static-binaries](https://github.com/muttleyxd/clang-tools-static-binaries) for all the binaries.

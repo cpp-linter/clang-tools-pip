@@ -5,14 +5,11 @@ from clang_tools.install import clang_tidy_exist
 from clang_tools.install import clang_tools_binary_url
 
 
-def test_clang_format_exist():
-    ret = clang_format_exist('1000')
-    assert ret == False
+@pytest.mark.parametrize(('version', 'expected'), (('12', True), ('100', False)))
+def test_clang_tools_exist(version, expected):
+    assert clang_format_exist(version) == expected
+    assert clang_tidy_exist(version) == expected
 
-
-def test_clang_tidy_exist():
-    ret = clang_tidy_exist('1000')
-    assert ret == False
 
 def test_clang_tools_binary_url():
     tools = ['clang-format', 'clang-tidy']
@@ -24,5 +21,3 @@ def test_clang_tools_binary_url():
             assert(f"{tool}-{version}_{os}-amd64.exe" in ret)
         else:
             assert(f"{tool}-{version}_{os}-amd64" in ret)
-
-def 

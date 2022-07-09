@@ -5,7 +5,7 @@ with open("README.md", "r", encoding='utf-8') as file:
 
 setup(
     name="clang_tools",
-    version="0.2.1",
+    version="0.2.2",
     description="Install clang-tools (clang-format, clang-tidy) with pip",
     long_description=long_description,
     long_description_content_type="text/markdown",

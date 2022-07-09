@@ -76,7 +76,7 @@ def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
     except PermissionError:
         raise SystemExit(
             f"Don't have permission to install {new_file_name} to {install_dir}. \
-            Try to run with the appropriate permissions."
+                Try to run with the appropriate permissions."
         )
 
 

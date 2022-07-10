@@ -39,7 +39,10 @@ jobs:
     - name: Lint with flake8
       run: flake8 .
     - name: Run tests and collect coverage
-      run: pytest --cov .
+      run: |
+        coverage run --source=tests,clang_tools -m pytest
+        coverage report -m
+        coverage html
     - name: Upload coverage reports to Codecov
       run: |
         # Replace `linux` below with the appropriate OS

@@ -69,10 +69,10 @@ def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
         install_dir = directory
     else:
         install_os = check_install_os()
-        if install_os == "windows":
-            install_dir = os.path.dirname(sys.executable)
-        else:
+        if install_os == "linux":
             install_dir = os.path.expanduser('~/.local/bin/')
+        else:
+            install_dir = os.path.dirname(sys.executable)
     try:
         if not os.path.isdir(install_dir):
             os.makedirs(install_dir)

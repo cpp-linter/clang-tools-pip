@@ -1,5 +1,8 @@
 from unittest import mock
-from clang_tools.util import check_install_os, download_file, unpack_file
+
+from clang_tools.util import check_install_os
+from clang_tools.util import download_file
+from clang_tools.util import unpack_file
 
 
 def test_check_install_os():

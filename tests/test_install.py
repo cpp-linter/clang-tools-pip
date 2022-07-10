@@ -1,4 +1,5 @@
 import pytest
+
 from clang_tools.install import check_install_os
 from clang_tools.install import clang_format_exist
 from clang_tools.install import clang_tidy_exist

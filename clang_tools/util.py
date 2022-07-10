@@ -1,7 +1,7 @@
+import platform
 import string
 import subprocess
 import urllib.request
-import platform
 
 
 def check_install_os() -> string:

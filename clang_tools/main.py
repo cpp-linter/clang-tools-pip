@@ -1,5 +1,6 @@
-import sys
 import argparse
+import sys
+
 from clang_tools.install import install_clang_tools
 
 

@@ -1,9 +1,10 @@
+import os
+import shutil
 import string
 import subprocess
-import shutil
-import os
 import sys
 from posixpath import basename
+
 from clang_tools.util import check_install_os
 from clang_tools.util import download_file
 
@@ -67,8 +68,8 @@ def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
     if directory:
         install_dir = directory
     else:
-        os = check_install_os()
-        if os == "windows":
+        install_os = check_install_os()
+        if install_os == "windows":
             install_dir = os.path.dirname(sys.executable)
         else:
             install_dir = os.path.expanduser('~/.local/bin/')
@@ -79,7 +80,8 @@ def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
         os.chmod(os.path.join(install_dir, new_file_name), 0o755)
     except PermissionError:
         raise SystemExit(
-            f"Don't have permission to install {new_file_name} to {install_dir}. Try to run with the appropriate permissions."
+            f"Don't have permission to install {new_file_name} to {install_dir}. \
+                Try to run with the appropriate permissions."
         )
 
 

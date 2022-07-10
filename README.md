@@ -10,7 +10,11 @@ Install clang-tools binaries (clang-format, clang-tidy) with pip.
 Install `clang-tools` command with pip
 
 ```bash
+# install `clang-tools` from pip
 $ pip install clang-tools
+
+# install `clang-tools` from git repo
+pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
 ```
 
 ## Usage

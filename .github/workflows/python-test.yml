@@ -37,7 +37,7 @@ jobs:
         pip install .
         pip install -r requirements-dev.txt
     - name: Lint with flake8
-      run: flake8 .
+      run: flake8 --max-line-length=120
     - name: Run tests and collect coverage
       run: |
         coverage run --source=tests,clang_tools -m pytest

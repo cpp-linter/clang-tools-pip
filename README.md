@@ -1,6 +1,6 @@
 # clang-tools
 
-[![PyPI](https://img.shields.io/pypi/v/clang-tools)](https://pypi.org/project/clang-tools/) [![Python test](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml/badge.svg)](https://github.com/shenxianpeng/clang-tools-pip/actions/workflows/python-test.yml) [![codecov](https://codecov.io/gh/shenxianpeng/clang-tools-pip/branch/master/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/shenxianpeng/clang-tools-pip) [![Platfrom](https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue)](https://pypi.org/project/clang-tools/) ![PyPI - Downloads](https://img.shields.io/pypi/dw/clang-tools)
+[![PyPI](https://img.shields.io/pypi/v/clang-tools)](https://pypi.org/project/clang-tools/) [![Python test](https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg)](https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml) [![codecov](https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/master/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/cpp-linter/clang-tools-pip) [![Platfrom](https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue)](https://pypi.org/project/clang-tools/) ![PyPI - Downloads](https://img.shields.io/pypi/dw/clang-tools)
 
 
 Install clang-tools binaries (clang-format, clang-tidy) with pip.
@@ -14,7 +14,7 @@ Install `clang-tools` command with pip
 $ pip install clang-tools
 
 # install `clang-tools` from git repo
-pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@main
+pip install git+https://github.com/cpp-linter/clang-tools-pip.git@main
 ```
 
 ## Usage

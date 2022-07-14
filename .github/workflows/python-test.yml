@@ -64,10 +64,10 @@ jobs:
       with:
         python-version: "3.8"
     - name: Install clang-tools of push event
-      run: pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.ref }}
+      run: pip install git+https://github.com/cpp-linter/clang-tools-pip.git@${{ github.ref }}
     - name: Install clang-tools of pull_request event
       if: github.event_name == 'pull_request'
-      run: pip install git+https://github.com/shenxianpeng/clang-tools-pip.git@${{ github.head_ref }}
+      run: pip install git+https://github.com/cpp-linter/clang-tools-pip.git@${{ github.head_ref }}
     - name: Installation testing
       run: |
         clang-tools --install ${{ matrix.version }}

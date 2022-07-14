@@ -17,7 +17,7 @@ When you're finished with the changes, create a pull request, also known as a PR
 Install `clang-tools` from source code
 
 ```bash
-$ git clone git@github.com:shenxianpeng/clang-tools-pip.git
+$ git clone git@github.com:cpp-linter/clang-tools-pip.git
 # Need root permission
 $ sudo python3 setup.py install
 # Install clang-tools version 13

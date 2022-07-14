@@ -16,8 +16,8 @@ setup(
     license="MIT License",
     packages=find_packages(),
     project_urls={
-        "Source": "https://github.com/shenxianpeng/clang-tools-pip",
-        "Tracker": "https://github.com/shenxianpeng/clang-tools-pip/issues"
+        "Source": "https://github.com/cpp-linter/clang-tools-pip",
+        "Tracker": "https://github.com/cpp-linter/clang-tools-pip/issues"
     },
     classifiers=[
         # https://pypi.org/pypi?%3Aaction=list_classifiers

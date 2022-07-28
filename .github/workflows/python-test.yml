@@ -10,14 +10,8 @@ on:
       - '**.py'
   pull_request:
     branches: [ "main" ]
-    paths:
-      - '**.py'
   workflow_dispatch:
-    # inputs:
-    #   branch_name:
-    #     description: 'Test against to branch'
-    #     required: true
-    #     default: 'main'
+
 
 permissions:
   contents: read
@@ -36,9 +30,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install .
         pip install -r requirements-dev.txt
-    - name: Lint with flake8
-      run: flake8 --max-line-length=120
-    - name: Run tests and collect coverage
+    - name: Run pre-commit
+      run: |
+        pre-commit install
+        pre-commit run --all-files
+    - name: Collect coverage
       run: |
         coverage run --source=tests,clang_tools -m pytest
         coverage report -m

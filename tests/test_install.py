@@ -18,7 +18,4 @@ def test_clang_tools_binary_url():
     os = check_install_os()
     for tool in tools:
         ret = clang_tools_binary_url(tool, version)
-        if os == 'windows':
-            assert(f"{tool}-{version}_{os}-amd64.exe" in ret)
-        else:
-            assert(f"{tool}-{version}_{os}-amd64" in ret)
+        assert(f"{tool}-{version}_{os}-amd64" in ret)

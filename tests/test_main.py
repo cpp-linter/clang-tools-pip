@@ -11,5 +11,3 @@ def test_main_install(argv, called, response):
         if called and not response:
             with pytest.raises(SystemExit):
                 main()
-        else:
-            main()

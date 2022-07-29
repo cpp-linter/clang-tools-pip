@@ -30,10 +30,6 @@ jobs:
         python3 -m pip install --upgrade pip
         pip install .
         pip install -r requirements-dev.txt
-    - name: Run pre-commit
-      run: |
-        pre-commit install
-        pre-commit run --all-files
     - name: Collect coverage
       run: |
         coverage run --source=tests,clang_tools -m pytest

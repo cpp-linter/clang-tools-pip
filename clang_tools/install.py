@@ -52,9 +52,10 @@ def install_clang_format(version, directory) -> None:
     clang_format_bin = basename(clang_format_bin_url)
     download_file(clang_format_bin_url, clang_format_bin)
     if install_os == "windows":
-        clang_format_newbin = f"clang-format-{version}.exe"
-    clang_format_newbin = f"clang-format-{version}"
-    move_and_chmod_bin(clang_format_bin, clang_format_newbin, directory)
+        new_clang_format_bin = f"clang-format-{version}.exe"
+    else:
+        new_clang_format_bin = f"clang-format-{version}"
+    move_and_chmod_bin(clang_format_bin, new_clang_format_bin, directory)
 
 
 def install_clang_tidy(version, directory) -> None:
@@ -64,9 +65,10 @@ def install_clang_tidy(version, directory) -> None:
     clang_tidy_bin = basename(clang_tidy_bin_url)
     download_file(clang_tidy_bin_url, clang_tidy_bin)
     if install_os == "windows":
-        clang_tidy_newbin = f"clang-tidy-{version}.exe"
-    clang_tidy_newbin = f"clang-tidy-{version}"
-    move_and_chmod_bin(clang_tidy_bin, clang_tidy_newbin, directory)
+        new_clang_tidy_bin = f"clang-tidy-{version}.exe"
+    else:
+        new_clang_tidy_bin = f"clang-tidy-{version}"
+    move_and_chmod_bin(clang_tidy_bin, new_clang_tidy_bin, directory)
 
 
 def move_and_chmod_bin(old_bin_name, new_bin_name, directory) -> None:
@@ -86,8 +88,8 @@ def move_and_chmod_bin(old_bin_name, new_bin_name, directory) -> None:
         os.chmod(os.path.join(install_dir, new_bin_name), 0o755)
     except PermissionError:
         raise SystemExit(
-            f"Don't have permission to install {new_bin_name} to {install_dir}. \nTry to run with the \
-                appropriate permissions."
+            f"""Don't have permission to install {new_bin_name} to {install_dir}.
+            Try to run with the appropriate permissions."""
         )
 
 

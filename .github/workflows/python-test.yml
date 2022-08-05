@@ -66,12 +66,12 @@ jobs:
         which clang-format-${{ matrix.version }}
         which clang-tidy-${{ matrix.version }}
     - name: Check clang-tools on Windows
-      if: ${{ matrix.os }} == 'windows-latest'
+      if: matrix.os == 'windows-latest'
       run: |
         clang-format-${{ matrix.version }}.exe --version
         clang-tidy-${{ matrix.version }}.exe --version
     - name: Check clang-tools on Unix
-      if: ${{ matrix.os }} == 'ubuntu-latest' || ${{ matrix.os }} == 'macos-latest'
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       run: |
         clang-format-${{ matrix.version }} --version
         clang-tidy-${{ matrix.version }} --version

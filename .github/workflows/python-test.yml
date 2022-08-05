@@ -60,10 +60,18 @@ jobs:
     - name: Install clang-tools of pull_request event
       if: github.event_name == 'pull_request'
       run: pip install git+https://github.com/cpp-linter/clang-tools-pip.git@${{ github.head_ref }}
-    - name: Installation testing
+    - name: Install clang-tools
       run: |
         clang-tools --install ${{ matrix.version }}
         which clang-format-${{ matrix.version }}
-        clang-format-${{ matrix.version }} --version
         which clang-tidy-${{ matrix.version }}
+    - name: Check clang-tools on Windows
+      if: ${{ matrix.os }} == 'windows-latest'
+      run: |
+        clang-format-${{ matrix.version }}.exe --version
+        clang-tidy-${{ matrix.version }}.exe --version
+    - name: Check clang-tools on Unix
+      if: ${{ matrix.os }} == 'ubuntu-latest' || ${{ matrix.os }} == 'macos-latest'
+      run: |
+        clang-format-${{ matrix.version }} --version
         clang-tidy-${{ matrix.version }} --version

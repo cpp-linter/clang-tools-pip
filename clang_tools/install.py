@@ -5,6 +5,7 @@ import subprocess
 import sys
 from posixpath import basename
 
+from clang_tools import install_os
 from clang_tools.util import check_install_os
 from clang_tools.util import download_file
 
@@ -36,7 +37,6 @@ def clang_tidy_exist(version) -> bool:
 
 
 def clang_tools_binary_url(tool, version) -> string:
-    install_os = check_install_os()
     base_url = "https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-208096c1"
     if install_os == "windows":
         download_url = f"{base_url}/{tool}-{version}_{install_os}-amd64.exe".replace(" ", "")
@@ -48,22 +48,28 @@ def clang_tools_binary_url(tool, version) -> string:
 def install_clang_format(version, directory) -> None:
     if clang_format_exist(version):
         return
-    clang_format_binary_url = clang_tools_binary_url("clang-format", version)
-    clang_format_binary = basename(clang_format_binary_url)
-    download_file(clang_format_binary_url, clang_format_binary)
-    move_and_chmod_binary(clang_format_binary, f"clang-format-{version}", directory)
+    clang_format_bin_url = clang_tools_binary_url("clang-format", version)
+    clang_format_bin = basename(clang_format_bin_url)
+    download_file(clang_format_bin_url, clang_format_bin)
+    if install_os == "windows":
+        clang_format_newbin = f"clang-format-{version}.exe"
+    clang_format_newbin = f"clang-format-{version}"
+    move_and_chmod_bin(clang_format_bin, clang_format_newbin, directory)
 
 
 def install_clang_tidy(version, directory) -> None:
     if clang_tidy_exist(version):
         return
-    clang_tidy_binary_url = clang_tools_binary_url("clang-tidy", version)
-    clang_tidy_binary = basename(clang_tidy_binary_url)
-    download_file(clang_tidy_binary_url, clang_tidy_binary)
-    move_and_chmod_binary(clang_tidy_binary, f"clang-tidy-{version}", directory)
+    clang_tidy_bin_url = clang_tools_binary_url("clang-tidy", version)
+    clang_tidy_bin = basename(clang_tidy_bin_url)
+    download_file(clang_tidy_bin_url, clang_tidy_bin)
+    if install_os == "windows":
+        clang_tidy_newbin = f"clang-tidy-{version}.exe"
+    clang_tidy_newbin = f"clang-tidy-{version}"
+    move_and_chmod_bin(clang_tidy_bin, clang_tidy_newbin, directory)
 
 
-def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
+def move_and_chmod_bin(old_file_name, new_file_name, directory) -> None:
     """Move download clang-tools binary and move to bin dir with right permission."""
     if directory:
         install_dir = directory
@@ -80,8 +86,8 @@ def move_and_chmod_binary(old_file_name, new_file_name, directory) -> None:
         os.chmod(os.path.join(install_dir, new_file_name), 0o755)
     except PermissionError:
         raise SystemExit(
-            f"Don't have permission to install {new_file_name} to {install_dir}. \
-                Try to run with the appropriate permissions."
+            f"Don't have permission to install {new_file_name} to {install_dir}. \nTry to run with the \
+                appropriate permissions."
         )
 
 

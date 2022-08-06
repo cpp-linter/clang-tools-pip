@@ -1,3 +1,4 @@
+"""Info used for installing the clang-tools package."""
 from setuptools import find_packages
 from setuptools import setup
 

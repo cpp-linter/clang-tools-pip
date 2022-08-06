@@ -88,8 +88,8 @@ def move_and_chmod_bin(old_bin_name, new_bin_name, directory) -> None:
         os.chmod(os.path.join(install_dir, new_bin_name), 0o755)
     except PermissionError:
         raise SystemExit(
-            f"""Don't have permission to install {new_bin_name} to {install_dir}.
-            Try to run with the appropriate permissions."""
+            f"Don't have permission to install {new_bin_name} to {install_dir}."
+            + " Try to run with the appropriate permissions."
         )
 
 

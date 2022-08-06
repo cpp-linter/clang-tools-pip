@@ -8,3 +8,4 @@ clang_tools/llvm-project*
 .vscode/settings.json
 tests/pytestdebug.log
 tests/__pycache__/
+.eggs

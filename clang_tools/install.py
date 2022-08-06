@@ -8,7 +8,7 @@ from posixpath import basename
 
 from . import install_os, suffix
 from .util import download_file
-
+# pylint: disable=fixme
 
 def is_installed(tool_name: str, version: str):
     """An abstract functions to check if a specified clang tool is installed."""
@@ -40,17 +40,18 @@ def clang_tools_binary_url(
     return download_url.replace(" ", "")
 
 
-def install_tool(tool_name: str, version: str, directory: str) -> None:
+def install_tool(tool_name: str, version: str, directory: str) -> bool:
     """An abstract function that can install either clang-tidy or clang-format."""
     if is_installed(tool_name, version):
-        # TODO should probably skip this if directory is not in PATH env var
+        # TODO should probably skip this if `directory` is not in the PATH env var.
         print(f"{tool_name}-{version}", "already installed")
-        return
+        return False
     bin_url = clang_tools_binary_url(tool_name, version)
     bin_name = basename(bin_url)
     print("downloading", tool_name, f"(version {version})")
     download_file(bin_url, bin_name)
     move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
+    return True
 
 
 def install_dir_name(directory: str) -> str:
@@ -124,5 +125,5 @@ def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
     """Wraps functions used to individually install tools."""
     install_dir = install_dir_name(directory)
     for tool_name in ("clang-format", "clang-tidy"):
-        install_tool(tool_name, version, install_dir)
-        create_sym_link(tool_name, version, install_dir, overwrite)
+        if install_tool(tool_name, version, install_dir):
+            create_sym_link(tool_name, version, install_dir, overwrite)

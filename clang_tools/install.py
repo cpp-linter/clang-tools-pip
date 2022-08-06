@@ -123,7 +123,7 @@ def create_sym_link(
 def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
     """Wraps functions used to individually install tools."""
     install_dir = install_dir_name(directory)
-    if install_dir not in os.environ.get("PATH"):
+    if install_dir.rstrip(os.sep) not in os.environ.get("PATH"):
         print(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",

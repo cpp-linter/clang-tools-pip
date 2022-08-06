@@ -1,12 +1,11 @@
 """The module that performs the installation of clang-tools."""
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 import shutil
 import subprocess
 import sys
-from posixpath import basename
 
-from . import install_os, suffix
+from . import install_os, suffix, YELLOW, RESET_COLOR
 from .util import download_file
 # pylint: disable=fixme
 
@@ -47,7 +46,7 @@ def install_tool(tool_name: str, version: str, directory: str) -> bool:
         print(f"{tool_name}-{version}", "already installed")
         return False
     bin_url = clang_tools_binary_url(tool_name, version)
-    bin_name = basename(bin_url)
+    bin_name = str(PurePath(bin_url).stem)
     print("downloading", tool_name, f"(version {version})")
     download_file(bin_url, bin_name)
     move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
@@ -124,6 +123,11 @@ def create_sym_link(
 def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
     """Wraps functions used to individually install tools."""
     install_dir = install_dir_name(directory)
+    if install_dir not in os.environ.get("PATH"):
+        print(
+            f"{YELLOW}{install_dir}",
+            f"directory is not in your environment variable PATH.{RESET_COLOR}",
+        )
     for tool_name in ("clang-format", "clang-tidy"):
         if install_tool(tool_name, version, install_dir):
             create_sym_link(tool_name, version, install_dir, overwrite)

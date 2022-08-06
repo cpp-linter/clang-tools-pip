@@ -5,7 +5,9 @@ clang_tools/__pycache__
 dist
 clang_tools/llvm-project*
 .coverage
-.vscode/settings.json
+htmlcov/
+.vscode/
 tests/pytestdebug.log
 tests/__pycache__/
 .eggs
+.mypy_cache/

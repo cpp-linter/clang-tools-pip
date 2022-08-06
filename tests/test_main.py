@@ -1,13 +1,27 @@
-from unittest import mock
-
+"""Tests that relate to the main.py module."""
 import pytest
+from clang_tools.main import parse_args
 
-from clang_tools.main import main
+
+class Args:
+    """A pseudo namespace for testing argparse.
+    These class attributes are set to the CLI args default values."""
+
+    directory: str = ""
+    install: str = "13"
+    overwrite: bool = False
 
 
-@pytest.mark.parametrize("argv, called, response", [(['-i'], True, False), (['-d'], True, False)])
-def test_main_install(argv, called, response):
-    with mock.patch('sys.argv', [''] + argv):
-        if called and not response:
-            with pytest.raises(SystemExit):
-                main()
+@pytest.mark.parametrize("arg_name", ["install", "directory"])
+@pytest.mark.parametrize("arg_value", [str(v) for v in range(7, 14)] + ["12.0.1"])
+def test_arg_parser(arg_name: str, arg_value: str):
+    """Test `parse_args()` using a set of fake args."""
+    args = parse_args([f"--{arg_name}={arg_value}"])
+    assert getattr(args, arg_name) == arg_value
+
+
+def test_default_args():
+    """Test the default values of CLI args"""
+    args = parse_args([])
+    for name, value in args.__dict__.items():
+        assert getattr(Args, name) == value

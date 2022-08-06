@@ -28,13 +28,11 @@ jobs:
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
-        pip install .
-        pip install -r requirements-dev.txt
+        python3 -m pip install . -r requirements-dev.txt
     - name: Collect coverage
       run: |
-        coverage run --source=tests,clang_tools -m pytest
+        coverage run -m pytest -vv
         coverage report -m
-        coverage html
     - name: Upload coverage reports to Codecov
       run: |
         # Replace `linux` below with the appropriate OS

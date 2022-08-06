@@ -63,9 +63,9 @@ def install_dir_name(directory: str) -> str:
         return os.path.abspath(directory)
     if install_os == "linux":
         return os.path.expanduser("~/.local/bin/")
-    if install_os == "windows":
-        # C:\Users\{username}\AppData\Local\clang-tools
-        return os.path.join(os.getenv("LOCALAPPDATA"), "clang-tools")
+    # if install_os == "windows":
+    #     # C:\Users\{username}\AppData\Local\clang-tools
+    #     return os.path.join(os.getenv("LOCALAPPDATA"), "clang-tools")
     return os.path.dirname(sys.executable)
 
 

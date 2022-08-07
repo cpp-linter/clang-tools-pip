@@ -34,13 +34,13 @@ jobs:
     - name: Check distribution
       run: twine check dist/*
     - name: Publish package (to TestPyPI)
-      if: github.event == 'workflow_dispatch' && github.repository == 'cpp-linter/clang-tools-pip'
+      if: github.event_name == 'workflow_dispatch' && github.repository == 'cpp-linter/clang-tools-pip'
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
       run: twine upload --repository testpypi dist/*
     - name: Publish package (to PyPI)
-      if: github.event == 'release' && github.repository == 'cpp-linter/clang-tools-pip' && github.ref == 'refs/heads/main'
+      if: github.event_name == 'release' && github.repository == 'cpp-linter/clang-tools-pip' && github.ref == 'refs/heads/main'
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}

@@ -77,6 +77,8 @@ jobs:
           path: dist
 
       - name: Install pkg from wheel
+        # using a wildcard as filename on Windows requires a bash shell
+        shell: bash
         run: pip install dist/*.whl
 
       - name: Install clang-tools

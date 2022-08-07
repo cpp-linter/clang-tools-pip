@@ -1,6 +1,7 @@
 """The module containing main entrypoint function."""
 import argparse
 from typing import List
+
 from .install import install_clang_tools
 
 

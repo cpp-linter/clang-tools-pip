@@ -1,8 +1,8 @@
 """A module containing utility functions."""
 import platform
-from typing import Optional
 import tarfile
 import urllib.request
+from typing import Optional
 from urllib.error import HTTPError
 
 
@@ -19,7 +19,7 @@ def check_install_os() -> str:
     this_os = platform.system().lower()
     if this_os == "darwin":
         this_os = "macosx"
-    if this_os not in ['linux', 'macosx', 'windows']:
+    if this_os not in ["linux", "macosx", "windows"]:
         raise SystemExit(f"{this_os} is not currently supported")
     return this_os
 

@@ -1,13 +1,19 @@
 """The module that performs the installation of clang-tools."""
 import os
-from pathlib import Path, PurePath
 import shutil
 import subprocess
 import sys
+from pathlib import Path
+from pathlib import PurePath
 
-from . import install_os, suffix, YELLOW, RESET_COLOR
+from . import install_os
+from . import RESET_COLOR
+from . import suffix
+from . import YELLOW
 from .util import download_file
+
 # pylint: disable=fixme
+
 
 def is_installed(tool_name: str, version: str):
     """An abstract functions to check if a specified clang tool is installed."""

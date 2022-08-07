@@ -1,4 +1,9 @@
-"""The module that performs the installation of clang-tools."""
+"""
+``clang_tools.install``
+-----------------------
+
+The module that performs the installation of clang-tools.
+"""
 import os
 import shutil
 import subprocess
@@ -15,8 +20,14 @@ from .util import download_file
 # pylint: disable=fixme
 
 
-def is_installed(tool_name: str, version: str):
-    """An abstract functions to check if a specified clang tool is installed."""
+def is_installed(tool_name: str, version: str) -> bool:
+    """An abstract functions to check if a specified clang tool is installed.
+
+    :param tool_name: The name of the tool.
+    :param version: The version of the tool to look for. If provided a blank string,
+        then only the ``tool_name`` is executed during the check.
+    :returns: A `bool` describing if the tool was installed and executed properly.
+    """
     command = [tool_name, "--version"]
     if version:
         command[0] += f"-{version}"
@@ -34,6 +45,7 @@ def clang_tools_binary_url(
 
     :param tool: The name of the tool to download.
     :param version: The version of the tool to download.
+    :param release_tag: The release tag used in the base URL.
 
     :returns: The URL used to download the specified tool.
     """
@@ -62,6 +74,9 @@ def install_tool(tool_name: str, version: str, directory: str) -> bool:
 def install_dir_name(directory: str) -> str:
     """Automate directory choosing if not explicitly specified by user.
 
+    :param directory: The directory that was manually specified in the CLI. If this was
+        not specified, then default values are used depending on the operating system.
+
     :returns: The install directory name (in absolute form).
     """
     if directory:
@@ -75,7 +90,13 @@ def install_dir_name(directory: str) -> str:
 
 
 def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -> None:
-    """Move download clang-tools binary and move to bin dir with right permission."""
+    """Move download clang-tools binary and move to bin dir with right permission.
+
+    :param old_bin_name: The downloaded file's name.
+    :param new_bin_name: The desired name of the file after being moved to
+        the ``install_dir``.
+    :param install_dir: The target installation directory.
+    """
     print("Installing", new_bin_name, "to", install_dir)
     try:
         if not os.path.isdir(install_dir):
@@ -127,7 +148,13 @@ def create_sym_link(
 
 
 def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
-    """Wraps functions used to individually install tools."""
+    """Wraps functions used to individually install tools.
+
+    :param version: The version of the tools to install.
+    :param directory: The installation directory.
+    :param overwrite: A flag to indicate if the creation of a symlink has
+        permission to overwrite an existing symlink.
+    """
     install_dir = install_dir_name(directory)
     if install_dir.rstrip(os.sep) not in os.environ.get("PATH"):
         print(

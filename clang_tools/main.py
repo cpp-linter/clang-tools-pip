@@ -1,4 +1,9 @@
-"""The module containing main entrypoint function."""
+"""
+``clang_tools.main``
+--------------------
+
+The module containing main entrypoint function.
+"""
 import argparse
 from typing import List
 
@@ -6,7 +11,11 @@ from .install import install_clang_tools
 
 
 def parse_args(args: List[str] = None) -> argparse.Namespace:
-    """Get and parse args given on the CLI."""
+    """Get and parse args given on the CLI.
+
+    :param args: The arguments given on the command line. If specified, this does not
+        need to include the name of the program (ie "clang_tools").
+    """
     parser = argparse.ArgumentParser(prog="clang-tools")
 
     parser.add_argument(

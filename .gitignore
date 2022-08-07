@@ -1,5 +1,5 @@
 .pytest_cache
-build
+*build
 clang_tools.egg-info
 clang_tools/__pycache__
 dist

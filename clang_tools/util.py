@@ -1,4 +1,9 @@
-"""A module containing utility functions."""
+"""
+``clang_tools.util``
+-----------------------
+
+A module containing utility functions.
+"""
 import platform
 import tarfile
 import urllib.request
@@ -27,6 +32,9 @@ def check_install_os() -> str:
 def download_file(url: str, file_name: str) -> Optional[str]:
     """Download the given file_name from the given url.
 
+    :param url: The URL to download from.
+    :param file_name: The file name to download.
+
     :returns: The path to downloaded file if  successful, otherwise `None`.
     """
     try:
@@ -37,7 +45,12 @@ def download_file(url: str, file_name: str) -> Optional[str]:
 
 
 def unpack_file(file_name: str) -> bool:
-    """Unpacks the archive."""
+    """Unpacks the archive.
+
+    :param file_name: The archive's file name. Expected to be a tar archive.
+
+    :returns: `True` for success extraction, otherwise `False`.
+    """
     if tarfile.is_tarfile(file_name):
         file = tarfile.open(file_name)
         file.extractall()

@@ -11,9 +11,10 @@ clang-tools Introduction
     :target: https://codecov.io/gh/cpp-linter/clang-tools-pip
     :alt: codecov
 .. image:: https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue
-    :target: https://pypi.org/project/clang-tools/)
+    :target: https://pypi.org/project/clang-tools/
     :alt: Platfrom
 .. image:: https://img.shields.io/pypi/dw/clang-tools
+    :target: https://pypistats.org/packages/clang-tools
     :alt: PyPI - Downloads
 
 
@@ -37,7 +38,7 @@ Install
         ./env-name/Scripts/activate
 
     This will ensure that
-    
+
     1. there are no permission problems when installing the tool
     2. the installed path (for MacOS and Windows) is within the environment's
        variable ``PATH``.
@@ -62,13 +63,12 @@ Usage
     usage: clang-tools [-h] [-i INSTALL] [-d DIRECTORY] [-f]
 
     optional arguments:
-    -h, --help            show this help message and exit
-    -i INSTALL, --install INSTALL
+      -h, --help            show this help message and exit
+      -i INSTALL, --install INSTALL
                             Install clang-tools with specific version. default is 13.
-    -d DIRECTORY, --directory DIRECTORY
+      -d DIRECTORY, --directory DIRECTORY
                             The directory where is the clang-tools install.
-    -f                    Force overwriting the symlink to the installed binary. This will only overwrite an existing
-                            symlink.
+      -f                    Force overwriting the symlink to the installed binary. This will only overwrite an existing symlink.
 
 Use ``clang-tools`` command to install version 13 binaries.
 

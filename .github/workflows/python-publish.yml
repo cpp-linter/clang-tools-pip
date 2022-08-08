@@ -10,7 +10,8 @@ name: Upload Python Package
 
 on:
   release:
-    types: [created]
+    branches: [main]
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -43,7 +44,7 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
       run: twine upload --repository testpypi dist/*
     - name: Publish package (to PyPI)
-      if: github.event_name != 'workflow_dispatch' && github.repository == 'cpp-linter/clang-tools-pip' && github.ref == 'refs/heads/main'
+      if: github.event_name != 'workflow_dispatch' && github.repository == 'cpp-linter/clang-tools-pip'
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}

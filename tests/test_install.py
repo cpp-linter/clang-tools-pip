@@ -41,8 +41,8 @@ def test_create_symlink(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     tool_name, version = ("clang-tool", "1")
     monkeypatch.chdir(str(tmp_path))
     # use a test tar file and rename it to "clang-tool-1" (+ OS suffix)
-    test_target = PurePath(__file__).parent / "file.tar.gz"
-    shutil.copyfile(str(test_target), str(tmp_path / f"{tool_name}-{version}{suffix}"))
+    test_target = tmp_path / f"{tool_name}-{version}{suffix}"
+    test_target.write_bytes(b"some binary data")
 
     # create the symlink
     assert create_sym_link(tool_name, version, str(tmp_path), False)
@@ -53,7 +53,7 @@ def test_create_symlink(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 
     # test safegaurd that doesn't overwrite a file that isn't a symlink
     os.remove(str(tmp_path / f"{tool_name}{suffix}"))
-    shutil.copyfile(str(test_target), str(tmp_path / f"{tool_name}{suffix}"))
+    Path(tmp_path / f"{tool_name}{suffix}").write_bytes(b"som data")
     assert not create_sym_link(tool_name, version, str(tmp_path), True)
 
 

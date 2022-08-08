@@ -42,18 +42,3 @@ def download_file(url: str, file_name: str) -> Optional[str]:
     except (ValueError, HTTPError):
         return None
     return file
-
-
-def unpack_file(file_name: str) -> bool:
-    """Unpacks the archive.
-
-    :param file_name: The archive's file name. Expected to be a tar archive.
-
-    :returns: `True` for success extraction, otherwise `False`.
-    """
-    if tarfile.is_tarfile(file_name):
-        file = tarfile.open(file_name)
-        file.extractall()
-        file.close()
-        return True
-    return False

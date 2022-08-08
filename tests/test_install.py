@@ -1,7 +1,6 @@
 """Tests related to installing a clang tool."""
 from pathlib import PurePath, Path
 import os
-import shutil
 import pytest
 from clang_tools import install_os, suffix
 from clang_tools.install import (

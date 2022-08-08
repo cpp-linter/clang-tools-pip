@@ -5,7 +5,6 @@
 A module containing utility functions.
 """
 import platform
-import tarfile
 import urllib.request
 from typing import Optional
 from urllib.error import HTTPError

@@ -1,29 +1,23 @@
-from unittest import mock
-
+"""Tests related to the utility functions."""
+from pathlib import Path
+import pytest
+from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import check_install_os
 from clang_tools.util import download_file
-from clang_tools.util import unpack_file
 
 
 def test_check_install_os():
+    """Tests the return value of `check_install_os()`."""
     install_os = check_install_os()
-    assert install_os in ("linux", "windos", "macosx")
+    assert install_os in ("linux", "windows", "macosx")
 
 
-@mock.patch('clang_tools.util.urllib.request.urlretrieve')
-def test_fail_download_file(mock_request):
-    mock_result = mock.MagicMock()
-    attrs = {'mock_result.return_value': 'file.tar.gz'}
-    mock_result.configure_mock(**attrs)
-    mock_request.return_value = mock_result
-    file_name = download_file('https://www.google.com', 'file.tar.gz')
-    assert file_name is None
-
-
-@mock.patch('clang_tools.util.subprocess.run')
-def test_unpack_file(mock_run):
-    mock_stdout = mock.Mock()
-    mock_stdout.configure_mock(**{"returncode": '0'})
-    mock_run.return_value = mock_stdout
-    result = unpack_file('file.tar.gz')
-    assert result == '0'
+@pytest.mark.parametrize(
+    "tag", ["master-208096c1", pytest.param("latest", marks=pytest.mark.xfail)]
+)
+def test_download_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, tag: str):
+    """Test that deliberately fails to download a file."""
+    monkeypatch.chdir(str(tmp_path))
+    url = clang_tools_binary_url("clang-query", "12", release_tag=tag)
+    file_name = download_file(url, "file.tar.gz")
+    assert file_name is not None

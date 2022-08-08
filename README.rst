@@ -39,15 +39,16 @@ Usage
 
 .. code-block:: shell
 
-    clang-tools --help
-    usage: clang-tools [-h] [-i INSTALL] [-d DIRECTORY]
+    usage: clang-tools [-h] [-i INSTALL] [-d DIRECTORY] [-f]
 
     optional arguments:
-      -h, --help            show this help message and exit
-      -i INSTALL, --install INSTALL
-                            Install clang-tools with specific version. default is 12.
-      -d DIRECTORY, --directory DIRECTORY
+    -h, --help            show this help message and exit
+    -i INSTALL, --install INSTALL
+                            Install clang-tools with specific version. default is 13.
+    -d DIRECTORY, --directory DIRECTORY
                             The directory where is the clang-tools install.
+    -f                    Force overwriting the symlink to the installed binary. This will only overwrite an existing
+                            symlink.
 
 Use ``clang-tools`` command to install version 13 binaries.
 

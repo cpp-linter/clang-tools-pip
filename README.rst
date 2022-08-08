@@ -22,6 +22,26 @@ Install clang-tools binaries (clang-format, clang-tidy) with pip.
 Install
 -------
 
+.. tip::
+    It is recommended to use this package in a virtual environment.
+
+    .. code-block:: bash
+
+        # create the virtual env in the working directory
+        python -m venv env-name
+
+        # to activate on Linux:
+        source env-name/bin/activate
+
+        # to activate on Windows:
+        ./env-name/Scripts/activate
+
+    This will ensure that
+    
+    1. there are no permission problems when installing the tool
+    2. the installed path (for MacOS and Windows) is within the environment's
+       variable ``PATH``.
+
 Install `clang-tools` command with pip
 
 .. code-block:: shell

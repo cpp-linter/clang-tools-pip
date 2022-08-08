@@ -1,5 +1,6 @@
 """Tests that relate to the main.py module."""
 import pytest
+
 from clang_tools.main import parse_args
 
 

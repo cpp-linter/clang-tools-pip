@@ -1,15 +1,17 @@
 """Tests related to installing a clang tool."""
-from pathlib import PurePath, Path
 import os
+from pathlib import Path
+from pathlib import PurePath
+
 import pytest
-from clang_tools import install_os, suffix
-from clang_tools.install import (
-    is_installed,
-    clang_tools_binary_url,
-    install_dir_name,
-    create_sym_link,
-    install_tool,
-)
+
+from clang_tools import install_os
+from clang_tools import suffix
+from clang_tools.install import clang_tools_binary_url
+from clang_tools.install import create_sym_link
+from clang_tools.install import install_dir_name
+from clang_tools.install import install_tool
+from clang_tools.install import is_installed
 
 
 @pytest.mark.parametrize("version", ["", pytest.param("1", marks=pytest.mark.xfail)])

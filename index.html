@@ -400,8 +400,8 @@
 <a class="reference external image-reference" href="https://pypi.org/project/clang-tools/"><img alt="PyPI" src="https://img.shields.io/pypi/v/clang-tools" /></a>
 <a class="reference external image-reference" href="https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml"><img alt="Python test" src="https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg" /></a>
 <a class="reference external image-reference" href="https://codecov.io/gh/cpp-linter/clang-tools-pip"><img alt="codecov" src="https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR" /></a>
-<a class="reference external image-reference" href="https://pypi.org/project/clang-tools/)"><img alt="Platfrom" src="https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue" /></a>
-<img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dw/clang-tools" />
+<a class="reference external image-reference" href="https://pypi.org/project/clang-tools/"><img alt="Platfrom" src="https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue" /></a>
+<a class="reference external image-reference" href="https://pypistats.org/packages/clang-tools"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dw/clang-tools" /></a>
 <p>Install clang-tools binaries (clang-format, clang-tidy) with pip.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permalink to this heading">¶</a></h2>
 <div class="admonition tip">
@@ -436,13 +436,12 @@ variable <code class="docutils literal notranslate"><span class="pre">PATH</span
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><code>usage: clang-tools <span class="o">[</span>-h<span class="o">]</span> <span class="o">[</span>-i INSTALL<span class="o">]</span> <span class="o">[</span>-d DIRECTORY<span class="o">]</span> <span class="o">[</span>-f<span class="o">]</span>
 
 optional arguments:
--h, --help            show this <span class="nb">help</span> message and <span class="nb">exit</span>
--i INSTALL, --install INSTALL
+  -h, --help            show this <span class="nb">help</span> message and <span class="nb">exit</span>
+  -i INSTALL, --install INSTALL
                         Install clang-tools with specific version. default is <span class="m">13</span>.
--d DIRECTORY, --directory DIRECTORY
+  -d DIRECTORY, --directory DIRECTORY
                         The directory where is the clang-tools install.
--f                    Force overwriting the symlink to the installed binary. This will only overwrite an existing
-                        symlink.
+  -f                    Force overwriting the symlink to the installed binary. This will only overwrite an existing symlink.
 </code></pre></div>
 </div>
 <p>Use <code class="docutils literal notranslate"><span class="pre">clang-tools</span></code> command to install version 13 binaries.</p>

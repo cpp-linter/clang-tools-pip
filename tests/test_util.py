@@ -1,8 +1,6 @@
 """Tests related to the utility functions."""
 from pathlib import Path
-
 import pytest
-
 from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import check_install_os
 from clang_tools.util import download_file

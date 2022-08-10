@@ -46,7 +46,7 @@ jobs:
 
       - name: build wheel
         run: python -m pip wheel -w dist .
-      
+
       - name: upload wheel as artifact
         uses: actions/upload-artifact@v3
         with:

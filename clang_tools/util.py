@@ -5,6 +5,7 @@
 A module containing utility functions.
 """
 import platform
+import math
 from pathlib import Path
 import urllib.request
 from typing import Optional
@@ -52,7 +53,7 @@ def download_file(url: str, file_name: str) -> Optional[str]:
         # show completed
         completed = len(buffer) / length
         print("    |" + "-" * int(completed * 20), end="")
-        print(" " * int((1 - completed) * 20), end="|")
+        print(" " * math.ceil((1 - completed) * 20), end="|")
         print(f"{int(completed * 100)}% (of {length} bytes)", end="\r")
         remaining = length - len(buffer)
         buffer += response.read(block_size if remaining > block_size else remaining)

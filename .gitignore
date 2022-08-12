@@ -11,3 +11,4 @@ tests/pytestdebug.log
 tests/__pycache__/
 .eggs
 .mypy_cache/
+*env

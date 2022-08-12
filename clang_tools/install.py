@@ -57,12 +57,15 @@ def clang_tools_binary_url(
     return download_url.replace(" ", "")
 
 
-def install_tool(tool_name: str, version: str, directory: str) -> bool:
+def install_tool(tool_name: str, version: str, directory: str, overwrite: bool) -> bool:
     """An abstract function that can install either clang-tidy or clang-format."""
     if is_installed(tool_name, version):
         # TODO should probably skip this if `directory` is not in the PATH env var.
         print(f"{tool_name}-{version}", "already installed")
-        return False
+        if overwrite:
+            return True
+        else:
+            return False
     bin_url = clang_tools_binary_url(tool_name, version)
     bin_name = str(PurePath(bin_url).stem)
     print("downloading", tool_name, f"(version {version})")
@@ -162,5 +165,5 @@ def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
     for tool_name in ("clang-format", "clang-tidy"):
-        if install_tool(tool_name, version, install_dir):
+        if install_tool(tool_name, version, install_dir, overwrite):
             create_sym_link(tool_name, version, install_dir, overwrite)

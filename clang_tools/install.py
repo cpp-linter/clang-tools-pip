@@ -142,6 +142,7 @@ def create_sym_link(
             return False
         os.remove(str(link))
         print("overwriting symbolic link", str(link))
+    assert target.exists()
     link.symlink_to(target)
     print("symbolic link created", str(link))
     return True
@@ -162,5 +163,6 @@ def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
     for tool_name in ("clang-format", "clang-tidy"):
-        if install_tool(tool_name, version, install_dir):
+        target_downloaded = install_tool(tool_name, version, install_dir)
+        if target_downloaded or (not target_downloaded and overwrite):
             create_sym_link(tool_name, version, install_dir, overwrite)

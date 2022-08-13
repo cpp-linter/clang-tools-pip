@@ -4,19 +4,11 @@ import os
 import pytest
 from clang_tools import install_os, suffix
 from clang_tools.install import (
-    is_installed,
     clang_tools_binary_url,
     install_dir_name,
     create_sym_link,
     install_tool,
 )
-
-
-@pytest.mark.parametrize("version", ["", pytest.param("1", marks=pytest.mark.xfail)])
-@pytest.mark.parametrize("tool_name", ["clang-format", "clang-tidy"])
-def test_clang_tools_exist(tool_name: str, version: str):
-    """Test `is_installed()`"""
-    assert is_installed(tool_name, version)
 
 
 @pytest.mark.parametrize("version", [str(v) for v in range(7, 14)] + ["12.0.1"])

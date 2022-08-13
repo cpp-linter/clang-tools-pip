@@ -6,7 +6,6 @@ The module that performs the installation of clang-tools.
 """
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 from pathlib import PurePath
@@ -39,11 +38,11 @@ def clang_tools_binary_url(
 
 def install_tool(tool_name: str, version: str, directory: str) -> bool:
     """An abstract function that can install either clang-tidy or clang-format.
-    
+
     :param tool_name: The name of the clang-tool to install.
     :param version: The version of the tools to install.
     :param directory: The installation directory.
-    
+
     :returns: `True` if the binary had to be downloaded and installed.
         `False` if the binary was not downloaded but is installed in ``directory``.
     """

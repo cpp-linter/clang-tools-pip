@@ -53,4 +53,6 @@ def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version:
     """Test install tools to a temp directory."""
     monkeypatch.chdir(tmp_path)
     for tool_name in ("clang-format", "clang-tidy"):
-        install_tool(tool_name, version, str(tmp_path))
+        assert install_tool(tool_name, version, str(tmp_path))
+        # invoking again should return False
+        assert not install_tool(tool_name, version, str(tmp_path))

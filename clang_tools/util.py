@@ -5,7 +5,6 @@
 A module containing utility functions.
 """
 import platform
-import sys
 import math
 import hashlib
 from pathlib import Path
@@ -67,6 +66,21 @@ def download_file(url: str, file_name: str) -> Optional[str]:
     return file.as_posix()
 
 
+def get_sha_checksum(binary_url: str) -> str:
+    """Fetch the SHA512 checksum corresponding to the released binary.
+
+    :param binary_url: The URL used to download the binary.
+
+    :returns: A `str` containing the contents of the SHA512sum file given
+        ``binary_url``.
+    """
+    with urllib.request.urlopen(
+        binary_url.replace(".exe", "") + ".sha512sum"
+    ) as response:
+        response: HTTPResponse
+        return response.read(response.length).decode(encoding="utf-8")
+
+
 def verify_sha512(checksum: str, exe: bytes) -> bool:
     """Verify the executable binary's SHA512 hash matches the valid checksum.
 
@@ -78,7 +92,7 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
     """
     if " " in checksum:
         # released checksum's include the corresponding filename (which we don't need)
-        checksum = checksum[: checksum.find(" ")]
+        checksum = checksum.split(" ", 1)[0]
     valid_hash = int(checksum, 16).to_bytes(int(len(checksum) / 2), "big")
     bin_hash = hashlib.sha512(exe).digest()
     return valid_hash == bin_hash

@@ -5,7 +5,9 @@
 A module containing utility functions.
 """
 import platform
+import sys
 import math
+import hashlib
 from pathlib import Path
 import urllib.request
 from typing import Optional
@@ -63,3 +65,20 @@ def download_file(url: str, file_name: str) -> Optional[str]:
     file = Path(file_name)
     file.write_bytes(buffer)
     return file.as_posix()
+
+
+def verify_sha512(checksum: str, exe: bytes) -> bool:
+    """Verify the executable binary's SHA512 hash matches the valid checksum.
+
+    :param checksum: The SHA512 checksum.
+    :param exe: The `bytes` content of the binary executable that is to be verified.
+
+    :returns: `True` if the ``exe`` hash matches the ``checksum`` given,
+        otherwise `False`.
+    """
+    if " " in checksum:
+        # released checksum's include the corresponding filename (which we don't need)
+        checksum = checksum[: checksum.find(" ")]
+    valid_hash = int(checksum, 16).to_bytes(int(len(checksum) / 2), "big")
+    bin_hash = hashlib.sha512(exe).digest()
+    return valid_hash == bin_hash

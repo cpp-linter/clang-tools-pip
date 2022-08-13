@@ -7,14 +7,15 @@ The module that performs the installation of clang-tools.
 import os
 import shutil
 import sys
-from pathlib import Path
-from pathlib import PurePath
+from pathlib import Path, PurePath
+from urllib.request import urlopen
+from http.client import HTTPResponse
 
 from . import install_os
 from . import RESET_COLOR
 from . import suffix
 from . import YELLOW
-from .util import download_file
+from .util import download_file, verify_sha512
 
 
 def clang_tools_binary_url(
@@ -46,12 +47,20 @@ def install_tool(tool_name: str, version: str, directory: str) -> bool:
     :returns: `True` if the binary had to be downloaded and installed.
         `False` if the binary was not downloaded but is installed in ``directory``.
     """
-    if Path(directory, f"{tool_name}-{version}{suffix}").exists():
-        print(f"{tool_name}-{version}", "already installed")
-        return False
+    destination = Path(directory, f"{tool_name}-{version}{suffix}")
     bin_url = clang_tools_binary_url(tool_name, version)
-    bin_name = str(PurePath(bin_url).stem)
+    if destination.exists():
+        print(f"{tool_name}-{version}", "already installed...")
+        print("   checking SHA512...", end=" ")
+        with urlopen(bin_url.replace(".exe", "") + ".sha512sum") as response:
+            response: HTTPResponse
+            checksum = response.read(response.length).decode(encoding="utf-8")
+        if verify_sha512(checksum, destination.read_bytes()):
+            print("valid")
+            return False
+        print("invalid")
     print("downloading", tool_name, f"(version {version})")
+    bin_name = str(PurePath(bin_url).stem)
     download_file(bin_url, bin_name)
     move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
     return True

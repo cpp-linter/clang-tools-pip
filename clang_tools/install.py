@@ -6,7 +6,6 @@ The module that performs the installation of clang-tools.
 """
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 from pathlib import PurePath
@@ -16,26 +15,6 @@ from . import RESET_COLOR
 from . import suffix
 from . import YELLOW
 from .util import download_file
-
-# pylint: disable=fixme
-
-
-def is_installed(tool_name: str, version: str) -> bool:
-    """An abstract functions to check if a specified clang tool is installed.
-
-    :param tool_name: The name of the tool.
-    :param version: The version of the tool to look for. If provided a blank string,
-        then only the ``tool_name`` is executed during the check.
-    :returns: A `bool` describing if the tool was installed and executed properly.
-    """
-    command = [tool_name, "--version"]
-    if version:
-        command[0] += f"-{version}"
-    try:
-        result = subprocess.run(command, capture_output=True, check=True)
-        return result.returncode == 0
-    except FileNotFoundError:
-        return False
 
 
 def clang_tools_binary_url(
@@ -58,9 +37,16 @@ def clang_tools_binary_url(
 
 
 def install_tool(tool_name: str, version: str, directory: str) -> bool:
-    """An abstract function that can install either clang-tidy or clang-format."""
-    if is_installed(tool_name, version):
-        # TODO should probably skip this if `directory` is not in the PATH env var.
+    """An abstract function that can install either clang-tidy or clang-format.
+
+    :param tool_name: The name of the clang-tool to install.
+    :param version: The version of the tools to install.
+    :param directory: The installation directory.
+
+    :returns: `True` if the binary had to be downloaded and installed.
+        `False` if the binary was not downloaded but is installed in ``directory``.
+    """
+    if Path(directory, f"{tool_name}-{version}{suffix}").exists():
         print(f"{tool_name}-{version}", "already installed")
         return False
     bin_url = clang_tools_binary_url(tool_name, version)
@@ -142,6 +128,7 @@ def create_sym_link(
             return False
         os.remove(str(link))
         print("overwriting symbolic link", str(link))
+    assert target.exists()
     link.symlink_to(target)
     print("symbolic link created", str(link))
     return True
@@ -162,5 +149,6 @@ def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
     for tool_name in ("clang-format", "clang-tidy"):
-        if install_tool(tool_name, version, install_dir):
-            create_sym_link(tool_name, version, install_dir, overwrite)
+        install_tool(tool_name, version, install_dir)
+        # `install_tool()` guarantees that the binary exists now
+        create_sym_link(tool_name, version, install_dir, overwrite)

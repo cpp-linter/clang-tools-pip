@@ -4,19 +4,11 @@ import os
 import pytest
 from clang_tools import install_os, suffix
 from clang_tools.install import (
-    is_installed,
     clang_tools_binary_url,
     install_dir_name,
     create_sym_link,
     install_tool,
 )
-
-
-@pytest.mark.parametrize("version", ["", pytest.param("1", marks=pytest.mark.xfail)])
-@pytest.mark.parametrize("tool_name", ["clang-format", "clang-tidy"])
-def test_clang_tools_exist(tool_name: str, version: str):
-    """Test `is_installed()`"""
-    assert is_installed(tool_name, version)
 
 
 @pytest.mark.parametrize("version", [str(v) for v in range(7, 14)] + ["12.0.1"])
@@ -61,4 +53,6 @@ def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version:
     """Test install tools to a temp directory."""
     monkeypatch.chdir(tmp_path)
     for tool_name in ("clang-format", "clang-tidy"):
-        install_tool(tool_name, version, str(tmp_path))
+        assert install_tool(tool_name, version, str(tmp_path))
+        # invoking again should return False
+        assert not install_tool(tool_name, version, str(tmp_path))

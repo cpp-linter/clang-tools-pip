@@ -57,9 +57,8 @@ def test_create_symlink(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 
 
 @pytest.mark.parametrize("version", [str(v) for v in range(10, 14)] + ["12.0.1"])
-@pytest.mark.parametrize("overwrite", [False, True])
-def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version: str, overwrite: bool):
+def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version: str):
     """Test install tools to a temp directory."""
     monkeypatch.chdir(tmp_path)
     for tool_name in ("clang-format", "clang-tidy"):
-        install_tool(tool_name, version, str(tmp_path), overwrite)
+        install_tool(tool_name, version, str(tmp_path))

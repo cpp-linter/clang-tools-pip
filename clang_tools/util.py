@@ -48,17 +48,18 @@ def download_file(url: str, file_name: str) -> Optional[str]:
         return None
     length = response.length
     buffer = bytes()
+    progress_bar = "=" if check_install_os() == "windows" else "█"
     while len(buffer) < length:
         block_size = int(length / 20)
         # show completed
         completed = len(buffer) / length
-        print("    |" + u"█" * int(completed * 20), end="")
+        print("    |" + progress_bar * int(completed * 20), end="")
         print(" " * math.ceil((1 - completed) * 20), end="|")
         print(f"{int(completed * 100)}% (of {length} bytes)", end="\r")
         remaining = length - len(buffer)
         buffer += response.read(block_size if remaining > block_size else remaining)
     response.close()
-    print("    |" + (u"█" * 20) + f"| 100% (of {length} bytes)")
+    print("    |" + (progress_bar * 20) + f"| 100% (of {length} bytes)")
     file = Path(file_name)
     file.write_bytes(buffer)
     return file.as_posix()

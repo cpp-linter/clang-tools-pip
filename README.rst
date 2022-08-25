@@ -20,6 +20,19 @@ clang-tools Introduction
 
 Install clang-tools binaries (clang-format, clang-tidy) with pip.
 
+Features
+--------
+
+- Binaries are statically linked for improved portability.
+- Binaries are checked with SHA512 checksum. This ensures:
+  
+  1. Downloads are not corrupted.
+  2. Old binary builds can be updated.
+- Installed binaries are symbolically linked for better cross-platform usage.
+  For example (on Windows), the ``clang-tidy-13.exe`` binary executable can
+  also be invoked with the symbolic link titled ``clang-tidy.exe``
+- Customizable install path.
+
 Install
 -------
 

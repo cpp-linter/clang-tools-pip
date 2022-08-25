@@ -93,6 +93,4 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
     if " " in checksum:
         # released checksum's include the corresponding filename (which we don't need)
         checksum = checksum.split(" ", 1)[0]
-    valid_hash = int(checksum, 16).to_bytes(int(len(checksum) / 2), "big")
-    bin_hash = hashlib.sha512(exe).digest()
-    return valid_hash == bin_hash
+    return checksum == hashlib.sha512(exe).hexdigest()

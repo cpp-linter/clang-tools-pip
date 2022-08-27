@@ -31,6 +31,11 @@ Features
 - Installed binaries are symbolically linked for better cross-platform usage.
   For example (on Windows), the ``clang-tidy-13.exe`` binary executable can
   also be invoked with the symbolic link titled ``clang-tidy.exe``
+
+  .. note::
+      To create symbolic links on Windows, you must enable developer mode
+      from the Windows settings under "Privacy & security" > "For developers"
+      category.
 - Customizable install path.
 
 Install

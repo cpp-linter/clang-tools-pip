@@ -132,12 +132,22 @@ def create_sym_link(
                 "already exists. Use '-f' to overwrite. Leaving it as is.",
             )
             return False
-        os.remove(str(link))
+        link.unlink()
         print("overwriting symbolic link", str(link))
     assert target.exists()
-    link.symlink_to(target)
-    print("symbolic link created", str(link))
-    return True
+    try:
+        link.symlink_to(target)
+        print("symbolic link created", str(link))
+        return True
+    except OSError as exc:
+        print(
+            "Encountered an error when trying to create the symbolic link:",
+            exc.strerror,
+            sep="\n    ",
+        )
+        if install_os == "windows":
+            print("Enable developer mode to create symbolic links")
+        return False
 
 
 def install_clang_tools(

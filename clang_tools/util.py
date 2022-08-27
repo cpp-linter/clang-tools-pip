@@ -59,14 +59,14 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[s
             display = "    |" + (progress_bar * completed)
             display += " " * (20 - completed) + "| "
             display += f"{int(percent * 100)}% (of {length} bytes)"
-            reset_pos = "" if not buffer else "\b" * len(display)
+            reset_pos = "" if not buffer else f"\033[{len(display)}D"
             print("", end=reset_pos + display, flush=True)
         remaining = length - len(buffer)
         buffer += response.read(block_size if remaining > block_size else remaining)
     response.close()
     if not no_progress_bar:
         display = f"    |{(progress_bar * 20)}| 100% (of {length} bytes)"
-        print("\b" * (len(display) - 1) + display)
+        print(f"\033[{(len(display) - 1)}D{display}")
     file = Path(file_name)
     file.write_bytes(buffer)
     return file.as_posix()

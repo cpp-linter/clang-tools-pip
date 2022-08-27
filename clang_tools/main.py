@@ -38,13 +38,21 @@ def parse_args(args: List[str] = None) -> argparse.Namespace:
         help="Force overwriting the symlink to the installed binary. This will only "
         "overwrite an existing symlink.",
     )
+    parser.add_argument(
+        "-b",
+        "--no-progress-bar",
+        action="store_true",
+        help="Do not display a progress bar for downloads.",
+    )
     return parser.parse_args(args)
 
 
 def main():
     """The main entrypoint to the CLI program."""
     args = parse_args()
-    install_clang_tools(args.install, args.directory, args.overwrite)
+    install_clang_tools(
+        args.install, args.directory, args.overwrite, args.no_progress_bar
+    )
 
 
 if __name__ == "__main__":

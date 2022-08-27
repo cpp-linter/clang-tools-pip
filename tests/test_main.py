@@ -10,6 +10,7 @@ class Args:
     directory: str = ""
     install: str = "13"
     overwrite: bool = False
+    no_progress_bar: bool = False
 
 
 @pytest.mark.parametrize("arg_name", ["install", "directory"])

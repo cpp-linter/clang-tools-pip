@@ -32,12 +32,15 @@ def clang_tools_binary_url(
     return download_url.replace(" ", "")
 
 
-def install_tool(tool_name: str, version: str, directory: str) -> bool:
+def install_tool(
+    tool_name: str, version: str, directory: str, no_progress_bar: bool
+) -> bool:
     """An abstract function that can install either clang-tidy or clang-format.
 
     :param tool_name: The name of the clang-tool to install.
     :param version: The version of the tools to install.
     :param directory: The installation directory.
+    :param no_progress_bar: A flag used to disable the downloads' progress bar.
 
     :returns: `True` if the binary had to be downloaded and installed.
         `False` if the binary was not downloaded but is installed in ``directory``.
@@ -53,7 +56,7 @@ def install_tool(tool_name: str, version: str, directory: str) -> bool:
         print("invalid")
     print("downloading", tool_name, f"(version {version})")
     bin_name = str(PurePath(bin_url).stem)
-    download_file(bin_url, bin_name)
+    download_file(bin_url, bin_name, no_progress_bar)
     move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
     if not verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
         raise ValueError(f"file was corrupted during download from {bin_url}")
@@ -137,13 +140,16 @@ def create_sym_link(
     return True
 
 
-def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
+def install_clang_tools(
+    version: str, directory: str, overwrite: bool, no_progress_bar: bool
+) -> None:
     """Wraps functions used to individually install tools.
 
     :param version: The version of the tools to install.
     :param directory: The installation directory.
     :param overwrite: A flag to indicate if the creation of a symlink has
         permission to overwrite an existing symlink.
+    :param no_progress_bar: A flag used to disable the downloads' progress bar.
     """
     install_dir = install_dir_name(directory)
     if install_dir.rstrip(os.sep) not in os.environ.get("PATH"):
@@ -152,6 +158,6 @@ def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
     for tool_name in ("clang-format", "clang-tidy"):
-        install_tool(tool_name, version, install_dir)
+        install_tool(tool_name, version, install_dir, no_progress_bar)
         # `install_tool()` guarantees that the binary exists now
         create_sym_link(tool_name, version, install_dir, overwrite)

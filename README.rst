@@ -20,6 +20,11 @@ clang-tools Introduction
 
 Install clang-tools binaries (clang-format, clang-tidy) with pip.
 
+.. important::
+    This package only manages binary executables (& corresponding symbolic links) that
+    are installed using this package's executable script. It does not intend to change or
+    modify any binary executable installed from other sources (like LLVM releases).
+
 Features
 --------
 

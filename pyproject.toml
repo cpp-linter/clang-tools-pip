@@ -49,6 +49,11 @@ version_scheme= "no-guess-dev"
 local_scheme = "no-local-version"
 fallback_version = "0.0.0"
 
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-vv"
+testpaths = ["tests"]
+
 [tool.mypy]
 show_error_codes = true
 show_column_numbers = true

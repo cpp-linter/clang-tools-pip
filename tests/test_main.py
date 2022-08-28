@@ -1,6 +1,8 @@
 """Tests that relate to the main.py module."""
+from typing import Optional
+from argparse import ArgumentParser
 import pytest
-from clang_tools.main import parse_args
+from clang_tools.main import get_parser
 
 
 class Args:
@@ -8,21 +10,35 @@ class Args:
     These class attributes are set to the CLI args default values."""
 
     directory: str = ""
-    install: str = "13"
+    install: Optional[str] = None
     overwrite: bool = False
     no_progress_bar: bool = False
+    uninstall: Optional[str] = None
 
 
-@pytest.mark.parametrize("arg_name", ["install", "directory"])
+@pytest.fixture
+def parser() -> ArgumentParser:
+    """get the arg parser for the tests in this module."""
+    return get_parser()
+
+
+@pytest.mark.parametrize("arg_name", ["install", "directory", "uninstall"])
 @pytest.mark.parametrize("arg_value", [str(v) for v in range(7, 14)] + ["12.0.1"])
-def test_arg_parser(arg_name: str, arg_value: str):
-    """Test `parse_args()` using a set of fake args."""
-    args = parse_args([f"--{arg_name}={arg_value}"])
+def test_arg_parser(arg_name: str, arg_value: str, parser: ArgumentParser):
+    """Test CLI arg parsing using a set of fake args."""
+    args = parser.parse_args([f"--{arg_name}={arg_value}"])
     assert getattr(args, arg_name) == arg_value
 
 
-def test_default_args():
+@pytest.mark.parametrize("switch_name", ["overwrite", "no-progress-bar"])
+def test_cli_switch(switch_name: str, parser: ArgumentParser):
+    """Test the CLI switches/flags"""
+    args = parser.parse_args([f"--{switch_name}"])
+    assert getattr(args, switch_name.replace("-", "_"))
+
+
+def test_default_args(parser: ArgumentParser):
     """Test the default values of CLI args"""
-    args = parse_args([])
+    args = parser.parse_args([])
     for name, value in args.__dict__.items():
         assert getattr(Args, name) == value

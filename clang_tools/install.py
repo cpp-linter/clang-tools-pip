@@ -54,6 +54,7 @@ def install_tool(
             print("valid")
             return False
         print("invalid")
+        uninstall_tool(tool_name, version, directory)
     print("downloading", tool_name, f"(version {version})")
     bin_name = str(PurePath(bin_url).stem)
     download_file(bin_url, bin_name, no_progress_bar)
@@ -148,6 +149,39 @@ def create_sym_link(
         if install_os == "windows":
             print("Enable developer mode to create symbolic links")
         return False
+
+
+def uninstall_tool(tool_name: str, version: str, directory: str):
+    """Remove a specified tool of a given version.
+
+    :param tool_name: The name of the clang tool to uninstall.
+    :param version: The version of the clang-tools to remove.
+    :param directory: the directory from which to remove the
+        installed clang-tools.
+    """
+    tool_path = Path(directory, f"{tool_name}-{version}{suffix}")
+    if tool_path.exists():
+        print("Removing", tool_path.name, "from", str(tool_path.parent))
+        tool_path.unlink()
+
+    # check for a dead symlink
+    symlink = Path(directory, f"{tool_name}{suffix}")
+    if symlink.is_symlink() and not symlink.exists():
+        print("Removing dead symbolic link", str(symlink))
+        symlink.unlink()
+
+
+def uninstall_clang_tools(version: str, directory: str):
+    """Uninstall a clang tool of a given version.
+
+    :param version: The version of the clang-tools to remove.
+    :param directory: the directory from which to remove the
+        installed clang-tools.
+    """
+    install_dir = install_dir_name(directory)
+    print(f"Uninstalling version {version} from {str(install_dir)}")
+    for tool in ("clang-format", "clang-tidy"):
+        uninstall_tool(tool, version, install_dir)
 
 
 def install_clang_tools(

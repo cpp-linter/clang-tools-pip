@@ -8,6 +8,7 @@ from clang_tools.install import (
     install_dir_name,
     create_sym_link,
     install_tool,
+    uninstall_tool,
 )
 
 
@@ -56,3 +57,8 @@ def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version:
         assert install_tool(tool_name, version, str(tmp_path), False)
         # invoking again should return False
         assert not install_tool(tool_name, version, str(tmp_path), False)
+        # uninstall the tool deliberately
+        uninstall_tool(tool_name, version, str(tmp_path))
+        assert f"{tool_name}-{version}{suffix}" not in [
+            fd.name for fd in tmp_path.iterdir()
+        ]

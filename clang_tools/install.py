@@ -140,7 +140,7 @@ def create_sym_link(
         link.symlink_to(target)
         print("symbolic link created", str(link))
         return True
-    except OSError as exc:
+    except OSError as exc:  # pragma: no cover
         print(
             "Encountered an error when trying to create the symbolic link:",
             exc.strerror,

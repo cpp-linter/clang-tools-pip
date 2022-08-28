@@ -65,10 +65,14 @@ def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version:
         ]
 
 def test_path_warning(capsys: pytest.CaptureFixture):
-    """Explicitly fail to download a set of tools to test the prompt that
-    warns users about using a dir not in env var PATH."""
+    """Explicitly fail to download a set of tools to test the prompts that
+    
+    1. warns users about using a dir not in env var PATH.
+    2. indicates a failure to download a tool
+    """
     try:
         install_clang_tools("x", ".", False, False)
-    except OSError:
+    except OSError as exc:
         result = capsys.readouterr()
         assert "directory is not in your environment variable PATH" in result.out
+        assert "Failed to download" in exc.args[0]

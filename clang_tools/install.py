@@ -60,7 +60,9 @@ def install_tool(
     download_file(bin_url, bin_name, no_progress_bar)
     move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
     if not verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
-        raise ValueError(f"file was corrupted during download from {bin_url}")
+        raise ValueError(
+            f"file was corrupted during download from {bin_url}"
+        )  # pragma: no cover
     return True
 
 
@@ -96,7 +98,7 @@ def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -
             os.makedirs(install_dir)
         shutil.move(old_bin_name, f"{install_dir}/{new_bin_name}")
         os.chmod(os.path.join(install_dir, new_bin_name), 0o755)
-    except PermissionError as exc:
+    except PermissionError as exc:  # pragma: no cover
         raise SystemExit(
             f"Don't have permission to install {new_bin_name} to {install_dir}."
             + " Try to run with the appropriate permissions."

@@ -4,13 +4,8 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import re
 from pathlib import Path
-import io
-from docutils.nodes import Node
-from sphinx import addnodes
 from sphinx.application import Sphinx
-from sphinx.environment import BuildEnvironment
 from clang_tools.main import get_parser
 
 # -- Path setup --------------------------------------------------------------
@@ -52,6 +47,8 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+# add emphasis to metavar of CLI options
+# option_emphasise_placeholders = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -107,53 +104,30 @@ html_theme_options = {
 
 object_description_options = [
     ("py:parameter", dict(include_in_toc=False)),
+    ("std:option", dict(include_fields_in_toc=False)),
 ]
 
 
 # -- Parse CLI args from `-h` output -------------------------------------
-
-
-def parse_cli_option(env: BuildEnvironment, sig: str, sig_node: Node):
-    """parse the given signature of a CLI option and
-    return the docutil nodes accordingly."""
-    opt_names = sig.split(", ")
-    sig_node["is_multiline"] = True
-    for i, opt_name in enumerate(opt_names):
-        name = addnodes.desc_signature_line("", "--" if i else opt_name)
-        if not i:
-            name["add_permalink"] = True
-        else:
-            name += addnodes.desc_name(opt_name, opt_name.lstrip("-"))
-        sig_node += name
-    # print(sig_node.pformat())
-    return opt_names[-1].lstrip("-")
+# pylint: disable=protected-access
 
 
 def setup(app: Sphinx):
     """Generate a doc from the executable script's ``--help`` output."""
-    app.add_object_type(
-        "cli-opt",
-        "cli-opt",
-        objname="Command Line Interface option",
-        indextemplate="pair: %s; Command Line Interface option",
-        parse_node=parse_cli_option,
-    )
-
-    with io.StringIO() as help_out:
-        get_parser().print_help(help_out)
-        output = help_out.getvalue()
-    first_line = re.search(r"^options:\s*\n", output, re.MULTILINE)
-    if first_line is None:
-        raise OSError("unrecognized output from `clang-tools -h`")
-    output = output[first_line.end(0) :]
+    parser = get_parser()
+    args = parser._actions
+    # print(parser.format_help())
+    formatter = parser._get_formatter()
     doc = "Command Line Interface Options\n==============================\n\n"
-    cli_opt_name = re.compile(r"^\s*(\-\w)?\s?[A-Z_]*,\s(\-\-.*?)(?:\s|$)")
-    for line in output.splitlines():
-        match = cli_opt_name.search(line)
-        if match is not None:
-            print(match.groups())
-            doc += "\n.. cli-opt:: " + ", ".join(match.groups()) + "\n\n"
-        doc += line + "\n"
+    for arg in args:
+        doc += f"\n.. option:: {formatter._format_action_invocation(arg)}\n\n"
+        if arg.default != "==SUPPRESS==":
+            doc += f"    :Default: ``{repr(arg.default)}``\n\n"
+        description = (
+            ""
+            if arg.help is None
+            else "    %s\n" % (arg.help.replace('\n', '\n    '))
+        )
+        doc += description
     cli_doc = Path(app.srcdir, "cli_args.rst")
-    cli_doc.unlink(missing_ok=True)
     cli_doc.write_text(doc, encoding="utf-8")

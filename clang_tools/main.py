@@ -16,12 +16,14 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-i",
         "--install",
+        metavar="VERSION",
         help="Install clang-tools about a specific version.",
     )
     parser.add_argument(
         "-d",
         "--directory",
         default="",
+        metavar="DIR",
         help="The directory where the clang-tools are installed.",
     )
     parser.add_argument(
@@ -40,6 +42,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-u",
         "--uninstall",
+        metavar="VERSION",
         help="Uninstall clang-tools with specific version. "
         "This is done before any install.",
     )

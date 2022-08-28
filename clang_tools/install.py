@@ -209,4 +209,4 @@ def install_clang_tools(
     for tool_name in ("clang-format", "clang-tidy"):
         install_tool(tool_name, version, install_dir, no_progress_bar)
         # `install_tool()` guarantees that the binary exists now
-        create_sym_link(tool_name, version, install_dir, overwrite)
+        create_sym_link(tool_name, version, install_dir, overwrite)  # pragma: no cover

@@ -80,7 +80,6 @@ exclude_lines = [
     # ignore any branch that makes the module executable
     'if __name__ == "__main__"',
     # we test parts of these algorithms separately
-    "def install_clang_tools",
     "def uninstall_clang_tools",
     "def main",
 ]

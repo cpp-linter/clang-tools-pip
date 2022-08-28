@@ -57,7 +57,10 @@ def install_tool(
         uninstall_tool(tool_name, version, directory)
     print("downloading", tool_name, f"(version {version})")
     bin_name = str(PurePath(bin_url).stem)
-    download_file(bin_url, bin_name, no_progress_bar)
+    if download_file(bin_url, bin_name, no_progress_bar) is None:
+        raise OSError(
+            f"Failed to download {bin_name} from {bin_url}"
+        )  # pragma: no cover
     move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
     if not verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
         raise ValueError(

@@ -56,7 +56,7 @@ def main():
     if not args.install and not args.uninstall:
         print(
             f"{YELLOW}Nothing to do because `--install` and `--uninstall`",
-            "was not specified.{RESET_COLOR}"
+            f"was not specified.{RESET_COLOR}"
         )
         parser.print_help()
     else:

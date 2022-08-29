@@ -8,6 +8,11 @@
 .. toctree::
    :hidden:
 
+   cli_args
+
+.. toctree::
+   :hidden:
+
    api
 
 Indices and tables

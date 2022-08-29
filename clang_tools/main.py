@@ -7,7 +7,7 @@ The module containing main entrypoint function.
 import argparse
 
 from .install import install_clang_tools, uninstall_clang_tools
-
+from . import RESET_COLOR, YELLOW
 
 def get_parser() -> argparse.ArgumentParser:
     """Get and parser to interpret CLI args."""
@@ -54,7 +54,10 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
     if not args.install and not args.uninstall:
-        print("Nothing to do because `--install` and `--uninstall` was not specified.")
+        print(
+            f"{YELLOW}Nothing to do because `--install` and `--uninstall`",
+            "was not specified.{RESET_COLOR}"
+        )
         parser.print_help()
     else:
         if args.uninstall:

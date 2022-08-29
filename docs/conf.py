@@ -115,11 +115,10 @@ object_description_options = [
 def setup(app: Sphinx):
     """Generate a doc from the executable script's ``--help`` output."""
     parser = get_parser()
-    args = parser._actions
     # print(parser.format_help())
     formatter = parser._get_formatter()
     doc = "Command Line Interface Options\n==============================\n\n"
-    for arg in args:
+    for arg in parser._actions:
         doc += f"\n.. option:: {formatter._format_action_invocation(arg)}\n\n"
         if arg.default != "==SUPPRESS==":
             doc += f"    :Default: ``{repr(arg.default)}``\n\n"

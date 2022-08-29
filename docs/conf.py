@@ -4,6 +4,10 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+from pathlib import Path
+from sphinx.application import Sphinx
+from clang_tools.main import get_parser
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -43,6 +47,8 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+# add emphasis to metavar of CLI options
+# option_emphasise_placeholders = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -56,7 +62,7 @@ html_theme = "sphinx_immaterial"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_logo = "_static/logo.png"
-html_favicon = "_static/favicon.ico"
+html_favicon = "_static/new_favicon.ico"
 html_css_files = ["extra_css.css"]
 html_title = "clang-tools installer"
 
@@ -98,4 +104,29 @@ html_theme_options = {
 
 object_description_options = [
     ("py:parameter", dict(include_in_toc=False)),
+    ("std:option", dict(include_fields_in_toc=False)),
 ]
+
+
+# -- Parse CLI args from `-h` output -------------------------------------
+# pylint: disable=protected-access
+
+
+def setup(app: Sphinx):
+    """Generate a doc from the executable script's ``--help`` output."""
+    parser = get_parser()
+    # print(parser.format_help())
+    formatter = parser._get_formatter()
+    doc = "Command Line Interface Options\n==============================\n\n"
+    for arg in parser._actions:
+        doc += f"\n.. option:: {formatter._format_action_invocation(arg)}\n\n"
+        if arg.default != "==SUPPRESS==":
+            doc += f"    :Default: ``{repr(arg.default)}``\n\n"
+        description = (
+            ""
+            if arg.help is None
+            else "    %s\n" % (arg.help.replace('\n', '\n    '))
+        )
+        doc += description
+    cli_doc = Path(app.srcdir, "cli_args.rst")
+    cli_doc.write_text(doc, encoding="utf-8")

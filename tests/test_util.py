@@ -19,7 +19,7 @@ def test_download_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, tag: str
     """Test that deliberately fails to download a file."""
     monkeypatch.chdir(str(tmp_path))
     url = clang_tools_binary_url("clang-query", "12", release_tag=tag)
-    file_name = download_file(url, "file.tar.gz")
+    file_name = download_file(url, "file.tar.gz", True)
     assert file_name is not None
 
 

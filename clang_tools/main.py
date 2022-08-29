@@ -5,46 +5,67 @@
 The module containing main entrypoint function.
 """
 import argparse
-from typing import List
 
-from .install import install_clang_tools
+from .install import install_clang_tools, uninstall_clang_tools
+from . import RESET_COLOR, YELLOW
 
-
-def parse_args(args: List[str] = None) -> argparse.Namespace:
-    """Get and parse args given on the CLI.
-
-    :param args: The arguments given on the command line. If specified, this does not
-        need to include the name of the program (ie "clang_tools").
-    """
-    parser = argparse.ArgumentParser(prog="clang-tools")
+def get_parser() -> argparse.ArgumentParser:
+    """Get and parser to interpret CLI args."""
+    parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "-i",
         "--install",
-        default="13",
-        help="Install clang-tools with specific version. default is 13.",
+        metavar="VERSION",
+        help="Install clang-tools about a specific version.",
     )
-
     parser.add_argument(
         "-d",
         "--directory",
         default="",
-        help="The directory where is the clang-tools install.",
+        metavar="DIR",
+        help="The directory where the clang-tools are installed.",
     )
     parser.add_argument(
         "-f",
+        "--overwrite",
         action="store_true",
-        dest="overwrite",
         help="Force overwriting the symlink to the installed binary. This will only "
         "overwrite an existing symlink.",
     )
-    return parser.parse_args(args)
+    parser.add_argument(
+        "-b",
+        "--no-progress-bar",
+        action="store_true",
+        help="Do not display a progress bar for downloads.",
+    )
+    parser.add_argument(
+        "-u",
+        "--uninstall",
+        metavar="VERSION",
+        help="Uninstall clang-tools with specific version. "
+        "This is done before any install.",
+    )
+    return parser
 
 
 def main():
     """The main entrypoint to the CLI program."""
-    args = parse_args()
-    install_clang_tools(args.install, args.directory, args.overwrite)
+    parser = get_parser()
+    args = parser.parse_args()
+    if not args.install and not args.uninstall:
+        print(
+            f"{YELLOW}Nothing to do because `--install` and `--uninstall`",
+            f"was not specified.{RESET_COLOR}"
+        )
+        parser.print_help()
+    else:
+        if args.uninstall:
+            uninstall_clang_tools(args.uninstall, args.directory)
+        if args.install:
+            install_clang_tools(
+                args.install, args.directory, args.overwrite, args.no_progress_bar
+            )
 
 
 if __name__ == "__main__":

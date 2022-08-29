@@ -32,12 +32,15 @@ def clang_tools_binary_url(
     return download_url.replace(" ", "")
 
 
-def install_tool(tool_name: str, version: str, directory: str) -> bool:
+def install_tool(
+    tool_name: str, version: str, directory: str, no_progress_bar: bool
+) -> bool:
     """An abstract function that can install either clang-tidy or clang-format.
 
     :param tool_name: The name of the clang-tool to install.
     :param version: The version of the tools to install.
     :param directory: The installation directory.
+    :param no_progress_bar: A flag used to disable the downloads' progress bar.
 
     :returns: `True` if the binary had to be downloaded and installed.
         `False` if the binary was not downloaded but is installed in ``directory``.
@@ -51,12 +54,16 @@ def install_tool(tool_name: str, version: str, directory: str) -> bool:
             print("valid")
             return False
         print("invalid")
+        uninstall_tool(tool_name, version, directory)
     print("downloading", tool_name, f"(version {version})")
     bin_name = str(PurePath(bin_url).stem)
-    download_file(bin_url, bin_name)
+    if download_file(bin_url, bin_name, no_progress_bar) is None:
+        raise OSError(f"Failed to download {bin_name} from {bin_url}")
     move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
     if not verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
-        raise ValueError(f"file was corrupted during download from {bin_url}")
+        raise ValueError(
+            f"file was corrupted during download from {bin_url}"
+        )  # pragma: no cover
     return True
 
 
@@ -92,7 +99,7 @@ def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -
             os.makedirs(install_dir)
         shutil.move(old_bin_name, f"{install_dir}/{new_bin_name}")
         os.chmod(os.path.join(install_dir, new_bin_name), 0o755)
-    except PermissionError as exc:
+    except PermissionError as exc:  # pragma: no cover
         raise SystemExit(
             f"Don't have permission to install {new_bin_name} to {install_dir}."
             + " Try to run with the appropriate permissions."
@@ -129,21 +136,67 @@ def create_sym_link(
                 "already exists. Use '-f' to overwrite. Leaving it as is.",
             )
             return False
-        os.remove(str(link))
+        link.unlink()
         print("overwriting symbolic link", str(link))
     assert target.exists()
-    link.symlink_to(target)
-    print("symbolic link created", str(link))
-    return True
+    try:
+        link.symlink_to(target)
+        print("symbolic link created", str(link))
+        return True
+    except OSError as exc:  # pragma: no cover
+        print(
+            "Encountered an error when trying to create the symbolic link:",
+            exc.strerror,
+            sep="\n    ",
+        )
+        if install_os == "windows":
+            print("Enable developer mode to create symbolic links")
+        return False
 
 
-def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
+def uninstall_tool(tool_name: str, version: str, directory: str):
+    """Remove a specified tool of a given version.
+
+    :param tool_name: The name of the clang tool to uninstall.
+    :param version: The version of the clang-tools to remove.
+    :param directory: the directory from which to remove the
+        installed clang-tools.
+    """
+    tool_path = Path(directory, f"{tool_name}-{version}{suffix}")
+    if tool_path.exists():
+        print("Removing", tool_path.name, "from", str(tool_path.parent))
+        tool_path.unlink()
+
+    # check for a dead symlink
+    symlink = Path(directory, f"{tool_name}{suffix}")
+    if symlink.is_symlink() and not symlink.exists():
+        print("Removing dead symbolic link", str(symlink))
+        symlink.unlink()
+
+
+def uninstall_clang_tools(version: str, directory: str):
+    """Uninstall a clang tool of a given version.
+
+    :param version: The version of the clang-tools to remove.
+    :param directory: the directory from which to remove the
+        installed clang-tools.
+    """
+    install_dir = install_dir_name(directory)
+    print(f"Uninstalling version {version} from {str(install_dir)}")
+    for tool in ("clang-format", "clang-tidy"):
+        uninstall_tool(tool, version, install_dir)
+
+
+def install_clang_tools(
+    version: str, directory: str, overwrite: bool, no_progress_bar: bool
+) -> None:
     """Wraps functions used to individually install tools.
 
     :param version: The version of the tools to install.
     :param directory: The installation directory.
     :param overwrite: A flag to indicate if the creation of a symlink has
         permission to overwrite an existing symlink.
+    :param no_progress_bar: A flag used to disable the downloads' progress bar.
     """
     install_dir = install_dir_name(directory)
     if install_dir.rstrip(os.sep) not in os.environ.get("PATH"):
@@ -152,6 +205,6 @@ def install_clang_tools(version: str, directory: str, overwrite: bool) -> None:
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
     for tool_name in ("clang-format", "clang-tidy"):
-        install_tool(tool_name, version, install_dir)
+        install_tool(tool_name, version, install_dir, no_progress_bar)
         # `install_tool()` guarantees that the binary exists now
-        create_sym_link(tool_name, version, install_dir, overwrite)
+        create_sym_link(tool_name, version, install_dir, overwrite)  # pragma: no cover

@@ -20,6 +20,11 @@ clang-tools Introduction
 
 Install clang-tools binaries (clang-format, clang-tidy) with pip.
 
+.. important::
+    This package only manages binary executables (& corresponding symbolic links) that
+    are installed using this package's executable script. It does not intend to change or
+    modify any binary executable installed from other sources (like LLVM releases).
+
 Features
 --------
 
@@ -31,6 +36,11 @@ Features
 - Installed binaries are symbolically linked for better cross-platform usage.
   For example (on Windows), the ``clang-tidy-13.exe`` binary executable can
   also be invoked with the symbolic link titled ``clang-tidy.exe``
+
+  .. note::
+      To create symbolic links on Windows, you must enable developer mode
+      from the Windows settings under "Privacy & security" > "For developers"
+      category.
 - Customizable install path.
 
 Install
@@ -71,17 +81,11 @@ Install `clang-tools` from git repo
 Usage
 -----
 
-.. code-block:: shell
+For a list of supported Command Line Interface options, see
+`the CLI documentation <https://cpp-linter.github.io/clang-tools-pip/cli_args.html>`_
 
-    usage: clang-tools [-h] [-i INSTALL] [-d DIRECTORY] [-f]
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -i INSTALL, --install INSTALL
-                            Install clang-tools with specific version. default is 13.
-      -d DIRECTORY, --directory DIRECTORY
-                            The directory where is the clang-tools install.
-      -f                    Force overwriting the symlink to the installed binary. This will only overwrite an existing symlink.
+Examples
+********
 
 Use ``clang-tools`` command to install version 13 binaries.
 

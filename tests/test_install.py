@@ -8,6 +8,8 @@ from clang_tools.install import (
     install_dir_name,
     create_sym_link,
     install_tool,
+    install_clang_tools,
+    uninstall_tool,
 )
 
 
@@ -53,6 +55,24 @@ def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version:
     """Test install tools to a temp directory."""
     monkeypatch.chdir(tmp_path)
     for tool_name in ("clang-format", "clang-tidy"):
-        assert install_tool(tool_name, version, str(tmp_path))
+        assert install_tool(tool_name, version, str(tmp_path), False)
         # invoking again should return False
-        assert not install_tool(tool_name, version, str(tmp_path))
+        assert not install_tool(tool_name, version, str(tmp_path), False)
+        # uninstall the tool deliberately
+        uninstall_tool(tool_name, version, str(tmp_path))
+        assert f"{tool_name}-{version}{suffix}" not in [
+            fd.name for fd in tmp_path.iterdir()
+        ]
+
+def test_path_warning(capsys: pytest.CaptureFixture):
+    """Explicitly fail to download a set of tools to test the prompts that
+    
+    1. warns users about using a dir not in env var PATH.
+    2. indicates a failure to download a tool
+    """
+    try:
+        install_clang_tools("x", ".", False, False)
+    except OSError as exc:
+        result = capsys.readouterr()
+        assert "directory is not in your environment variable PATH" in result.out
+        assert "Failed to download" in exc.args[0]

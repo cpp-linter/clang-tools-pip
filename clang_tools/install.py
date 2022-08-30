@@ -159,7 +159,7 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
 
     :param tool_name: The name of the clang tool to uninstall.
     :param version: The version of the clang-tools to remove.
-    :param directory: the directory from which to remove the
+    :param directory: The directory from which to remove the
         installed clang-tools.
     """
     tool_path = Path(directory, f"{tool_name}-{version}{suffix}")
@@ -178,7 +178,7 @@ def uninstall_clang_tools(version: str, directory: str):
     """Uninstall a clang tool of a given version.
 
     :param version: The version of the clang-tools to remove.
-    :param directory: the directory from which to remove the
+    :param directory: The directory from which to remove the
         installed clang-tools.
     """
     install_dir = install_dir_name(directory)

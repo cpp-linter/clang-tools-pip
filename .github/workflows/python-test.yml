@@ -5,7 +5,7 @@ name: Test
 
 on:
   push:
-    branches: [ "main" ]
+    # branches: [ "main" ]
     paths:
       - '**.py'
       - '.github/workflows/python-test.yml'
@@ -80,8 +80,11 @@ jobs:
         run: pip install dist/*.whl
 
       - name: Install clang-tools
+        run: clang-tools --install ${{ matrix.version }}
+      
+      - name: show path of binaries
         run: |
-          clang-tools --install ${{ matrix.version }}
+          ls -all /usr/lib/llvm-12/bin
           which clang-format-${{ matrix.version }}
           which clang-tidy-${{ matrix.version }}
 

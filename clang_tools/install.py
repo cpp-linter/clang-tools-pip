@@ -199,7 +199,7 @@ def create_sym_link(
     except OSError as exc:  # pragma: no cover
         print(
             "Encountered an error when trying to create the symbolic link:",
-            "; ".join(exc.args),
+            "; ".join([x for x in exc.args if isinstance(x, str)]),
             sep="\n    ",
         )
         if install_os == "windows":

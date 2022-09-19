@@ -174,7 +174,7 @@ def create_sym_link(
     if target is None:
         target = Path(install_dir) / f"{tool_name}-{version}{suffix}"
     else:
-        target = Path(target)
+        target = Path(target).resolve()
     if link.exists():
         if not link.is_symlink():
             print(

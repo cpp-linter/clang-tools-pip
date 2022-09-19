@@ -20,7 +20,7 @@ from .util import download_file, verify_sha512, get_sha_checksum
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
 
 
-def is_installed(tool_name: str, version: str) -> Optional[str]:
+def is_installed(tool_name: str, version: str) -> Optional[Path]:
     """Detect if the specified tool is installed.
 
     :param tool_name: The name of the specified tool.
@@ -47,11 +47,12 @@ def is_installed(tool_name: str, version: str) -> Optional[str]:
     path = shutil.which(exe_name)  # find the installed binary
     if path is None:
         return None  # failed to locate the binary
+    path = Path(path).resolve()
     print(
         f"Found a installed version of {tool_name}:",
         ver_num.groups(0)[0].decode(encoding="utf-8"),
         "at",
-        path,
+        str(path),
     )
     return path
 
@@ -154,7 +155,7 @@ def create_sym_link(
     version: str,
     install_dir: str,
     overwrite: bool = False,
-    target: Union[str, Path] = None,
+    target: Path = None,
 ) -> bool:
     """Create a symlink to the installed binary that
     doesn't have the version number appended.
@@ -173,8 +174,6 @@ def create_sym_link(
     link = Path(install_dir) / (tool_name + suffix)
     if target is None:
         target = Path(install_dir) / f"{tool_name}-{version}{suffix}"
-    else:
-        target = Path(target).resolve()
     if link.exists():
         if not link.is_symlink():
             print(
@@ -200,7 +199,7 @@ def create_sym_link(
     except OSError as exc:  # pragma: no cover
         print(
             "Encountered an error when trying to create the symbolic link:",
-            exc.strerror,
+            "; ".join(exc.args),
             sep="\n    ",
         )
         if install_os == "windows":

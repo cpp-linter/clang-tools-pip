@@ -171,9 +171,12 @@ def create_sym_link(
 
     :returns: A `bool` describing if the symlink was created.
     """
-    link = Path(install_dir) / (tool_name + suffix)
+    link_root_path = Path(install_dir)
+    if not link_root_path.exists():
+        link_root_path.mkdir(parents=True)
+    link = link_root_path / (tool_name + suffix)
     if target is None:
-        target = Path(install_dir) / f"{tool_name}-{version}{suffix}"
+        target = link_root_path / f"{tool_name}-{version}{suffix}"
     if link.exists():
         if not link.is_symlink():
             print(

@@ -5,12 +5,61 @@
 The module that performs the installation of clang-tools.
 """
 import os
-import shutil
-import sys
 from pathlib import Path, PurePath
+import re
+import shutil
+import subprocess
+import sys
+from typing import Optional, Union
 
 from . import install_os, RESET_COLOR, suffix, YELLOW
 from .util import download_file, verify_sha512, get_sha_checksum
+
+
+#: This pattern is designed to match only the major version number.
+RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
+
+
+def is_installed(tool_name: str, version: str) -> Optional[Path]:
+    """Detect if the specified tool is installed.
+
+    :param tool_name: The name of the specified tool.
+    :param version: The specific version to expect.
+
+    :returns: The path to the detected tool (if found), otherwise `None`.
+    """
+    version_tuple = version.split(".")
+    ver_major = version_tuple[0]
+    if len(version_tuple) < 3:
+        # append minor and patch version numbers if not specified
+        version_tuple += (0,) * (3 - len(version_tuple))
+    exe_name = (
+        f"{tool_name}" + (f"-{ver_major}" if install_os != "windows" else "") + suffix
+    )
+    try:
+        result = subprocess.run(
+            [exe_name, "--version"], capture_output=True, check=True
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None  # tool is not installed
+    ver_num = RE_PARSE_VERSION.search(result.stdout)
+    print(
+        f"Found a installed version of {tool_name}:",
+        ver_num.groups(0)[0].decode(encoding="utf-8"),
+        end=" "
+    )
+    path = shutil.which(exe_name)  # find the installed binary
+    if path is None:
+        print()  # print end-of-line
+        return None  # failed to locate the binary
+    path = Path(path).resolve()
+    print("at", str(path))
+    if (
+        ver_num is None
+        or ver_num.groups(0)[0].decode(encoding="utf-8").split(".") != version_tuple
+    ):
+        return None  # version is unknown or not the desired major release
+    return path
 
 
 def clang_tools_binary_url(
@@ -107,7 +156,11 @@ def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -
 
 
 def create_sym_link(
-    tool_name: str, version: str, install_dir: str, overwrite: bool = False
+    tool_name: str,
+    version: str,
+    install_dir: str,
+    overwrite: bool = False,
+    target: Path = None,
 ) -> bool:
     """Create a symlink to the installed binary that
     doesn't have the version number appended.
@@ -116,11 +169,19 @@ def create_sym_link(
     :param version: The version of the clang-tool to symlink.
     :param install_dir: The installation directory to create the symlink in.
     :param overwrite: A flag to indicate if an existing symlink should be overwritten.
+    :param target: The target executable's path and name for which to create a symlink
+        to. If this argument is not specified (or is `None`), then the target's path and
+        name is constructed from the ``tool_name``, ``version``, and ``install_dir``
+        parameters.
 
     :returns: A `bool` describing if the symlink was created.
     """
-    link = Path(install_dir) / (tool_name + suffix)
-    target = Path(install_dir) / f"{tool_name}-{version}{suffix}"
+    link_root_path = Path(install_dir)
+    if not link_root_path.exists():
+        link_root_path.mkdir(parents=True)
+    link = link_root_path / (tool_name + suffix)
+    if target is None:
+        target = link_root_path / f"{tool_name}-{version}{suffix}"
     if link.exists():
         if not link.is_symlink():
             print(
@@ -146,7 +207,7 @@ def create_sym_link(
     except OSError as exc:  # pragma: no cover
         print(
             "Encountered an error when trying to create the symbolic link:",
-            exc.strerror,
+            "; ".join([x for x in exc.args if isinstance(x, str)]),
             sep="\n    ",
         )
         if install_os == "windows":
@@ -205,6 +266,10 @@ def install_clang_tools(
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
     for tool_name in ("clang-format", "clang-tidy"):
-        install_tool(tool_name, version, install_dir, no_progress_bar)
-        # `install_tool()` guarantees that the binary exists now
-        create_sym_link(tool_name, version, install_dir, overwrite)  # pragma: no cover
+        native_bin = is_installed(tool_name, version)
+        if native_bin is None:  # (not already installed)
+            # `install_tool()` guarantees that the binary exists now
+            install_tool(tool_name, version, install_dir, no_progress_bar)
+        create_sym_link(  # pragma: no cover
+            tool_name, version, install_dir, overwrite, native_bin
+        )

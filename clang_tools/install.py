@@ -28,7 +28,11 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
 
     :returns: The path to the detected tool (if found), otherwise `None`.
     """
-    ver_major = version.split(".")[0]
+    version_tuple = version.split(".")
+    ver_major = version_tuple[0]
+    if len(version_tuple) < 3:
+        # append minor and patch version numbers if not specified
+        version_tuple += (0,) * (3 - len(version_tuple))
     exe_name = (
         f"{tool_name}" + (f"-{ver_major}" if install_os != "windows" else "") + suffix
     )
@@ -39,21 +43,22 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     except (FileNotFoundError, subprocess.CalledProcessError):
         return None  # tool is not installed
     ver_num = RE_PARSE_VERSION.search(result.stdout)
-    if (
-        ver_num is None
-        or ver_num.groups(0)[0].decode(encoding="utf-8").split(".")[0] != ver_major
-    ):
-        return None  # version is unknown or not the desired major release
-    path = shutil.which(exe_name)  # find the installed binary
-    if path is None:
-        return None  # failed to locate the binary
-    path = Path(path).resolve()
     print(
         f"Found a installed version of {tool_name}:",
         ver_num.groups(0)[0].decode(encoding="utf-8"),
-        "at",
-        str(path),
+        end=" "
     )
+    path = shutil.which(exe_name)  # find the installed binary
+    if path is None:
+        print()  # print end-of-line
+        return None  # failed to locate the binary
+    path = Path(path).resolve()
+    print("at", str(path))
+    if (
+        ver_num is None
+        or ver_num.groups(0)[0].decode(encoding="utf-8").split(".") != version_tuple
+    ):
+        return None  # version is unknown or not the desired major release
     return path
 
 

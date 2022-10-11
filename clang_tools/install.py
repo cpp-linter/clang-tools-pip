@@ -10,7 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import Optional, Union
+from typing import Optional
 
 from . import install_os, RESET_COLOR, suffix, YELLOW
 from .util import download_file, verify_sha512, get_sha_checksum
@@ -34,7 +34,7 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     )
     try:
         result = subprocess.run(
-            [exe_name, "--version"], capture_output=True, check=True
+            [exe_name, "--version"], stdout=subprocess.PIPE, check=True
         )
     except (FileNotFoundError, subprocess.CalledProcessError):
         return None  # tool is not installed

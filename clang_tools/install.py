@@ -32,7 +32,7 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     ver_major = version_tuple[0]
     if len(version_tuple) < 3:
         # append minor and patch version numbers if not specified
-        version_tuple += ('0',) * (3 - len(version_tuple))
+        version_tuple += ("0",) * (3 - len(version_tuple))
     exe_name = (
         f"{tool_name}" + (f"-{ver_major}" if install_os != "windows" else "") + suffix
     )

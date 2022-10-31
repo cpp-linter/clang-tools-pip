@@ -10,6 +10,9 @@ clang-tools Introduction
 .. image:: https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR
     :target: https://codecov.io/gh/cpp-linter/clang-tools-pip
     :alt: codecov
+.. image:: https://sonarcloud.io/api/project_badges/measure?project=shenxianpeng_clang-tools-pip&metric=alert_status
+    :target: https://sonarcloud.io/summary/new_code?id=shenxianpeng_clang-tools-pip
+    :alt: sonarcloud
 .. image:: https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue
     :target: https://pypi.org/project/clang-tools/
     :alt: Platfrom

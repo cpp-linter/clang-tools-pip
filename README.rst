@@ -144,7 +144,7 @@ clang-tidy
 Know issues:
 
 1. clang-tidy-14 and clang-tidy-15 has Segmentation fault on Ubuntu 22.02.
-2. clang-format-14 is over 1 GB for MacOSX
+2. clang-tidy-14 and clang-tidy-15 is over 1 GB for MacOSX
 
 Thanks to the project
 `clang-tools-static-binaries <https://github.com/muttleyxd/clang-tools-static-binaries>`_

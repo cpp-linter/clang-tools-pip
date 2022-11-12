@@ -63,7 +63,7 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
 
 
 def clang_tools_binary_url(
-    tool: str, version: str, release_tag: str = "master-208096c1"
+    tool: str, version: str, release_tag: str = "master-1d7ec53d"
 ) -> str:
     """Assemble the URL to the binary.
 

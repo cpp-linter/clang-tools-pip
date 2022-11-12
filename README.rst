@@ -33,7 +33,7 @@ Features
 
 - Binaries are statically linked for improved portability.
 - Binaries are checked with SHA512 checksum. This ensures:
-  
+
   1. Downloads are not corrupted.
   2. Old binary builds can be updated.
 - Installed binaries are symbolically linked for better cross-platform usage.
@@ -124,22 +124,22 @@ Supported versions
 clang-format
 ************
 .. csv-table::
-    :header: "Version", "14", "13", "12.0.1", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3.9"
+    :header: "Version", "15", "14", "13", "12.0.1", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3.9"
     :stub-columns: 1
 
-    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
 clang-tidy
 **********
 .. csv-table::
-    :header: "Version", "14", "13", "12.0.1", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3.9"
+    :header: "Version", "15", "14", "13", "12.0.1", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3.9"
     :stub-columns: 1
 
-    Linux,❌,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Linux,✔️,❌,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
 Know issues:
 

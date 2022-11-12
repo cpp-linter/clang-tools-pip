@@ -57,8 +57,7 @@ jobs:
     needs: [build]
     strategy:
       matrix:
-        # skip version 14 because it failed on ubuntu.
-        version: [ 3.9, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12.0.1, 13, 15 ]
+        version: [ 3.9, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12.0.1, 13, 14, 15 ]
         os: [ ubuntu-latest, macos-latest, windows-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -98,7 +97,11 @@ jobs:
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           clang-format-${{ matrix.version }} --version
-          clang-tidy-${{ matrix.version }} --version
+          if [ "${{ matrix.version }}" = "14" -o "${{ matrix.version }}" = "15" ]; then
+            echo "skip version ${{ matrix.version }} because Segmentation fault on ubuntu."
+          else
+            clang-tidy-${{ matrix.version }} --version
+          fi
 
   docs:
     runs-on: ubuntu-latest

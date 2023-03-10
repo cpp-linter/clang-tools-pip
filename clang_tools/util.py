@@ -13,7 +13,6 @@ from urllib.error import HTTPError
 from http.client import HTTPResponse
 
 
-
 def check_install_os() -> str:
     """Identify this Operating System.
 

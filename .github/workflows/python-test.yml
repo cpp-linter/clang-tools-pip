@@ -4,11 +4,6 @@
 name: Test
 
 on:
-  push:
-    # branches: [ "main" ]
-    paths:
-      - '**.py'
-      - '.github/workflows/python-test.yml'
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
@@ -29,8 +24,8 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install . -r requirements-dev.txt
-
-      - run: pre-commit run
+      - name: Run pre-commit
+        run: pre-commit run --all-files
 
       - name: Collect coverage
         run: |

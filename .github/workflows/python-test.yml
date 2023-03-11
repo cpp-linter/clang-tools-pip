@@ -110,7 +110,7 @@ jobs:
       - name: Check clang-tools on Unix
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
-          if [ "${{ matrix.version }}" = "12.0.1" ]; then
+          if [ "${{ matrix.version }}" = "12.0.1" -a "${{ matrix.os }}" = "ubuntu-latest" ]; then
             clang-format-12 --version
             clang-tidy-12 --version
           else

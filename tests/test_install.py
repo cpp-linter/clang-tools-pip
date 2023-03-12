@@ -64,9 +64,10 @@ def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version:
             fd.name for fd in tmp_path.iterdir()
         ]
 
+
 def test_path_warning(capsys: pytest.CaptureFixture):
     """Explicitly fail to download a set of tools to test the prompts that
-    
+
     1. warns users about using a dir not in env var PATH.
     2. indicates a failure to download a tool
     """

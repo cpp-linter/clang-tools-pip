@@ -23,7 +23,7 @@ def parser() -> ArgumentParser:
 
 
 @pytest.mark.parametrize("arg_name", ["install", "directory", "uninstall"])
-@pytest.mark.parametrize("arg_value", [str(v) for v in range(7, 14)] + ["12.0.1"])
+@pytest.mark.parametrize("arg_value", [str(v) for v in range(7, 17)] + ["12.0.1"])
 def test_arg_parser(arg_name: str, arg_value: str, parser: ArgumentParser):
     """Test CLI arg parsing using a set of fake args."""
     args = parser.parse_args([f"--{arg_name}={arg_value}"])

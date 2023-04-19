@@ -13,7 +13,7 @@ from clang_tools.install import (
 )
 
 
-@pytest.mark.parametrize("version", [str(v) for v in range(7, 14)] + ["12.0.1"])
+@pytest.mark.parametrize("version", [str(v) for v in range(7, 17)] + ["12.0.1"])
 @pytest.mark.parametrize("tool_name", ["clang-format", "clang-tidy"])
 def test_clang_tools_binary_url(tool_name: str, version: str):
     """Test `clang_tools_binary_url()`"""
@@ -50,7 +50,7 @@ def test_create_symlink(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     assert not create_sym_link(tool_name, version, str(tmp_path), True)
 
 
-@pytest.mark.parametrize("version", [str(v) for v in range(10, 14)] + ["12.0.1"])
+@pytest.mark.parametrize("version", [str(v) for v in range(10, 17)] + ["12.0.1"])
 def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version: str):
     """Test install tools to a temp directory."""
     monkeypatch.chdir(tmp_path)

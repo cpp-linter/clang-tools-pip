@@ -52,7 +52,7 @@ jobs:
     needs: [build]
     strategy:
       matrix:
-        version: [ 3.9, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12.0.1, 13, 14, 15 ]
+        version: [ 3.9, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12.0.1, 13, 14, 15, 16 ]
         os: [ ubuntu-latest, macos-latest, windows-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -110,11 +110,14 @@ jobs:
             clang-tidy-12 --version
           else
             clang-format-${{ matrix.version }} --version
-            if [ "${{ matrix.version }}" = "14" -o "${{ matrix.version }}" = "15" ]; then
-              echo "skip version ${{ matrix.version }} because Segmentation fault on ubuntu."
-            else
-              clang-tidy-${{ matrix.version }} --version
-            fi
+            case "${{ matrix.version }}" in
+              14|15|16)
+                echo "Skipping version ${{ matrix.version }} due to Segmentation fault on Ubuntu."
+                ;;
+              *)
+                clang-tidy-${{ matrix.version }} --version
+                ;;
+            esac
           fi
 
   docs:

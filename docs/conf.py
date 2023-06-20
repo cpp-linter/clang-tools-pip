@@ -69,7 +69,6 @@ html_title = "clang-tools installer"
 html_theme_options = {
     "repo_url": "https://github.com/cpp-linter/clang-tools-pip",
     "repo_name": "clang-tools",
-    "repo_type": "github",
     "palette": [
         {
             "media": "(prefers-color-scheme: light)",

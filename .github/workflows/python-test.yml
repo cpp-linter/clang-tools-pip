@@ -94,13 +94,16 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          if [ "${{ matrix.version }}" = "15" ]; then
-            clang-format.exe --version
-            clang-tidy.exe --version
-          else
-            clang-format-${{ matrix.version }}.exe --version
-            clang-tidy-${{ matrix.version }}.exe --version
-          fi
+          case "${{ matrix.version }}" in
+            15|16)
+              clang-format.exe --version
+              clang-tidy.exe --version
+              ;;
+            *) 
+              clang-format-${{ matrix.version }}.exe --version
+              clang-tidy-${{ matrix.version }}.exe --version
+              ;;
+          esac
 
       - name: Check clang-tools on Unix
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'

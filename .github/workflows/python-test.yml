@@ -99,7 +99,7 @@ jobs:
               clang-format.exe --version
               clang-tidy.exe --version
               ;;
-            *) 
+            *)
               clang-format-${{ matrix.version }}.exe --version
               clang-tidy-${{ matrix.version }}.exe --version
               ;;

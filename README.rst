@@ -134,17 +134,17 @@ clang-format
 clang-tidy
 **********
 .. csv-table::
-    :header: "Version", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3.9"
+    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3.9"
     :stub-columns: 1
 
-    Linux,❌,❌,❌,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Linux,✔️,❌,❌,❌,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
     Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
     macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
 Know issues:
 
 1. clang-tidy-14, clang-tidy-15 and clang-tidy-16 has Segmentation fault on Ubuntu 22.02.
-2. clang-tidy-14, clang-tidy-15 and clang-tidy-16 is over 1 GB for MacOSX
+2. clang-tidy-14, clang-tidy-15, clang-tidy-16, clang-tidy-17 is over 1 GB for MacOSX
 
 Thanks to the project
 `clang-tools-static-binaries <https://github.com/muttleyxd/clang-tools-static-binaries>`_

@@ -6,6 +6,14 @@ name: Test
 on:
   pull_request:
     branches: [ "main" ]
+    paths:
+      - "**.py"
+      - "**requirements*.txt"
+      - pyproject.toml
+      - setup.py
+      - .pre-commit-config.yaml
+      - ".github/workflows/python-test.yml"
+      - "!docs/**"
   workflow_dispatch:
 
 

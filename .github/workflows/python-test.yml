@@ -79,15 +79,12 @@ jobs:
       - name: Show path of binaries
         shell: bash
         run: |
-          if [ "${{ matrix.version }}" = "15" -a "${{ matrix.os }}" = "windows-latest" ]; then
-            which clang-format
-            which clang-tidy
-          elif [ "${{ matrix.version }}" = "12.0.1"  -a "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            which clang-format-12
-            which clang-tidy-12
-          else
-            which clang-format-${{ matrix.version }}
-            which clang-tidy-${{ matrix.version }}
+          if [ "${{ matrix.version }}" = "15" -o "${{ matrix.version }}" = "16" ] && [ "${{ matrix.os }}" = "windows-latest" ]; then
+              which clang-format
+              which clang-tidy
+          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+              which "clang-format-${{ matrix.version }}"
+              which "clang-tidy-${{ matrix.version }}"
           fi
 
       - name: Check clang-tools on Windows

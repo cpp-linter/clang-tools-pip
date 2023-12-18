@@ -47,14 +47,14 @@ jobs:
           files: ./coverage.xml
           verbose: true # optional (default = false)
 
-      - name: build wheel
+      - name: Build wheel
         run: python -m pip wheel -w dist .
 
-      - name: upload wheel as artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload wheel as artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: "clang-tools-pip_wheel"
-          path: ${{ github.workspace }}/dist/*.whl
+          name: clang-tools-pip_wheel
+          path: dist/*.whl
 
   install:
     needs: [build]
@@ -65,16 +65,16 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Set up Python 3.8
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
+          python-version: "3.10"
 
-      - name: download wheel artifact
-        uses: actions/download-artifact@v3
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v4
         with:
           name: clang-tools-pip_wheel
-          path: dist
+          path: dist/
 
       - name: Install pkg from wheel
         # using a wildcard as filename on Windows requires a bash shell
@@ -144,12 +144,12 @@ jobs:
         run: sphinx-build -E -W -b html . _build/html
 
       - name: Save built docs as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "clang-tools-pip_docs"
-          path: ${{ github.workspace }}/docs/_build/html
+          path: docs/_build/html
 
-      - name: upload to github pages
+      - name: Upload to github pages
         # only publish doc changes from main branch
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3

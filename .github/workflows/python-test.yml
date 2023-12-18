@@ -51,7 +51,7 @@ jobs:
         run: python -m pip wheel -w dist .
 
       - name: upload wheel as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "clang-tools-pip_wheel"
           path: ${{ github.workspace }}/dist/*.whl
@@ -144,7 +144,7 @@ jobs:
         run: sphinx-build -E -W -b html . _build/html
 
       - name: Save built docs as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "clang-tools-pip_docs"
           path: ${{ github.workspace }}/docs/_build/html

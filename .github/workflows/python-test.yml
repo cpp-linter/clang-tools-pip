@@ -54,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: "clang-tools-pip_wheel"
-          path: ${{ github.workspace }}/dist/*.whl
+          path: dist/*.whl
 
   install:
     needs: [build]

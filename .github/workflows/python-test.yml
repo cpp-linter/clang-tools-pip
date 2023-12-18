@@ -53,7 +53,7 @@ jobs:
       - name: upload wheel as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: "clang-tools-pip_wheel"
+          name: clang-tools-pip_wheel
           path: dist/*.whl
 
   install:
@@ -147,9 +147,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: "clang-tools-pip_docs"
-          path: ${{ github.workspace }}/docs/_build/html
+          path: docs/_build/html
 
-      - name: upload to github pages
+      - name: Upload to github pages
         # only publish doc changes from main branch
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3

@@ -147,6 +147,6 @@ clang-tidy
 ------------
 
 Thanks to the project
-`clang-tools-static-binaries <https://github.com/muttleyxd/clang-tools-static-binaries>`_. 
-We now used the `fork repository <https://github.com/cpp-linter/clang-tools-static-binaries>`_ 
+`clang-tools-static-binaries <https://github.com/muttleyxd/clang-tools-static-binaries>`_.
+We now used the `fork repository <https://github.com/cpp-linter/clang-tools-static-binaries>`_
 that fixed the clang-tidy v14+ Segmentation fault (core dumped). see `#56 <https://github.com/cpp-linter/clang-tools-pip/issues/56>`_ for details.

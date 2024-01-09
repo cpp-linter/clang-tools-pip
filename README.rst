@@ -124,28 +124,29 @@ Supported versions
 clang-format
 ************
 .. csv-table::
-    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3.9"
+    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
     :stub-columns: 1
 
-    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
 clang-tidy
 **********
 .. csv-table::
-    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3.9"
+    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
     :stub-columns: 1
 
-    Linux,✔️,❌,❌,❌,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
-Know issues:
+.. warning::
+    All clang-tidy v14+ builds for MacOS are still ~1.7 GB in size.
 
-1. clang-tidy-14, clang-tidy-15 and clang-tidy-16 has Segmentation fault on Ubuntu 22.02.
-2. clang-tidy-14, clang-tidy-15, clang-tidy-16, clang-tidy-17 is over 1 GB for MacOSX
+------------
 
 Thanks to the project
-`clang-tools-static-binaries <https://github.com/muttleyxd/clang-tools-static-binaries>`_
-for all the binaries.
+`clang-tools-static-binaries <https://github.com/muttleyxd/clang-tools-static-binaries>`_.
+We now used the `fork repository <https://github.com/cpp-linter/clang-tools-static-binaries>`_
+that fixed the clang-tidy v14+ Segmentation fault (core dumped). see `#56 <https://github.com/cpp-linter/clang-tools-pip/issues/56>`_ for details.

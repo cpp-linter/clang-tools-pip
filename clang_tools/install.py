@@ -63,7 +63,7 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
 
 
 def clang_tools_binary_url(
-    tool: str, version: str, release_tag: str = "master-8f72ab3c"
+    tool: str, version: str, release_tag: str = "master-be694ee7"
 ) -> str:
     """Assemble the URL to the binary.
 
@@ -74,7 +74,7 @@ def clang_tools_binary_url(
     :returns: The URL used to download the specified tool.
     """
     base_url = (
-        "https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/"
+        "https://github.com/cpp-linter/clang-tools-static-binaries/releases/download/"
         + release_tag
     )
     download_url = f"{base_url}/{tool}-{version}_{install_os}-amd64{suffix}"

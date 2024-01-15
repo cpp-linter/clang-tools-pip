@@ -21,7 +21,7 @@ clang-tools Introduction
     :alt: PyPI - Downloads
 
 
-Install clang-tools binaries (clang-format, clang-tidy) with pip.
+Install clang-tools binaries (clang-format, clang-tidy, clang-query and clang-apply-replacements) with pip.
 
 .. important::
     This package only manages binary executables (& corresponding symbolic links) that
@@ -32,6 +32,7 @@ Features
 --------
 
 - Binaries are statically linked for improved portability.
+- Binaries can be specified installed for increased flexibility.
 - Binaries are checked with SHA512 checksum. This ensures:
 
   1. Downloads are not corrupted.
@@ -102,6 +103,12 @@ Or install to a specified directory
 
     clang-tools --install 13 --directory .
 
+Or install a specified tool, such as clang-format and clang-query version 14.
+
+.. code-block:: shell
+
+    clang-tools --install 14 --tool clang-format clang-query
+
 If the installed directory is in your path, you can run the installed tools.
 
 .. code-block:: shell
@@ -133,6 +140,27 @@ clang-format
 
 clang-tidy
 **********
+.. csv-table::
+    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
+    :stub-columns: 1
+
+    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+
+clang-query
+**********
+.. csv-table::
+    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
+    :stub-columns: 1
+
+    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+
+
+clang-apply-replacements
+************************
 .. csv-table::
     :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
     :stub-columns: 1

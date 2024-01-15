@@ -14,7 +14,7 @@ from clang_tools.install import (
 
 
 @pytest.mark.parametrize("version", [str(v) for v in range(7, 17)] + ["12.0.1"])
-@pytest.mark.parametrize("tool_name", ["clang-format", "clang-tidy"])
+@pytest.mark.parametrize("tool_name", ["clang-format", "clang-tidy", "clang-query", "clang-apply-replacements"])
 def test_clang_tools_binary_url(tool_name: str, version: str):
     """Test `clang_tools_binary_url()`"""
     url = clang_tools_binary_url(tool_name, version)

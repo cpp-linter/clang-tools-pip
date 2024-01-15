@@ -22,7 +22,7 @@ def parser() -> ArgumentParser:
     return get_parser()
 
 
-@pytest.mark.parametrize("arg_name", ["install", "tool", "directory", "uninstall"])
+@pytest.mark.parametrize("arg_name", ["install", "directory", "uninstall"])
 @pytest.mark.parametrize("arg_value", [str(v) for v in range(7, 17)] + ["12.0.1"])
 def test_arg_parser(arg_name: str, arg_value: str, parser: ArgumentParser):
     """Test CLI arg parsing using a set of fake args."""
@@ -37,8 +37,15 @@ def test_cli_switch(switch_name: str, parser: ArgumentParser):
     assert getattr(args, switch_name.replace("-", "_"))
 
 
-def test_default_args(parser: ArgumentParser):
+@pytest.mark.parametrize("name, default_value", [
+    ("install", None),
+    ("uninstall", None),
+    ("overwrite", False),
+    ("no_progress_bar", False),
+    ("directory", ""),
+    ("tool", ['clang-format', 'clang-tidy'])
+])
+def test_default_args(parser: ArgumentParser, name, default_value):
     """Test the default values of CLI args"""
     args = parser.parse_args([])
-    for name, value in args.__dict__.items():
-        assert getattr(Args, name) == value
+    assert getattr(args, name) == default_value

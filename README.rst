@@ -128,39 +128,8 @@ If the installed directory is in your path, you can run the installed tools.
 Supported versions
 ------------------
 
-clang-format
-************
-.. csv-table::
-    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
-    :stub-columns: 1
-
-    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-
-clang-tidy
-**********
-.. csv-table::
-    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
-    :stub-columns: 1
-
-    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-
-clang-query
-**********
-.. csv-table::
-    :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
-    :stub-columns: 1
-
-    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-
-
-clang-apply-replacements
-************************
+clang-format, clang-tidy, clang-query, clang-apply-replacements
+***************************************************************
 .. csv-table::
     :header: "Version", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
     :stub-columns: 1

@@ -72,7 +72,7 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     2. indicates a failure to download a tool
     """
     try:
-        install_clang_tools("x", ".", False, False)
+        install_clang_tools("x", "x", ".", False, False)
     except OSError as exc:
         result = capsys.readouterr()
         assert "directory is not in your environment variable PATH" in result.out

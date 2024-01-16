@@ -21,6 +21,14 @@ def get_parser() -> argparse.ArgumentParser:
         help="Install clang-tools about a specific version.",
     )
     parser.add_argument(
+        "-t",
+        "--tool",
+        nargs='+',
+        default=['clang-format', 'clang-tidy'],
+        metavar="TOOL",
+        help="Specify which tool(s) to install.",
+    )
+    parser.add_argument(
         "-d",
         "--directory",
         default="",
@@ -54,19 +62,19 @@ def main():
     """The main entrypoint to the CLI program."""
     parser = get_parser()
     args = parser.parse_args()
-    if not args.install and not args.uninstall:
+
+    if args.uninstall:
+        uninstall_clang_tools(args.uninstall, args.directory)
+    if args.install:
+        install_clang_tools(
+            args.install, args.tool, args.directory, args.overwrite, args.no_progress_bar
+        )
+    else:
         print(
             f"{YELLOW}Nothing to do because `--install` and `--uninstall`",
             f"was not specified.{RESET_COLOR}"
         )
         parser.print_help()
-    else:
-        if args.uninstall:
-            uninstall_clang_tools(args.uninstall, args.directory)
-        if args.install:
-            install_clang_tools(
-                args.install, args.directory, args.overwrite, args.no_progress_bar
-            )
 
 
 if __name__ == "__main__":

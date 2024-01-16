@@ -14,7 +14,7 @@ from clang_tools.install import (
 
 
 @pytest.mark.parametrize("version", [str(v) for v in range(7, 17)] + ["12.0.1"])
-@pytest.mark.parametrize("tool_name", ["clang-format", "clang-tidy"])
+@pytest.mark.parametrize("tool_name", ["clang-format", "clang-tidy", "clang-query", "clang-apply-replacements"])
 def test_clang_tools_binary_url(tool_name: str, version: str):
     """Test `clang_tools_binary_url()`"""
     url = clang_tools_binary_url(tool_name, version)
@@ -72,7 +72,7 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     2. indicates a failure to download a tool
     """
     try:
-        install_clang_tools("x", ".", False, False)
+        install_clang_tools("x", "x", ".", False, False)
     except OSError as exc:
         result = capsys.readouterr()
         assert "directory is not in your environment variable PATH" in result.out

@@ -249,11 +249,12 @@ def uninstall_clang_tools(version: str, directory: str):
 
 
 def install_clang_tools(
-    version: str, directory: str, overwrite: bool, no_progress_bar: bool
+    version: str, tools: str, directory: str, overwrite: bool, no_progress_bar: bool
 ) -> None:
     """Wraps functions used to individually install tools.
 
     :param version: The version of the tools to install.
+    :param tools: The specify tool(s) to install.
     :param directory: The installation directory.
     :param overwrite: A flag to indicate if the creation of a symlink has
         permission to overwrite an existing symlink.
@@ -265,7 +266,7 @@ def install_clang_tools(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
-    for tool_name in ("clang-format", "clang-tidy"):
+    for tool_name in tools:
         native_bin = is_installed(tool_name, version)
         if native_bin is None:  # (not already installed)
             # `install_tool()` guarantees that the binary exists now

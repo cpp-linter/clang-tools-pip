@@ -4,6 +4,7 @@ import pytest
 from clang_tools import install_os
 from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import check_install_os, download_file, get_sha_checksum
+from clang_tools import release_tag
 
 
 def test_check_install_os():
@@ -13,12 +14,12 @@ def test_check_install_os():
 
 
 @pytest.mark.parametrize(
-    "tag", ["master-a2d1eff4", pytest.param("latest", marks=pytest.mark.xfail)]
+    "tag", [release_tag, pytest.param("latest", marks=pytest.mark.xfail)]
 )
 def test_download_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, tag: str):
     """Test that deliberately fails to download a file."""
     monkeypatch.chdir(str(tmp_path))
-    url = clang_tools_binary_url("clang-format", "12", release_tag=tag)
+    url = clang_tools_binary_url("clang-format", "12", tag=release_tag)
     file_name = download_file(url, "file.tar.gz", True)
     assert file_name is not None
 
@@ -30,5 +31,5 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     expected = Path(f"clang-format-12_{install_os}-amd64.sha512sum").read_text(
         encoding="utf-8"
     )
-    url = clang_tools_binary_url("clang-format", "12", release_tag="master-a2d1eff4")
+    url = clang_tools_binary_url("clang-format", "12", tag=release_tag)
     assert get_sha_checksum(url) == expected

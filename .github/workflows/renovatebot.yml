@@ -18,3 +18,5 @@ jobs:
         with:
           configurationFile: renovate.json
           token: ${{ secrets.CPP_LINTER_TOKEN }}
+        env:
+          RENOVATE_AUTODISCOVER: true

@@ -1,28 +1,21 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "baseBranches": ["master"],
-    "dependencyDashboard": false,
-    "labels": ["dependencies"],
-    "commitMessagePrefix": "",
-    "commitMessageTopic": "{{depName}}",
-    "regexManagers": [
-      {
-        "customType": "regex",
-        "fileMatch": ["clang_tools/install.py", "tests/test_util.py"],
-        "matchStrings": [
-          "^master-\\w*"
-        ],
-        "datasourceTemplate": "github-releases",
-        "depNameTemplate": "cpp-linter/clang-tools-static-binaries",
-        "extractVersionTemplate": "^master-\\w*"
-      }
+    "extends": [
+      "config:recommended"
     ],
     "packageRules": [
       {
-        "matchDatasources": ["github-releases"],
-        "matchDepNames": ["cpp-linter/clang-tools-static-binaries"],
-        "matchUpdateTypes": ["minor", "patch"],
-        "automerge": true
+        "matchManagers": ["regex"],
+        "matchPackageNames": ["cpp-linter/clang-tools-static-binaries"],
+        "extractVersion": "^master-\\w*"
+      }
+    ],
+    "customManagers": [
+      {
+        "customType": "regex",
+        "fileMatch": ["clang_tools/install.py", "tests/test_util.py"],
+        "matchStrings": ["^master-\\w*"],
+        "datasourceTemplate": "github-releases"
       }
     ]
   }

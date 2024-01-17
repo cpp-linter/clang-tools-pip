@@ -1,28 +1,22 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "baseBranches": ["main"],
-    "rebaseWhen": "behind-base-branch",
-    "dependencyDashboard": false,
-    "labels": ["dependencies"],
-    "commitMessagePrefix": "",
-    "commitMessageTopic": "{{depName}}",
+    "extends": [
+      ":enabled",
+      ":python"
+    ],
     "regexManagers": [
       {
-        "customType": "regex",
-        "matchStrings": [
-          "\\sappVersion: (?<currentValue>.*)\\s"
-        ],
-        "datasourceTemplate": "github-releases",
-        "depNameTemplate": "cpp-linter/clang-tools-static-binaries",
-        "extractVersionTemplate": "^master-\\w*"
+        "fileMatch": ["^__init__\\.py$"],
+        "matchStrings": ["^release_tag = 'master-\\w*'"],
+        "replaceStrings": ["release_tag = '{newVersion}'"],
+        "datasourceTemplate": "github-releases"
       }
     ],
     "packageRules": [
       {
-        "matchDatasources": ["github-releases"],
-        "matchDepNames": ["cpp-linter/clang-tools-static-binaries"],
-        "matchUpdateTypes": ["minor", "patch"],
-        "automerge": true
+        "managers": ["regex"],
+        "datasources": ["github-releases"],
+        "repositories": ["cpp-linter/clang-tools-static-binaries"],
+        "updateTypes": ["major", "minor", "patch"]
       }
     ]
   }

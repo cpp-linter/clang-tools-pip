@@ -13,7 +13,7 @@ def test_check_install_os():
 
 
 @pytest.mark.parametrize(
-    "tag", ["master-be694ee7", pytest.param("latest", marks=pytest.mark.xfail)]
+    "tag", ["master-a2d1eff4", pytest.param("latest", marks=pytest.mark.xfail)]
 )
 def test_download_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, tag: str):
     """Test that deliberately fails to download a file."""
@@ -30,5 +30,5 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     expected = Path(f"clang-format-12_{install_os}-amd64.sha512sum").read_text(
         encoding="utf-8"
     )
-    url = clang_tools_binary_url("clang-format", "12", release_tag="master-be694ee7")
+    url = clang_tools_binary_url("clang-format", "12", release_tag="master-a2d1eff4")
     assert get_sha_checksum(url) == expected

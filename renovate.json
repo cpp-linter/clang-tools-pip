@@ -10,10 +10,13 @@
       "extractVersion": "^master-(?<version>.*)$"
     }
   ],
+  "enabledManagers": [
+    "custom.regex"
+  ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["\\.py$"],
+      "fileMatch": ["clang_tools\\.py$"],
       "matchStrings": ["datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\sENV .*?_VERSION=(?<currentValue>.*)\\s"]
     }
   ]

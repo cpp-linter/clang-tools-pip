@@ -14,7 +14,7 @@
         ],
         "datasourceTemplate": "github-releases",
         "depNameTemplate": "cpp-linter/clang-tools-static-binaries",
-        "extractVersionTemplate": "^master-\w*"
+        "extractVersionTemplate": "^master-\\w*"
       }
     ],
     "packageRules": [

@@ -14,8 +14,7 @@
       {
         "customType": "regex",
         "fileMatch": ["clang_tools/install.py", "tests/test_util.py"],
-        "matchStrings": ["^master-\\w*"],
-        "datasourceTemplate": "github-releases"
+        "matchStrings": ["^master-\\w*"]
       }
     ]
   }

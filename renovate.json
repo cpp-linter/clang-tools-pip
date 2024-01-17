@@ -1,20 +1,20 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": [
-      "config:recommended"
-    ],
-    "packageRules": [
-      {
-        "matchManagers": ["regex"],
-        "matchPackageNames": ["cpp-linter/clang-tools-static-binaries"],
-        "extractVersion": "^master-\\w*"
-      }
-    ],
-    "customManagers": [
-      {
-        "customType": "regex",
-        "fileMatch": ["clang_tools/install.py", "tests/test_util.py"],
-        "matchStrings": ["datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\sENV .*?_VERSION=(?<currentValue>.*)\\s"]
-      }
-    ]
-  }
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["cpp-linter/clang-tools-static-binaries"],
+      "extractVersion": "^master-\\w*"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["clang_tools/install.py", "tests/test_util.py"],
+      "matchStrings": ["^master-\\w*"]
+    }
+  ]
+}

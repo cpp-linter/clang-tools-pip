@@ -3,11 +3,15 @@
       ":enabled",
       ":python"
     ],
-    "regexManagers": [
+    "customManagers": [
       {
+        "customType": "regex",
         "fileMatch": ["clang_tools/__init__.py"],
-        "matchStrings": ["^release_tag = 'master-\\w*'"],
-        "replaceStrings": ["release_tag = '{newVersion}'"],
+        "matchStringsStrategy": "any",
+        "matchStrings": [
+          "release_tag = \\s*\"(?<currentValue>.*)\"\\s*//"
+        ],
+        "depNameTemplate": "release_tag = 'master-1234abcd'",
         "datasourceTemplate": "github-releases"
       }
     ],

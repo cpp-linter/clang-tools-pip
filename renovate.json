@@ -5,16 +5,15 @@
   ],
   "packageRules": [
     {
-      "allowedVersions": "<3.2.0",
       "matchManagers": ["regex"],
-      "matchPackageNames": ["openssl/openssl"],
-      "extractVersion": "^openssl-(?<version>.*)$"
+      "matchPackageNames": ["cpp-linter/clang-tools-static-binaries"],
+      "extractVersion": "^master-(?<version>.*)$"
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^Dockerfile$"],
+      "fileMatch": ["\\.py$"],
       "matchStrings": ["datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\sENV .*?_VERSION=(?<currentValue>.*)\\s"]
     }
   ]

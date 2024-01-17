@@ -14,7 +14,7 @@
       {
         "customType": "regex",
         "fileMatch": ["clang_tools/install.py", "tests/test_util.py"],
-        "matchStrings": ["^master-\\w*"]
+        "matchStrings": ["datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\sENV .*?_VERSION=(?<currentValue>.*)\\s"]
       }
     ]
   }

@@ -1,26 +1,29 @@
 {
-    "extends": [
-      ":enabled",
-      ":python"
-    ],
-    "customManagers": [
-      {
-        "customType": "regex",
-        "fileMatch": ["clang_tools/__init__.py"],
-        "matchStringsStrategy": "any",
-        "matchStrings": [
-          "release_tag = \\s*\"(?<currentValue>.*)\"\\s*//"
-        ],
-        "depNameTemplate": "release_tag = 'master-1234abcd'",
-        "datasourceTemplate": "github-releases"
-      }
-    ],
-    "packageRules": [
-      {
-        "managers": ["regex"],
-        "datasources": ["github-releases"],
-        "repositories": ["cpp-linter/clang-tools-static-binaries"],
-        "updateTypes": ["major", "minor", "patch"]
-      }
-    ]
-  }
+  "extends": ["config:base"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["clang_tools/__init__.py"],
+      "matchStringsStrategy": "any",
+      "matchStrings": [
+        "release_tag = \\s*\"(?<currentValue>.*)\"\\s*//"
+      ],
+      "depNameTemplate": "release_tag = 'master-1234abcd'",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
+  "packageRules": [
+    {
+      "managers": ["regex"],
+      "datasources": ["github-releases"],
+      "updateTypes": ["major", "minor", "patch"]
+    }
+  ],
+  "repositories": [
+    {
+      "matchDatasource": "github-releases",
+      "matchPackageNames": ["cpp-linter/clang-tools-static-binaries"],
+      "enabled": true
+    }
+  ]
+}

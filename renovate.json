@@ -10,7 +10,7 @@
       {
         "customType": "regex",
         "matchStrings": [
-          "ARG PORTAINER_VERSION=[\"']?(?<currentValue>.+?)[\"']?\\s+"
+          "\\sappVersion: (?<currentValue>.*)\\s"
         ],
         "datasourceTemplate": "github-releases",
         "depNameTemplate": "cpp-linter/clang-tools-static-binaries",

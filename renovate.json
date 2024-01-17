@@ -3,7 +3,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["clang_tools/__init__.py"],
+      "fileMatch": ["**/__init__.py"],
       "matchStringsStrategy": "any",
       "matchStrings": [
         "release_tag = \\s*\"(?<currentValue>.*)\"\\s*//"

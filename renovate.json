@@ -1,7 +1,6 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "baseBranches": ["main"],
-    "rebaseWhen": "behind-base-branch",
+    "baseBranches": ["master"],
     "dependencyDashboard": false,
     "labels": ["dependencies"],
     "commitMessagePrefix": "",
@@ -9,8 +8,9 @@
     "regexManagers": [
       {
         "customType": "regex",
+        "fileMatch": ["clang_tools/install.py", "tests/test_util.py"],
         "matchStrings": [
-          "\\sappVersion: (?<currentValue>.*)\\s"
+          "^master-\\w*"
         ],
         "datasourceTemplate": "github-releases",
         "depNameTemplate": "cpp-linter/clang-tools-static-binaries",

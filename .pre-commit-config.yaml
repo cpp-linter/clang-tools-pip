@@ -20,6 +20,7 @@ repos:
     hooks:
       - id: flake8
         args: [--max-line-length=120]
+        exclude: ^(.github/workflows/bump-version.py)
   # - repo: local
   #   hooks:
   #     - id: pytest

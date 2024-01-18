@@ -1,0 +1,54 @@
+---
+name: Bump clang-tools static binaries version
+
+scms:
+  default:
+    kind: github
+    spec:
+      user: "{{ .github.user }}"
+      email: "{{ .github.email }}"
+      owner: "{{ .github.owner }}"
+      repository: "{{ .github.repository }}"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      branch: "{{ .github.branch }}"
+
+sources:
+  lastVersion:
+    kind: githubrelease
+    name: Get the latest clang-tools static binaries version
+    spec:
+      owner: "cpp-linter"
+      repository: "clang-tools-static-binaries"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      versionfilter:
+        kind: latest
+    transformers:
+      - addprefix: "master-"
+
+conditions:
+  checkIfReleaseIsAvailable:
+    sourceid: lastVersion
+    kind: shell
+    spec:
+      command: bash ./updatecli/check-tag.sh # source input value passed as argument
+
+targets:
+  updateVersion:
+    name: "Update clang-tools-pip"
+    sourceid: lastVersion
+    scmid: github
+    kind: shell
+    spec:
+      command: bash {{ "GITHUB_WORKSPACE" }}/updatecli/update-tag.sh
+
+actions:
+  default:
+    kind: github/pullrequest
+    scmid: default
+    title: Bump clang-tools-static-binaries version to {{ source "lastVersion" }}
+    spec:
+      labels:
+        - dependencies
+        - clang-tools-static-binaries

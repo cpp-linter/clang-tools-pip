@@ -1,0 +1,8 @@
+github:
+  user: "Cpp Linter Bot (updatecli)"
+  email: "60776566+cpp-linter-bot@users.noreply.github.com"
+  username: "cpp-linter-bot"
+  token: "CPP_LINTER_TOKEN"
+  branch: "main"
+  owner: "cpp-linter"
+  repository: "clang-tools-pip"

@@ -27,7 +27,6 @@ jobs:
       run: |
         cd .github/workflows
         bump_tag=`python3 bump-version.py`
-        bump_tag=$(echo $bump_tag | tr '\n' ' ')
         echo "bump_tag=$bump_tag" >> $GITHUB_OUTPUT
 
         cd ${{ github.workspace }}

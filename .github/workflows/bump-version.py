@@ -18,21 +18,13 @@ def update_tag(current_tag, latest_tag) -> None:
 
     with open(file_path, 'w') as file:
         file.write(updated_content)
-    print("Update release_tag successfully.")
 
 
-def main() -> str:
+if __name__ == "__main__":
     latest_tag = get_latest_tag()
     current_tag = release_tag
-
-    print(f"Latest tag is {latest_tag}")
-    print(f"Current tag is {current_tag}")
 
     if latest_tag != current_tag:
         update_tag(current_tag, latest_tag)
 
     print(latest_tag)
-
-
-if __name__ == "__main__":
-    main()

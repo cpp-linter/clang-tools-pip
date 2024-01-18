@@ -23,6 +23,7 @@ jobs:
       run: pip install requests
 
     - name: Bump version
+      id: bump
       run: |
         cd .github/workflows
         latest_tag=`python3 bump-version.py`
@@ -40,8 +41,8 @@ jobs:
       with:
         token: ${{ secrets.CPP_LINTER_TOKEN }}
         add-paths: "clang_tools/__init__.py"
-        commit-message: "chore: bump clang-tools-static-binaries to ${{ steps.vars.outputs.latest_tag }}"
-        title: "Bump cpp-linter/clang-tools-static-binaries to ${{ steps.vars.outputs.latest_tag }}"
+        commit-message: "chore: bump clang-tools-static-binaries to ${{ steps.bump.outputs.latest_tag }}"
+        title: "Bump cpp-linter/clang-tools-static-binaries to ${{ steps.bump.outputs.latest_tag }}"
         body: |
           Bump [cpp-linter/clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries/releases) to ${{ steps.vars.outputs.latest_tag }}
           - This PR was auto-generated on $(date +%d-%m-%Y) by [create-pull-request][1]

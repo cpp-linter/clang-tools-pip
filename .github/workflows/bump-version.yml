@@ -27,6 +27,7 @@ jobs:
       run: |
         cd .github/workflows
         latest_tag=`python3 bump-version.py`
+        echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
 
         cd ${{ github.workspace }}
 
@@ -44,7 +45,7 @@ jobs:
         title: "Bump cpp-linter/clang-tools-static-binaries to ${{ steps.bump.outputs.latest_tag }}"
         body: |
           Bump [cpp-linter/clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries/releases) to ${{ steps.vars.outputs.latest_tag }}
-          - This PR was auto-generated on $(date +%d-%m-%Y) by [create-pull-request][1]
+          - This PR was auto-generated on `date +%d-%m-%Y` by [create-pull-request][1]
 
           [1]: https://github.com/peter-evans/create-pull-request
         base: main

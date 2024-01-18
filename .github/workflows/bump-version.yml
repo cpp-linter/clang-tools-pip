@@ -34,7 +34,6 @@ jobs:
           echo "No changes detected."
           exit 0
         fi
-        echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v5

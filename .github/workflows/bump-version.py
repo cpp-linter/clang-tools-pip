@@ -4,12 +4,12 @@ sys.path.append('../../')
 from clang_tools import release_tag
 
 
-def get_latest_tag():
+def get_latest_tag() -> str:
     response = requests.get("https://api.github.com/repos/cpp-linter/clang-tools-static-binaries/releases/latest")
     return response.json()['tag_name']
 
 
-def update_tag(current_tag, latest_tag):
+def update_tag(current_tag, latest_tag) -> None:
     file_path = "../../clang_tools/__init__.py"
     with open(file_path) as file:
         file_content = file.read()
@@ -21,7 +21,7 @@ def update_tag(current_tag, latest_tag):
     print("Update release_tag successfully.")
 
 
-def main():
+def main() -> str:
     latest_tag = get_latest_tag()
     current_tag = release_tag
 
@@ -31,7 +31,7 @@ def main():
     if latest_tag != current_tag:
         update_tag(current_tag, latest_tag)
 
-    return latest_tag
+    print(latest_tag)
 
 
 if __name__ == "__main__":

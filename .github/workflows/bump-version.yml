@@ -26,8 +26,8 @@ jobs:
       id: bump
       run: |
         cd .github/workflows
-        latest_tag=`python3 bump-version.py`
-        echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+        bump_tag=`python3 bump-version.py`
+        echo "bump_tag=$bump_tag" >> $GITHUB_OUTPUT
 
         cd ${{ github.workspace }}
 
@@ -41,10 +41,10 @@ jobs:
       with:
         token: ${{ secrets.CPP_LINTER_TOKEN }}
         add-paths: "clang_tools/__init__.py"
-        commit-message: "chore: bump clang-tools-static-binaries to ${{ steps.bump.outputs.latest_tag }}"
-        title: "Bump cpp-linter/clang-tools-static-binaries to ${{ steps.bump.outputs.latest_tag }}"
+        commit-message: "chore: bump clang-tools-static-binaries to ${{ steps.bump.outputs.bump_tag }}"
+        title: "Bump cpp-linter/clang-tools-static-binaries to ${{ steps.bump.outputs.bump_tag }}"
         body: |
-          Bump [cpp-linter/clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries/releases) to ${{ steps.vars.outputs.latest_tag }}
+          Bump [cpp-linter/clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries/releases) to ${{ steps.vars.outputs.bump_tag }}
           - This PR was auto-generated on `date +%d-%m-%Y` by [create-pull-request][1]
 
           [1]: https://github.com/peter-evans/create-pull-request

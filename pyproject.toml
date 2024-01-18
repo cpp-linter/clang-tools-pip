@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "clang_tools"
 description = "Install clang-tools (clang-format, clang-tidy) with pip"
-readme = "README.rst"
+readme = "README.md"
 keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format"]
 license = {text = "MIT License"}
 authors = [

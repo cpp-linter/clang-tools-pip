@@ -42,8 +42,8 @@ jobs:
         token: ${{ secrets.CPP_LINTER_TOKEN }}
         add-paths: "clang_tools/__init__.py"
         commit-message: "chore: bump clang-tools-static-binaries to ${{ steps.bump.outputs.bump_tag }}"
-        committer: GitHub <noreply@github.com>
-        author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+        committer: github-actions[bot]
+        author: 41898282+github-actions[bot]@users.noreply.github.com
         title: "Bump cpp-linter/clang-tools-static-binaries to ${{ steps.bump.outputs.bump_tag }}"
         body: |
           Bump [cpp-linter/clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries/releases) to `${{ steps.bump.outputs.bump_tag }}`

@@ -17,7 +17,6 @@
 
 - Binaries are statically linked for improved portability.
 - Binaries can be specified installed for increased flexibility.
-- Customizable install path.
 - Binaries are checked with SHA512 checksum. This ensures:
 
   1. Downloads are not corrupted.
@@ -28,8 +27,7 @@
   For example (on Windows), the `clang-tidy-13.exe` binary executable can
   also be invoked with the symbolic link titled `clang-tidy.exe`
 
-    > [!NOTE]
-    > To create symbolic links on Windows, you must enable developer mode from the Windows settings under "Privacy & security" > "For developers" category.
+- Customizable install path.
 
 
 ## Install

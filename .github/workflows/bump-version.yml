@@ -50,5 +50,4 @@ jobs:
         base: main
         labels: dependencies
         branch: bump-clang-tools-static-binaries-version
-        reviewers: shenxianpeng
         delete-branch: true

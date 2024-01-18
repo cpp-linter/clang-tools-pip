@@ -10,7 +10,6 @@ on:
       - "**.py"
       - "**requirements*.txt"
       - pyproject.toml
-      - setup.py
       - .pre-commit-config.yaml
       - ".github/workflows/python-test.yml"
       - "!docs/**"
@@ -81,8 +80,8 @@ jobs:
         shell: bash
         run: pip install dist/*.whl
 
-      - name: Install clang-tools
-        run: clang-tools --install ${{ matrix.version }}
+      - name: Install clang-tools binaries
+        run: clang-tools --install ${{ matrix.version }} --tool clang-format clang-tidy clang-query clang-apply-replacements
 
       - name: Show path of binaries
         shell: bash
@@ -90,9 +89,13 @@ jobs:
           if [ "${{ matrix.version }}" = "15" -o "${{ matrix.version }}" = "16" ] && [ "${{ matrix.os }}" = "windows-latest" ]; then
               which clang-format
               which clang-tidy
+              which clang-query
+              which clang-apply-replacements
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
               which "clang-format-${{ matrix.version }}"
               which "clang-tidy-${{ matrix.version }}"
+              which "clang-query-${{ matrix.version }}"
+              which "clang-apply-replacements-${{ matrix.version }}"
           fi
 
       - name: Check clang-tools on Windows
@@ -103,10 +106,14 @@ jobs:
             15|16)
               clang-format.exe --version
               clang-tidy.exe --version
+              clang-query.exe --version
+              clang-apply-replacements.exe --version
               ;;
             *)
               clang-format-${{ matrix.version }}.exe --version
               clang-tidy-${{ matrix.version }}.exe --version
+              clang-query-${{ matrix.version }}.exe --version
+              clang-apply-replacements-${{ matrix.version }}.exe --version
               ;;
           esac
 
@@ -116,16 +123,13 @@ jobs:
           if [ "${{ matrix.version }}" = "12.0.1" -a "${{ matrix.os }}" = "ubuntu-latest" ]; then
             clang-format-12.0.1 --version
             clang-tidy-12.0.1 --version
+            clang-query-12.0.1 --version
+            clang-apply-replacements-12.0.1 --version
           else
             clang-format-${{ matrix.version }} --version
-            case "${{ matrix.version }}" in
-              14|15|16)
-                echo "Skipping version ${{ matrix.version }} due to Segmentation fault on Ubuntu."
-                ;;
-              *)
-                clang-tidy-${{ matrix.version }} --version
-                ;;
-            esac
+            clang-tidy-${{ matrix.version }} --version
+            clang-query-${{ matrix.version }} --version
+            clang-apply-replacements-${{ matrix.version }} --version
           fi
 
   docs:

@@ -28,30 +28,30 @@
   For example (on Windows), the `clang-tidy-13.exe` binary executable can
   also be invoked with the symbolic link titled `clang-tidy.exe`
 
-> [!NOTE]
-> To create symbolic links on Windows, you must enable developer mode from the Windows settings under "Privacy & security" > "For developers" category.
+    > [!NOTE]
+    > To create symbolic links on Windows, you must enable developer mode from the Windows settings under "Privacy & security" > "For developers" category.
 
 
 ## Install
 
 > [!TIP]
 > It is recommended to use this package in a virtual environment.
->
-    ```bash
-    # create the virtual env in the working directory
-    python -m venv env-name
 
-    # to activate on Linux:
-    source env-name/bin/activate
+```sh
+# create the virtual env in the working directory
+python -m venv env-name
 
-    # to activate on Windows:
-    ./env-name/Scripts/activate
-    ```
+# to activate on Linux:
+source env-name/bin/activate
 
-    This will ensure that
+# to activate on Windows:
+./env-name/Scripts/activate
+```
 
-    1. there are no permission problems when installing the tool
-    2. the installed path (for MacOS and Windows) is within the environment's variable `PATH`.
+This will ensure that
+
+1. there are no permission problems when installing the tool
+2. the installed path (for MacOS and Windows) is within the environment's variable `PATH`.
 
 ### Install `clang-tools` command with pip
 
@@ -66,7 +66,6 @@ pip install git+https://github.com/cpp-linter/clang-tools-pip.git@main
 ```
 
 ## `clang-tools` usage
------
 
 For a list of supported Command Line Interface options, see [the CLI documentation](https://cpp-linter.github.io/clang-tools-pip/cli_args.html).
 
@@ -107,7 +106,7 @@ LLVM (http://llvm.org/):
 
 ## Supported versions
 
-clang-format, clang-tidy, clang-query, clang-apply-replacements
+clang-format, clang-tidy, clang-query, clang-apply-replacements supports versions
 
 | Version | 17 | 16 | 15 | 14 | 13 | 12 | 11 | 10 | 9 | 8 | 7 |
 |---------|----|----|----|----|----|----|----|----|---|---|---|

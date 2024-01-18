@@ -28,8 +28,8 @@
   For example (on Windows), the `clang-tidy-13.exe` binary executable can
   also be invoked with the symbolic link titled `clang-tidy.exe`
 
-    > [!NOTE]
-    > To create symbolic links on Windows, you must enable developer mode from the Windows settings under "Privacy & security" > "For developers" category.
+> [!NOTE]
+> To create symbolic links on Windows, you must enable developer mode from the Windows settings under "Privacy & security" > "For developers" category.
 
 
 ## Install
@@ -122,5 +122,5 @@ clang-format, clang-tidy, clang-query, clang-apply-replacements
 ------------
 
 Thanks to the project [clang-tools-static-binaries](https://github.com/muttleyxd/clang-tools-static-binaries).
-
-We now used the [fork repository](https://github.com/cpp-linter/clang-tools-static-binaries) that fixed the clang-tidy v14+ Segmentation fault (core dumped). see [#56](https://github.com/cpp-linter/clang-tools-pip/issues/56) for details.
+We now used the [fork repository](https://github.com/cpp-linter/clang-tools-static-binaries) that fixed the clang-tidy v14+ Segmentation fault (core dumped).
+see [#56](https://github.com/cpp-linter/clang-tools-pip/issues/56) for details.

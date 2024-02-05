@@ -37,7 +37,7 @@ jobs:
         fi
 
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v5
+      uses: peter-evans/create-pull-request@v6
       with:
         add-paths: "clang_tools/__init__.py"
         commit-message: "chore: bump clang-tools-static-binaries to ${{ steps.bump.outputs.bump_tag }}"

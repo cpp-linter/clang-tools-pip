@@ -105,14 +105,14 @@ def install_tool(
             return False
         print("invalid")
         uninstall_tool(tool_name, version, directory)
-    print("downloading", tool_name, f"(version {version})")
+    print("Downloading", tool_name, f"(version {version})")
     bin_name = str(PurePath(bin_url).stem)
     if download_file(bin_url, bin_name, no_progress_bar) is None:
         raise OSError(f"Failed to download {bin_name} from {bin_url}")
     move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
     if not verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
         raise ValueError(
-            f"file was corrupted during download from {bin_url}"
+            f"File was corrupted during download from {bin_url}"
         )  # pragma: no cover
     return True
 
@@ -186,24 +186,24 @@ def create_sym_link(
     if link.exists():
         if not link.is_symlink():
             print(
-                "file",
+                "File",
                 str(link),
                 "already exists and it is not a symbolic link. Leaving it as is.",
             )
             return False
         if not overwrite:
             print(
-                "symbolic link",
+                "Symbolic link",
                 str(link),
                 "already exists. Use '-f' to overwrite. Leaving it as is.",
             )
             return False
         link.unlink()
-        print("overwriting symbolic link", str(link))
+        print("Overwriting symbolic link", str(link))
     assert target.exists()
     try:
         link.symlink_to(target)
-        print("symbolic link created", str(link))
+        print("Symbolic link created", str(link))
         return True
     except OSError as exc:  # pragma: no cover
         print(

@@ -19,7 +19,7 @@ def test_check_install_os():
 def test_download_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, tag: str):
     """Test that deliberately fails to download a file."""
     monkeypatch.chdir(str(tmp_path))
-    url = clang_tools_binary_url("clang-format", "12", tag=release_tag)
+    url = clang_tools_binary_url("clang-format", "12", tag=tag)
     file_name = download_file(url, "file.tar.gz", True)
     assert file_name is not None
 

@@ -17,8 +17,12 @@ on:
 
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,20 +36,29 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install . -r requirements-dev.txt
 
-      - name: Run pre-commit
-        run: pre-commit run --all-files
+      - name: Collect Coverage
+        run: coverage run -m pytest -vv
 
-      - name: Collect coverage
-        run: |
-          coverage run -m pytest -vv
-          coverage report -m
-          coverage xml
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v4
         with:
-          files: ./coverage.xml
-          verbose: true # optional (default = false)
+          name: coverage-data-${{ runner.os }}
+          path: .coverage*
+
+  coverage-report:
+    needs: [test]
+    uses: cpp-linter/.github/.github/workflows/py-coverage.yml@main
+    secrets: inherit
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
       - name: Build wheel
         run: python -m pip wheel -w dist .

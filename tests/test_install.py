@@ -74,6 +74,8 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     try:
         install_clang_tools("x", "x", ".", False, False)
     except OSError as exc:
-        result = capsys.readouterr()
-        assert "directory is not in your environment variable PATH" in result.out
+        if install_dir_name(".") not in os.environ.get("PATH"):
+            # this warning does not happen in an activated venv
+            result = capsys.readouterr()
+            assert "directory is not in your environment variable PATH" in result.out
         assert "Failed to download" in exc.args[0]

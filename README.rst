@@ -46,8 +46,8 @@ Features
       category.
 - Customizable install path.
 
-Install
--------
+Install clang-tools CLI
+-----------------------
 
 .. tip::
     It is recommended to use this package in a virtual environment.

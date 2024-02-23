@@ -1,5 +1,7 @@
-clang-tools Introduction
-========================
+clang-tools CLI
+===============
+
+**Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries with clang-tools CLI.**
 
 .. image:: https://img.shields.io/pypi/v/clang-tools
     :target: https://pypi.org/project/clang-tools/
@@ -19,9 +21,6 @@ clang-tools Introduction
 .. image:: https://img.shields.io/pypi/dw/clang-tools
     :target: https://pypistats.org/packages/clang-tools
     :alt: PyPI - Downloads
-
-
-Install clang-tools binaries (clang-format, clang-tidy, clang-query and clang-apply-replacements) with pip.
 
 .. important::
     This package only manages binary executables (& corresponding symbolic links) that
@@ -47,8 +46,8 @@ Features
       category.
 - Customizable install path.
 
-Install
--------
+Install clang-tools CLI
+-----------------------
 
 .. tip::
     It is recommended to use this package in a virtual environment.
@@ -82,8 +81,8 @@ Install `clang-tools` from git repo
 
     pip install git+https://github.com/cpp-linter/clang-tools-pip.git@main
 
-Usage
------
+CLI Usage
+---------
 
 For a list of supported Command Line Interface options, see
 `the CLI documentation <https://cpp-linter.github.io/clang-tools-pip/cli_args.html>`_

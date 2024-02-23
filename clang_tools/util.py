@@ -48,7 +48,7 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[s
         return None
     assert response.length is not None
     length = response.length
-    buffer = b''
+    buffer = b""
     progress_bar = "=" if check_install_os() == "windows" else "█"
     while len(buffer) < length:
         block_size = int(length / 20)

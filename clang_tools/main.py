@@ -23,8 +23,8 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-t",
         "--tool",
-        nargs='+',
-        default=['clang-format', 'clang-tidy'],
+        nargs="+",
+        default=["clang-format", "clang-tidy"],
         metavar="TOOL",
         help="Specify which tool(s) to install.",
     )
@@ -67,12 +67,16 @@ def main():
         uninstall_clang_tools(args.uninstall, args.directory)
     if args.install:
         install_clang_tools(
-            args.install, args.tool, args.directory, args.overwrite, args.no_progress_bar
+            args.install,
+            args.tool,
+            args.directory,
+            args.overwrite,
+            args.no_progress_bar,
         )
     else:
         print(
             f"{YELLOW}Nothing to do because `--install` and `--uninstall`",
-            f"was not specified.{RESET_COLOR}"
+            f"was not specified.{RESET_COLOR}",
         )
         parser.print_help()
 

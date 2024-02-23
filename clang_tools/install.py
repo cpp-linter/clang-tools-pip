@@ -58,9 +58,7 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
         return None  # failed to locate the binary
     path = Path(path).resolve()
     print("at", str(path))
-    ver_num = (
-        ver_num.groups(0)[0].decode(encoding="utf-8").split(".")
-    )  # pragma: no cover
+    ver_num = ver_num.groups(0)[0].decode(encoding="utf-8").split(".")
     if ver_num is None or ver_num[0] != ver_major:
         return None  # version is unknown or not the desired major release
     return path

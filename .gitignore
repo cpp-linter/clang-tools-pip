@@ -4,7 +4,7 @@ clang_tools.egg-info
 clang_tools/__pycache__
 dist
 clang_tools/llvm-project*
-.coverage
+.coverage*
 coverage.xml
 htmlcov/
 .vscode/

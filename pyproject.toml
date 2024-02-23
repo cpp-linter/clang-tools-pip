@@ -61,9 +61,11 @@ show_column_numbers = true
 [tool.coverage]
 [tool.coverage.run]
 dynamic_context = "test_function"
+parallel = true
+relative_files = true
 omit = [
     # don't include tests in coverage
-    "tests/*",
+    # "tests/*",
 ]
 
 [tool.coverage.json]
@@ -79,7 +81,5 @@ exclude_lines = [
     "pragma: no cover",
     # ignore any branch that makes the module executable
     'if __name__ == "__main__"',
-    # we test parts of these algorithms separately
-    "def uninstall_clang_tools",
     "def main",
 ]

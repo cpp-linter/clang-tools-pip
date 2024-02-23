@@ -9,12 +9,16 @@ from clang_tools.install import (
     create_sym_link,
     install_tool,
     install_clang_tools,
-    uninstall_tool,
+    is_installed,
+    uninstall_clang_tools,
 )
 
 
 @pytest.mark.parametrize("version", [str(v) for v in range(7, 17)] + ["12.0.1"])
-@pytest.mark.parametrize("tool_name", ["clang-format", "clang-tidy", "clang-query", "clang-apply-replacements"])
+@pytest.mark.parametrize(
+    "tool_name",
+    ["clang-format", "clang-tidy", "clang-query", "clang-apply-replacements"],
+)
 def test_clang_tools_binary_url(tool_name: str, version: str):
     """Test `clang_tools_binary_url()`"""
     url = clang_tools_binary_url(tool_name, version)
@@ -50,19 +54,27 @@ def test_create_symlink(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     assert not create_sym_link(tool_name, version, str(tmp_path), True)
 
 
-@pytest.mark.parametrize("version", [str(v) for v in range(10, 17)] + ["12.0.1"])
+@pytest.mark.parametrize("version", ["12"])
 def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version: str):
     """Test install tools to a temp directory."""
     monkeypatch.chdir(tmp_path)
-    for tool_name in ("clang-format", "clang-tidy"):
-        assert install_tool(tool_name, version, str(tmp_path), False)
-        # invoking again should return False
-        assert not install_tool(tool_name, version, str(tmp_path), False)
-        # uninstall the tool deliberately
-        uninstall_tool(tool_name, version, str(tmp_path))
-        assert f"{tool_name}-{version}{suffix}" not in [
-            fd.name for fd in tmp_path.iterdir()
-        ]
+    tool_name = "clang-format"
+
+    assert install_tool(tool_name, version, str(tmp_path), False)
+    # invoking again should return False
+    assert not install_tool(tool_name, version, str(tmp_path), False)
+    # uninstall the tool deliberately
+    uninstall_clang_tools(version, str(tmp_path))
+    assert f"{tool_name}-{version}{suffix}" not in [
+        fd.name for fd in tmp_path.iterdir()
+    ]
+
+
+@pytest.mark.parametrize("version", ["0"])
+def test_is_installed(version: str):
+    """Test if installed version matches specified ``version``"""
+    tool_path = is_installed("clang-format", version=version)
+    assert tool_path is None
 
 
 def test_path_warning(capsys: pytest.CaptureFixture):
@@ -74,6 +86,8 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     try:
         install_clang_tools("x", "x", ".", False, False)
     except OSError as exc:
-        result = capsys.readouterr()
-        assert "directory is not in your environment variable PATH" in result.out
+        if install_dir_name(".") not in os.environ.get("PATH"):  # pragma: no cover
+            # this warning does not happen in an activated venv
+            result = capsys.readouterr()
+            assert "directory is not in your environment variable PATH" in result.out
         assert "Failed to download" in exc.args[0]

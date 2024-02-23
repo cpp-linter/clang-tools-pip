@@ -39,7 +39,10 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     )
     try:
         result = subprocess.run(
-            [exe_name, "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+            [exe_name, "--version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
         )
     except (FileNotFoundError, subprocess.CalledProcessError):
         return None  # tool is not installed
@@ -47,7 +50,7 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     print(
         f"Found a installed version of {tool_name}:",
         ver_num.groups(0)[0].decode(encoding="utf-8"),
-        end=" "
+        end=" ",
     )
     path = shutil.which(exe_name)  # find the installed binary
     if path is None:
@@ -55,17 +58,13 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
         return None  # failed to locate the binary
     path = Path(path).resolve()
     print("at", str(path))
-    ver_num = ver_num.groups(0)[0].decode(encoding="utf-8").split(".")  # pragma: no cover
-    if (
-        ver_num is None or ver_num[0] != ver_major
-    ):
+    ver_num = ver_num.groups(0)[0].decode(encoding="utf-8").split(".")
+    if ver_num is None or ver_num[0] != ver_major:
         return None  # version is unknown or not the desired major release
     return path
 
 
-def clang_tools_binary_url(
-    tool: str, version: str, tag: str = release_tag
-) -> str:
+def clang_tools_binary_url(tool: str, version: str, tag: str = release_tag) -> str:
     """Assemble the URL to the binary.
 
     :param tool: The name of the tool to download.

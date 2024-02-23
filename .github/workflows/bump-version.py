@@ -1,12 +1,15 @@
 import requests
 import sys
-sys.path.append('../../')
-from clang_tools import release_tag
+
+sys.path.append("../../")
+from clang_tools import release_tag  # noqa E402
 
 
 def get_latest_tag() -> str:
-    response = requests.get("https://api.github.com/repos/cpp-linter/clang-tools-static-binaries/releases/latest")
-    return response.json()['tag_name']
+    response = requests.get(
+        "https://api.github.com/repos/cpp-linter/clang-tools-static-binaries/releases/latest"
+    )
+    return response.json()["tag_name"]
 
 
 def update_tag(current_tag, latest_tag) -> None:
@@ -16,7 +19,7 @@ def update_tag(current_tag, latest_tag) -> None:
 
     updated_content = file_content.replace(current_tag, latest_tag)
 
-    with open(file_path, 'w') as file:
+    with open(file_path, "w") as file:
         file.write(updated_content)
 
 

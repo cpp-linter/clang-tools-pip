@@ -37,7 +37,7 @@ extensions = [
     "sphinx.ext.intersphinx",
 ]
 
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -78,7 +78,7 @@ html_theme_options = {
             "toggle": {
                 "icon": "material/lightbulb-outline",
                 "name": "Switch to dark mode",
-            }
+            },
         },
         {
             "media": "(prefers-color-scheme: dark)",
@@ -88,7 +88,7 @@ html_theme_options = {
             "toggle": {
                 "icon": "material/lightbulb",
                 "name": "Switch to light mode",
-            }
+            },
         },
     ],
     "features": [
@@ -98,7 +98,7 @@ html_theme_options = {
         "toc.sticky",
         "toc.follow",
         "search.share",
-    ]
+    ],
 }
 
 object_description_options = [
@@ -122,9 +122,7 @@ def setup(app: Sphinx):
         if arg.default != "==SUPPRESS==":
             doc += f"    :Default: ``{repr(arg.default)}``\n\n"
         description = (
-            ""
-            if arg.help is None
-            else "    %s\n" % (arg.help.replace('\n', '\n    '))
+            "" if arg.help is None else "    %s\n" % (arg.help.replace("\n", "\n    "))
         )
         doc += description
     cli_doc = Path(app.srcdir, "cli_args.rst")

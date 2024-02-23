@@ -1,5 +1,5 @@
 """Tests that relate to the main.py module."""
-from typing import Optional
+from typing import Optional, List
 from argparse import ArgumentParser
 import pytest
 from clang_tools.main import get_parser
@@ -14,6 +14,7 @@ class Args:
     overwrite: bool = False
     no_progress_bar: bool = False
     uninstall: Optional[str] = None
+    tool: List[str] = ["clang-format", "clang-tidy"]
 
 
 @pytest.fixture
@@ -37,15 +38,8 @@ def test_cli_switch(switch_name: str, parser: ArgumentParser):
     assert getattr(args, switch_name.replace("-", "_"))
 
 
-@pytest.mark.parametrize("name, default_value", [
-    ("install", None),
-    ("uninstall", None),
-    ("overwrite", False),
-    ("no_progress_bar", False),
-    ("directory", ""),
-    ("tool", ['clang-format', 'clang-tidy'])
-])
-def test_default_args(parser: ArgumentParser, name, default_value):
+def test_default_args(parser: ArgumentParser):
     """Test the default values of CLI args"""
     args = parser.parse_args([])
-    assert getattr(args, name) == default_value
+    for name, value in args.__dict__.items():
+        assert getattr(Args, name) == value

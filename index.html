@@ -1,0 +1,694 @@
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      <link rel="icon" href="_static/new_favicon.ico">
+    
+    
+      
+        <title>clang-tools installer</title>
+      
+    
+    
+      
+        
+        
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+        <link rel="stylesheet" type="text/css" href="_static/sphinx_immaterial_theme.03ee1730f15ed0f74.min.css?v=e1a21df1" />
+        <link rel="stylesheet" type="text/css" href="_static/extra_css.css?v=75a1e5ab" />
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="cyan">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="#" title="clang-tools installer" class="md-header__button md-logo" aria-label="clang-tools installer" data-md-component="logo">
+      <img src="_static/logo.png" alt="logo">
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            clang-tools installer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              clang-tools CLI
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="cyan"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="cyan"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
+            </label>
+          
+        
+      </form>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/cpp-linter/clang-tools-pip" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    clang-tools
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+    
+  
+
+
+  <li class="md-tabs__item">
+    <a href="#" class="md-tabs__link md-tabs__link--active">
+      <span class="md-ellipsis">clang-<wbr>tools CLI</span>
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="cli_args.html" class="md-tabs__link">
+      <span class="md-ellipsis">Command Line Interface Options</span>
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="api.html" class="md-tabs__link">
+      <span class="md-ellipsis">API Reference</span>
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="#" title="clang-tools installer" class="md-nav__button md-logo" aria-label="clang-tools installer" data-md-component="logo">
+      <img src="_static/logo.png" alt="logo">
+    </a>
+    clang-tools installer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/cpp-linter/clang-tools-pip" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    clang-tools
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+    
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      <a href="#" class="md-nav__link md-nav__link--active">
+        <span class="md-ellipsis">clang-<wbr>tools CLI</span>
+      </a>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cli_args.html" class="md-nav__link">
+        <span class="md-ellipsis">Command Line Interface Options</span>
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api.html" class="md-nav__link">
+        <span class="md-ellipsis">API Reference</span>
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#" class="md-nav__link">
+    <span class="md-ellipsis">clang-<wbr>tools CLI</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="clang-tools CLI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">Features</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-clang-tools-cli" class="md-nav__link">
+    <span class="md-ellipsis">Install clang-<wbr>tools CLI</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-usage" class="md-nav__link">
+    <span class="md-ellipsis">CLI Usage</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CLI Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">Examples</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#supported-versions" class="md-nav__link">
+    <span class="md-ellipsis">Supported versions</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supported versions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clang-format-clang-tidy-clang-query-clang-apply-replacements" class="md-nav__link">
+    <span class="md-ellipsis">clang-<wbr>format, clang-<wbr>tidy, clang-<wbr>query, clang-<wbr>apply-<wbr>replacements</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#indices-and-tables" class="md-nav__link">
+    <span class="md-ellipsis">Indices and tables</span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset" role="main">
+                  
+
+
+<h1 id="clang-tools-cli">clang-tools CLI<a class="headerlink" href="#clang-tools-cli" title="Link to this heading">¶</a></h1>
+<p><strong>Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries with clang-tools CLI.</strong></p>
+<a class="reference external image-reference" href="https://pypi.org/project/clang-tools/"><img alt="PyPI" src="https://img.shields.io/pypi/v/clang-tools" /></a>
+<a class="reference external image-reference" href="https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml"><img alt="Python test" src="https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg" /></a>
+<a class="reference external image-reference" href="https://codecov.io/gh/cpp-linter/clang-tools-pip"><img alt="codecov" src="https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR" /></a>
+<a class="reference external image-reference" href="https://sonarcloud.io/summary/new_code?id=cpp-linter_clang-tools-pip"><img alt="sonarcloud" src="https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&amp;metric=alert_status" /></a>
+<a class="reference external image-reference" href="https://pypi.org/project/clang-tools/"><img alt="Platfrom" src="https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue" /></a>
+<a class="reference external image-reference" href="https://pypistats.org/packages/clang-tools"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dw/clang-tools" /></a>
+<div class="important admonition">
+<p class="admonition-title">Important</p>
+<p>This package only manages binary executables (&amp; corresponding symbolic links) that
+are installed using this package’s executable script. It does not intend to change or
+modify any binary executable installed from other sources (like LLVM releases).</p>
+</div>
+<h2 id="features">Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+<ul>
+<li><p>Binaries are statically linked for improved portability.</p></li>
+<li><p>Binaries can be specified installed for increased flexibility.</p></li>
+<li><p>Binaries are checked with SHA512 checksum. This ensures:</p>
+<ol class="arabic simple">
+<li><p>Downloads are not corrupted.</p></li>
+<li><p>Old binary builds can be updated.</p></li>
+</ol>
+</li>
+<li><p>Installed binaries are symbolically linked for better cross-platform usage.
+For example (on Windows), the <code class="docutils literal notranslate"><span class="pre">clang-tidy-13.exe</span></code> binary executable can
+also be invoked with the symbolic link titled <code class="docutils literal notranslate"><span class="pre">clang-tidy.exe</span></code></p>
+<div class="note admonition">
+<p class="admonition-title">Note</p>
+<p>To create symbolic links on Windows, you must enable developer mode
+from the Windows settings under “Privacy &amp; security” &gt; “For developers”
+category.</p>
+</div>
+</li>
+<li><p>Customizable install path.</p></li>
+</ul>
+<h2 id="install-clang-tools-cli">Install clang-tools CLI<a class="headerlink" href="#install-clang-tools-cli" title="Link to this heading">¶</a></h2>
+<div class="tip admonition">
+<p class="admonition-title">Tip</p>
+<p>It is recommended to use this package in a virtual environment.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span class="c1"># create the virtual env in the working directory</span>
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>env-name
+
+<span class="c1"># to activate on Linux:</span>
+<span class="nb">source</span><span class="w"> </span>env-name/bin/activate
+
+<span class="c1"># to activate on Windows:</span>
+./env-name/Scripts/activate
+</code></pre></div>
+</div>
+<p>This will ensure that</p>
+<ol class="arabic simple">
+<li><p>there are no permission problems when installing the tool</p></li>
+<li><p>the installed path (for MacOS and Windows) is within the environment’s
+variable <code class="docutils literal notranslate"><span class="pre">PATH</span></code>.</p></li>
+</ol>
+</div>
+<p>Install <cite>clang-tools</cite> command with pip</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>clang-tools
+</code></pre></div>
+</div>
+<p>Install <cite>clang-tools</cite> from git repo</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/cpp-linter/clang-tools-pip.git@main
+</code></pre></div>
+</div>
+<h2 id="cli-usage">CLI Usage<a class="headerlink" href="#cli-usage" title="Link to this heading">¶</a></h2>
+<p>For a list of supported Command Line Interface options, see
+<a class="reference external" href="https://cpp-linter.github.io/clang-tools-pip/cli_args.html">the CLI documentation</a></p>
+<h3 id="examples">Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">clang-tools</span></code> command to install version 13 binaries.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><code>clang-tools<span class="w"> </span>--install<span class="w"> </span><span class="m">13</span>
+</code></pre></div>
+</div>
+<p>Or install to a specified directory</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><code>clang-tools<span class="w"> </span>--install<span class="w"> </span><span class="m">13</span><span class="w"> </span>--directory<span class="w"> </span>.
+</code></pre></div>
+</div>
+<p>Or install a specified tool, such as clang-format and clang-query version 14.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><code>clang-tools<span class="w"> </span>--install<span class="w"> </span><span class="m">14</span><span class="w"> </span>--tool<span class="w"> </span>clang-format<span class="w"> </span>clang-query
+</code></pre></div>
+</div>
+<p>If the installed directory is in your path, you can run the installed tools.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><code>clang-format-13<span class="w"> </span>--version
+clang-format<span class="w"> </span>version<span class="w"> </span><span class="m">13</span>.0.0
+</code></pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><code>clang-tidy-13<span class="w"> </span>--version
+LLVM<span class="w"> </span><span class="o">(</span>http://llvm.org/<span class="o">)</span>:
+<span class="w">  </span>LLVM<span class="w"> </span>version<span class="w"> </span><span class="m">13</span>.0.0
+<span class="w">  </span>Optimized<span class="w"> </span>build.
+<span class="w">  </span>Default<span class="w"> </span>target:<span class="w"> </span>x86_64-unknown-linux-gnu
+<span class="w">  </span>Host<span class="w"> </span>CPU:<span class="w"> </span>skylake
+</code></pre></div>
+</div>
+<h2 id="supported-versions">Supported versions<a class="headerlink" href="#supported-versions" title="Link to this heading">¶</a></h2>
+<h3 id="clang-format-clang-tidy-clang-query-clang-apply-replacements">clang-format, clang-tidy, clang-query, clang-apply-replacements<a class="headerlink" href="#clang-format-clang-tidy-clang-query-clang-apply-replacements" title="Link to this heading">¶</a></h3>
+<table class="docutils data align-default">
+<thead>
+<tr class="row-odd"><th class="head stub"><p>Version</p></th>
+<th class="head"><p>17</p></th>
+<th class="head"><p>16</p></th>
+<th class="head"><p>15</p></th>
+<th class="head"><p>14</p></th>
+<th class="head"><p>13</p></th>
+<th class="head"><p>12</p></th>
+<th class="head"><p>11</p></th>
+<th class="head"><p>10</p></th>
+<th class="head"><p>9</p></th>
+<th class="head"><p>8</p></th>
+<th class="head"><p>7</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><th class="stub"><p>Linux</p></th>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Windows</p></th>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>macOS</p></th>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+<td><p>✔️</p></td>
+</tr>
+</tbody>
+</table>
+<div class="warning admonition">
+<p class="admonition-title">Warning</p>
+<p>All clang-tidy v14+ builds for MacOS are still ~1.7 GB in size.</p>
+</div>
+<hr class="docutils" />
+<p>Thanks to the project
+<a class="reference external" href="https://github.com/muttleyxd/clang-tools-static-binaries">clang-tools-static-binaries</a>.
+We now used the <a class="reference external" href="https://github.com/cpp-linter/clang-tools-static-binaries">fork repository</a>
+that fixed the clang-tidy v14+ Segmentation fault (core dumped). see <a class="reference external" href="https://github.com/cpp-linter/clang-tools-pip/issues/56">#56</a> for details.</p>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<h1 id="indices-and-tables">Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+</ul>
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+          <a href="#" class="md-top md-icon" data-md-component="top" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+            Back to top
+          </a>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+      
+        
+        <a href="cli_args.html" class="md-footer__link md-footer__link--next" aria-label="Next: Command Line Interface Options" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Command Line Interface Options
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  
+  
+  <div class="md-footer-meta md-typeset">
+    
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-footer-copyright__highlight">
+        &#169; Copyright 2022, cpp-linter team.
+        
+    </div>
+  
+    Created using
+    <a href="https://www.sphinx-doc.org/" target="_blank" rel="noopener">Sphinx</a>
+    7.2.6.
+     and
+    <a href="https://github.com/jbms/sphinx-immaterial/" target="_blank" rel="noopener">Sphinx-Immaterial</a>
+  
+</div>
+      
+    </div>
+    
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.top", "navigation.tabs", "navigation.tabs.sticky", "toc.sticky", "toc.follow", "search.share"], "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+      
+        <script src="_static/sphinx_immaterial_theme.f9d9eeeb247ace16c.min.js?v=8ec58cb5"></script>
+    
+  </body>
+</html>

@@ -1,0 +1,43 @@
+Command Line Interface Options
+==============================
+
+
+.. option:: -h, --help
+
+    show this help message and exit
+
+.. option:: -i VERSION, --install VERSION
+
+    :Default: ``None``
+
+    Install clang-tools about a specific version.
+
+.. option:: -t TOOL [TOOL ...], --tool TOOL [TOOL ...]
+
+    :Default: ``['clang-format', 'clang-tidy']``
+
+    Specify which tool(s) to install.
+
+.. option:: -d DIR, --directory DIR
+
+    :Default: ``''``
+
+    The directory where the clang-tools are installed.
+
+.. option:: -f, --overwrite
+
+    :Default: ``False``
+
+    Force overwriting the symlink to the installed binary. This will only overwrite an existing symlink.
+
+.. option:: -b, --no-progress-bar
+
+    :Default: ``False``
+
+    Do not display a progress bar for downloads.
+
+.. option:: -u VERSION, --uninstall VERSION
+
+    :Default: ``None``
+
+    Uninstall clang-tools with specific version. This is done before any install.

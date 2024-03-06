@@ -65,7 +65,7 @@ def main():
 
     if args.uninstall:
         uninstall_clang_tools(args.uninstall, args.directory)
-    if args.install:
+    elif args.install:
         install_clang_tools(
             args.install,
             args.tool,

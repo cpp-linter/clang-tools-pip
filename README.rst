@@ -3,24 +3,26 @@ clang-tools CLI
 
 **Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries with clang-tools CLI.**
 
-.. image:: https://img.shields.io/pypi/v/clang-tools
+.. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools
     :target: https://pypi.org/project/clang-tools/
     :alt: PyPI
-.. image:: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg
+.. |python-test| image:: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg
     :target: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml
     :alt: Python test
-.. image:: https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR
+.. |codecov-badge| image:: https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR
     :target: https://codecov.io/gh/cpp-linter/clang-tools-pip
     :alt: codecov
-.. image:: https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&metric=alert_status
+.. |sonar-badge| image:: https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&metric=alert_status
     :target: https://sonarcloud.io/summary/new_code?id=cpp-linter_clang-tools-pip
     :alt: sonarcloud
-.. image:: https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue
+.. |platfrom-badge| image:: https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue
     :target: https://pypi.org/project/clang-tools/
     :alt: Platfrom
-.. image:: https://img.shields.io/pypi/dw/clang-tools
+.. |pypi-badge| image:: https://img.shields.io/pypi/dw/clang-tools
     :target: https://pypistats.org/packages/clang-tools
     :alt: PyPI - Downloads
+
+|latest-version| |python-test| |codecov-badge| |sonar-badge| |platfrom-badge| |pypi-badge|
 
 .. important::
     This package only manages binary executables (& corresponding symbolic links) that

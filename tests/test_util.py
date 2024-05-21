@@ -1,9 +1,15 @@
 """Tests related to the utility functions."""
+
 from pathlib import Path, PurePath
 import pytest
 from clang_tools import install_os
 from clang_tools.install import clang_tools_binary_url
-from clang_tools.util import check_install_os, download_file, get_sha_checksum
+from clang_tools.util import (
+    check_install_os,
+    download_file,
+    get_sha_checksum,
+    parse_version,
+)
 from clang_tools import release_tag
 
 
@@ -33,3 +39,9 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     )
     url = clang_tools_binary_url("clang-format", "12", tag=release_tag)
     assert get_sha_checksum(url) == expected
+
+
+def test_version_path():
+    """Tests version parsing when given specification is a path."""
+    version = "some/path/to/bin/folder"
+    assert parse_version(version) == (0, 0, 0)

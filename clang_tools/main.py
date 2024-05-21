@@ -4,10 +4,12 @@
 
 The module containing main entrypoint function.
 """
+
 import argparse
 
 from .install import install_clang_tools, uninstall_clang_tools
 from . import RESET_COLOR, YELLOW
+from .util import parse_version
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -66,13 +68,19 @@ def main():
     if args.uninstall:
         uninstall_clang_tools(args.uninstall, args.directory)
     elif args.install:
-        install_clang_tools(
-            args.install,
-            args.tool,
-            args.directory,
-            args.overwrite,
-            args.no_progress_bar,
-        )
+        if parse_version(args.install) != (0, 0, 0):
+            install_clang_tools(
+                args.install,
+                args.tool,
+                args.directory,
+                args.overwrite,
+                args.no_progress_bar,
+            )
+        else:
+            print(
+                f"{YELLOW}The version specified is not a semantic",
+                f"specification{RESET_COLOR}",
+            )
     else:
         print(
             f"{YELLOW}Nothing to do because `--install` and `--uninstall`",

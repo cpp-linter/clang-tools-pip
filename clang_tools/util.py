@@ -8,7 +8,7 @@ import platform
 import hashlib
 from pathlib import Path
 import urllib.request
-from typing import Optional
+from typing import Optional, Tuple
 from urllib.error import HTTPError
 from http.client import HTTPResponse
 
@@ -99,3 +99,21 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
         # released checksum's include the corresponding filename (which we don't need)
         checksum = checksum.split(" ", 1)[0]
     return checksum == hashlib.sha512(exe).hexdigest()
+
+
+def parse_version(version: str) -> Tuple[int]:
+    """Parse the given version string into a semantic specification.
+
+    :param version: The version specification as a string.
+
+    :returns: A tuple of ints that describes the major, minor, and patch versions.
+        If the version is a path, then the tuple is just 3 zeros.
+    """
+    version_tuple = version.split(".")
+    if len(version_tuple) < 3:
+        # append minor and patch version numbers if not specified
+        version_tuple += ["0"] * (3 - len(version_tuple))
+    try:
+        return tuple([int(x) for x in version_tuple])
+    except ValueError:
+        return (0, 0, 0)

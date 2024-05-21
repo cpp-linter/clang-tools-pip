@@ -14,7 +14,7 @@ from typing import Optional
 from . import release_tag
 
 from . import install_os, RESET_COLOR, suffix, YELLOW
-from .util import download_file, verify_sha512, get_sha_checksum
+from .util import download_file, verify_sha512, get_sha_checksum, parse_version
 
 
 #: This pattern is designed to match only the major version number.
@@ -29,11 +29,8 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
 
     :returns: The path to the detected tool (if found), otherwise `None`.
     """
-    version_tuple = version.split(".")
+    version_tuple = parse_version(version)
     ver_major = version_tuple[0]
-    if len(version_tuple) < 3:
-        # append minor and patch version numbers if not specified
-        version_tuple += ("0",) * (3 - len(version_tuple))
     exe_name = (
         f"{tool_name}" + (f"-{ver_major}" if install_os != "windows" else "") + suffix
     )
@@ -59,7 +56,7 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     path = Path(path).resolve()
     print("at", str(path))
     ver_num = ver_num.groups(0)[0].decode(encoding="utf-8").split(".")
-    if ver_num is None or ver_num[0] != ver_major:
+    if ver_num is None or ver_num[0] != str(ver_major):
         return None  # version is unknown or not the desired major release
     return path
 

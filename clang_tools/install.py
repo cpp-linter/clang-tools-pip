@@ -10,18 +10,23 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import Optional
-from . import release_tag
+from typing import Optional, cast
 
-from . import install_os, RESET_COLOR, suffix, YELLOW
-from .util import download_file, verify_sha512, get_sha_checksum, parse_version
+from . import release_tag, install_os, RESET_COLOR, suffix, YELLOW
+from .util import (
+    download_file,
+    verify_sha512,
+    get_sha_checksum,
+    parse_version,
+    VERSION_TUPLE,
+)
 
 
 #: This pattern is designed to match only the major version number.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
 
 
-def is_installed(tool_name: str, version: str) -> Optional[Path]:
+def is_installed(tool_name: str, version: VERSION_TUPLE) -> Optional[Path]:
     """Detect if the specified tool is installed.
 
     :param tool_name: The name of the specified tool.
@@ -29,8 +34,7 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
 
     :returns: The path to the detected tool (if found), otherwise `None`.
     """
-    version_tuple = parse_version(version)
-    ver_major = version_tuple[0]
+    ver_major = version[0]
     exe_name = (
         f"{tool_name}" + (f"-{ver_major}" if install_os != "windows" else "") + suffix
     )
@@ -44,24 +48,28 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     except (FileNotFoundError, subprocess.CalledProcessError):
         return None  # tool is not installed
     ver_num = RE_PARSE_VERSION.search(result.stdout)
+    assert ver_num is not None, "Failed to parse version from tool output"
+    ver_match = cast(bytes, ver_num.groups(0)[0]).decode(encoding="utf-8")
     print(
         f"Found a installed version of {tool_name}:",
-        ver_num.groups(0)[0].decode(encoding="utf-8"),
+        ver_match,
         end=" ",
     )
-    path = shutil.which(exe_name)  # find the installed binary
-    if path is None:
+    exe_path = shutil.which(exe_name)  # find the installed binary
+    if exe_path is None:
         print()  # print end-of-line
         return None  # failed to locate the binary
-    path = Path(path).resolve()
+    path = Path(exe_path).resolve()
     print("at", str(path))
-    ver_num = ver_num.groups(0)[0].decode(encoding="utf-8").split(".")
-    if ver_num is None or ver_num[0] != str(ver_major):
+    ver_tuple = ver_match.split(".")
+    if ver_tuple is None or ver_tuple[0] != str(ver_major):
         return None  # version is unknown or not the desired major release
     return path
 
 
-def clang_tools_binary_url(tool: str, version: str, tag: str = release_tag) -> str:
+def clang_tools_binary_url(
+    tool: str, version: VERSION_TUPLE, tag: str = release_tag
+) -> str:
     """Assemble the URL to the binary.
 
     :param tool: The name of the tool to download.
@@ -74,12 +82,12 @@ def clang_tools_binary_url(tool: str, version: str, tag: str = release_tag) -> s
         "https://github.com/cpp-linter/clang-tools-static-binaries/releases/download/"
         + tag
     )
-    download_url = f"{base_url}/{tool}-{version}_{install_os}-amd64{suffix}"
+    download_url = f"{base_url}/{tool}-{version[0]}_{install_os}-amd64{suffix}"
     return download_url.replace(" ", "")
 
 
 def install_tool(
-    tool_name: str, version: str, directory: str, no_progress_bar: bool
+    tool_name: str, version: VERSION_TUPLE, directory: str, no_progress_bar: bool
 ) -> bool:
     """An abstract function that can install either clang-tidy or clang-format.
 
@@ -91,21 +99,21 @@ def install_tool(
     :returns: `True` if the binary had to be downloaded and installed.
         `False` if the binary was not downloaded but is installed in ``directory``.
     """
-    destination = Path(directory, f"{tool_name}-{version}{suffix}")
+    destination = Path(directory, f"{tool_name}-{version[0]}{suffix}")
     bin_url = clang_tools_binary_url(tool_name, version)
     if destination.exists():
-        print(f"{tool_name}-{version}", "already installed...")
+        print(f"{tool_name}-{version[0]}", "already installed...")
         print("   checking SHA512...", end=" ")
         if verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
             print("valid")
             return False
         print("invalid")
         uninstall_tool(tool_name, version, directory)
-    print("Downloading", tool_name, f"(version {version})")
+    print("Downloading", tool_name, f"(version {version[0]})")
     bin_name = str(PurePath(bin_url).stem)
     if download_file(bin_url, bin_name, no_progress_bar) is None:
         raise OSError(f"Failed to download {bin_name} from {bin_url}")
-    move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
+    move_and_chmod_bin(bin_name, f"{tool_name}-{version[0]}{suffix}", directory)
     if not verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
         raise ValueError(
             f"File was corrupted during download from {bin_url}"
@@ -154,10 +162,10 @@ def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -
 
 def create_sym_link(
     tool_name: str,
-    version: str,
+    version: VERSION_TUPLE,
     install_dir: str,
     overwrite: bool = False,
-    target: Path = None,
+    target: Optional[Path] = None,
 ) -> bool:
     """Create a symlink to the installed binary that
     doesn't have the version number appended.
@@ -178,7 +186,7 @@ def create_sym_link(
         link_root_path.mkdir(parents=True)
     link = link_root_path / (tool_name + suffix)
     if target is None:
-        target = link_root_path / f"{tool_name}-{version}{suffix}"
+        target = link_root_path / f"{tool_name}-{version[0]}{suffix}"
     if link.exists():
         if not link.is_symlink():
             print(
@@ -212,7 +220,7 @@ def create_sym_link(
         return False
 
 
-def uninstall_tool(tool_name: str, version: str, directory: str):
+def uninstall_tool(tool_name: str, version: VERSION_TUPLE, directory: str):
     """Remove a specified tool of a given version.
 
     :param tool_name: The name of the clang tool to uninstall.
@@ -220,7 +228,7 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
     :param directory: The directory from which to remove the
         installed clang-tools.
     """
-    tool_path = Path(directory, f"{tool_name}-{version}{suffix}")
+    tool_path = Path(directory, f"{tool_name}-{version[0]}{suffix}")
     if tool_path.exists():
         print("Removing", tool_path.name, "from", str(tool_path.parent))
         tool_path.unlink()
@@ -241,12 +249,17 @@ def uninstall_clang_tools(version: str, directory: str):
     """
     install_dir = install_dir_name(directory)
     print(f"Uninstalling version {version} from {str(install_dir)}")
+    version_tuple = parse_version(version)
     for tool in ("clang-format", "clang-tidy"):
-        uninstall_tool(tool, version, install_dir)
+        uninstall_tool(tool, version_tuple, install_dir)
 
 
 def install_clang_tools(
-    version: str, tools: str, directory: str, overwrite: bool, no_progress_bar: bool
+    version: VERSION_TUPLE,
+    tools: str,
+    directory: str,
+    overwrite: bool,
+    no_progress_bar: bool,
 ) -> None:
     """Wraps functions used to individually install tools.
 
@@ -258,7 +271,7 @@ def install_clang_tools(
     :param no_progress_bar: A flag used to disable the downloads' progress bar.
     """
     install_dir = install_dir_name(directory)
-    if install_dir.rstrip(os.sep) not in os.environ.get("PATH"):
+    if install_dir.rstrip(os.sep) not in os.environ.get("PATH", ""):
         print(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",

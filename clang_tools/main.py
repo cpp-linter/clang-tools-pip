@@ -68,9 +68,10 @@ def main():
     if args.uninstall:
         uninstall_clang_tools(args.uninstall, args.directory)
     elif args.install:
-        if parse_version(args.install) != (0, 0, 0):
+        version = parse_version(args.install)
+        if version != (0, 0, 0):
             install_clang_tools(
-                args.install,
+                version,
                 args.tool,
                 args.directory,
                 args.overwrite,

@@ -12,6 +12,8 @@ from typing import Optional, Tuple
 from urllib.error import HTTPError
 from http.client import HTTPResponse
 
+VERSION_TUPLE = Tuple[int, int, int]
+
 
 def check_install_os() -> str:
     """Identify this Operating System.
@@ -82,7 +84,6 @@ def get_sha_checksum(binary_url: str) -> str:
     with urllib.request.urlopen(
         binary_url.replace(".exe", "") + ".sha512sum"
     ) as response:
-        response: HTTPResponse
         return response.read(response.length).decode(encoding="utf-8")
 
 
@@ -101,7 +102,7 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
     return checksum == hashlib.sha512(exe).hexdigest()
 
 
-def parse_version(version: str) -> Tuple[int]:
+def parse_version(version: str) -> VERSION_TUPLE:
     """Parse the given version string into a semantic specification.
 
     :param version: The version specification as a string.
@@ -114,7 +115,7 @@ def parse_version(version: str) -> Tuple[int]:
         # append minor and patch version numbers if not specified
         version_tuple += ["0"] * (3 - len(version_tuple))
     try:
-        return tuple([int(x) for x in version_tuple])
+        return tuple([int(x) for x in version_tuple])  # type: ignore[return-value]
     except ValueError:
         assert Path(version).exists(), "specified version is not a semantic or a path"
         return (0, 0, 0)

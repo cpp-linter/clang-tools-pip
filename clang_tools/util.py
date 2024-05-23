@@ -116,4 +116,5 @@ def parse_version(version: str) -> Tuple[int]:
     try:
         return tuple([int(x) for x in version_tuple])
     except ValueError:
+        assert Path(version).exists(), "specified version is not a semantic or a path"
         return (0, 0, 0)

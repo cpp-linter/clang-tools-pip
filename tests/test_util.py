@@ -43,5 +43,5 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
 
 def test_version_path():
     """Tests version parsing when given specification is a path."""
-    version = "some/path/to/bin/folder"
+    version = str(Path(__file__).parent)
     assert parse_version(version) == (0, 0, 0)

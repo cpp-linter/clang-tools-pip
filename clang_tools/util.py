@@ -4,6 +4,7 @@
 
 A module containing utility functions.
 """
+
 import platform
 import hashlib
 from pathlib import Path
@@ -11,8 +12,6 @@ import urllib.request
 from typing import Optional, Tuple
 from urllib.error import HTTPError
 from http.client import HTTPResponse
-
-VERSION_TUPLE = Tuple[int, int, int]
 
 
 def check_install_os() -> str:
@@ -102,7 +101,7 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
     return checksum == hashlib.sha512(exe).hexdigest()
 
 
-def parse_version(version: str) -> VERSION_TUPLE:
+def parse_version(version: str) -> Tuple[int, int, int]:
     """Parse the given version string into a semantic specification.
 
     :param version: The version specification as a string.

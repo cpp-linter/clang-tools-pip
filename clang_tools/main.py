@@ -71,7 +71,7 @@ def main():
         version = parse_version(args.install)
         if version != (0, 0, 0):
             install_clang_tools(
-                version,
+                version[0],
                 args.tool,
                 args.directory,
                 args.overwrite,

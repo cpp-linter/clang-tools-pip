@@ -7,6 +7,7 @@
 from argparse import _StoreTrueAction
 from io import StringIO
 from pathlib import Path
+import time
 from typing import Optional
 import docutils
 from sphinx.application import Sphinx
@@ -27,8 +28,9 @@ from clang_tools.main import get_parser
 
 # -- Project information -----------------------------------------------------
 
+year = time.strftime("%Y", time.gmtime())
 project = "clang-tools"
-copyright = "2022, cpp-linter team"
+copyright = f"{year}, cpp-linter team"
 author = "cpp-linter team"
 
 

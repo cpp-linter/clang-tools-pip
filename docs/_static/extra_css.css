@@ -13,6 +13,15 @@ thead {
   margin-left: .35em
 }
 
+.md-typeset .mdx-badge__icon {
+  background: var(--md-accent-fg-color--transparent);
+  padding: .2rem;
+}
+
+.md-typeset .mdx-badge__icon:last-child {
+  border-radius: .1rem;
+}
+
 [dir=ltr] .md-typeset .mdx-badge__icon {
   border-top-left-radius: .1rem;
   border-bottom-left-radius: .1rem;
@@ -23,13 +32,9 @@ thead {
   border-bottom-right-radius: .1rem;
 }
 
-.md-typeset .mdx-badge__icon {
-  background: var(--md-accent-fg-color--transparent);
-  padding: .2rem;
-}
-
-.md-typeset .mdx-badge__icon:last-child {
-  border-radius: .1rem;
+.md-typeset .mdx-badge__text {
+  box-shadow: 0 0 0 1px inset var(--md-accent-fg-color--transparent);
+  padding: .2rem .3rem;
 }
 
 [dir=ltr] .md-typeset .mdx-badge__text {
@@ -40,9 +45,4 @@ thead {
 [dir=rtl] .md-typeset .mdx-badge__text {
   border-top-left-radius: .1rem;
   border-bottom-left-radius: .1rem;
-}
-
-.md-typeset .mdx-badge__text {
-  box-shadow: 0 0 0 1px inset var(--md-accent-fg-color--transparent);
-  padding: .2rem .3rem;
 }

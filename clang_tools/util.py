@@ -101,20 +101,28 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
     return checksum == hashlib.sha512(exe).hexdigest()
 
 
-def parse_version(version: str) -> Tuple[int, int, int]:
+class Version:
     """Parse the given version string into a semantic specification.
 
-    :param version: The version specification as a string.
-
-    :returns: A tuple of ints that describes the major, minor, and patch versions.
-        If the version is a path, then the tuple is just 3 zeros.
+    :param user_input: The version specification as a string.
     """
-    version_tuple = version.split(".")
-    if len(version_tuple) < 3:
-        # append minor and patch version numbers if not specified
-        version_tuple += ["0"] * (3 - len(version_tuple))
-    try:
-        return tuple([int(x) for x in version_tuple])  # type: ignore[return-value]
-    except ValueError:
-        assert Path(version).exists(), "specified version is not a semantic or a path"
-        return (0, 0, 0)
+
+    def __init__(self, user_input: str):
+        #: The version input in string form
+        self.string = user_input
+        version_tuple = user_input.split(".")
+        self.info: Tuple[int, int, int]
+        """
+        A tuple of integers that describes the major, minor, and patch versions.
+        If the version `string` is a path, then this tuple is just 3 zeros.
+        """
+        if len(version_tuple) < 3:
+            # append minor and patch version numbers if not specified
+            version_tuple += ["0"] * (3 - len(version_tuple))
+        try:
+            self.info = tuple([int(x) for x in version_tuple])  # type: ignore[assignment]
+        except ValueError:
+            assert Path(
+                user_input
+            ).exists(), "specified version is not a semantic or a path"
+            self.info = (0, 0, 0)

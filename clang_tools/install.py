@@ -34,30 +34,29 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     if len(version_tuple) < 3:
         # append minor and patch version numbers if not specified
         version_tuple += ("0",) * (3 - len(version_tuple))
-    exe_name = (
-        f"{tool_name}" + (f"-{ver_major}" if install_os != "windows" else "") + suffix
-    )
-    try:
-        result = subprocess.run(
-            [exe_name, "--version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True,
+    exe_path = None
+    for tool_exe in [f"{tool_name}-{ver_major}", tool_name]:
+        try:
+            result = subprocess.run(
+                [tool_exe, "--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            continue  # tool_exe not found; try generic name on 2nd iteration
+        ver_num = RE_PARSE_VERSION.search(result.stdout)
+        print(
+            f"Found a installed version of {tool_name}:",
+            ver_num.groups(0)[0].decode(encoding="utf-8"),
+            end=" ",
         )
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return None  # tool is not installed
-    ver_num = RE_PARSE_VERSION.search(result.stdout)
-    print(
-        f"Found a installed version of {tool_name}:",
-        ver_num.groups(0)[0].decode(encoding="utf-8"),
-        end=" ",
-    )
-    path = shutil.which(exe_name)  # find the installed binary
-    if path is None:
+        exe_path = shutil.which(tool_exe)  # find the installed binary
+    if exe_path is None:
         print()  # print end-of-line
         return None  # failed to locate the binary
-    path = Path(path).resolve()
-    print("at", str(path))
+    path = Path(exe_path).resolve()
+    print("at", str(exe_path))
     ver_num = ver_num.groups(0)[0].decode(encoding="utf-8").split(".")
     if ver_num is None or ver_num[0] != ver_major:
         return None  # version is unknown or not the desired major release

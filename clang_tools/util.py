@@ -4,11 +4,12 @@
 
 A module containing utility functions.
 """
+
 import platform
 import hashlib
 from pathlib import Path
 import urllib.request
-from typing import Optional
+from typing import Optional, Tuple
 from urllib.error import HTTPError
 from http.client import HTTPResponse
 
@@ -82,7 +83,6 @@ def get_sha_checksum(binary_url: str) -> str:
     with urllib.request.urlopen(
         binary_url.replace(".exe", "") + ".sha512sum"
     ) as response:
-        response: HTTPResponse
         return response.read(response.length).decode(encoding="utf-8")
 
 
@@ -99,3 +99,27 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
         # released checksum's include the corresponding filename (which we don't need)
         checksum = checksum.split(" ", 1)[0]
     return checksum == hashlib.sha512(exe).hexdigest()
+
+
+class Version:
+    """Parse the given version string into a semantic specification.
+
+    :param user_input: The version specification as a string.
+    """
+
+    def __init__(self, user_input: str):
+        #: The version input in string form
+        self.string = user_input
+        version_tuple = user_input.split(".")
+        self.info: Tuple[int, int, int]
+        """
+        A tuple of integers that describes the major, minor, and patch versions.
+        If the version `string` is a path, then this tuple is just 3 zeros.
+        """
+        if len(version_tuple) < 3:
+            # append minor and patch version numbers if not specified
+            version_tuple += ["0"] * (3 - len(version_tuple))
+        try:
+            self.info = tuple([int(x) for x in version_tuple])  # type: ignore[assignment]
+        except ValueError:
+            self.info = (0, 0, 0)

@@ -12,6 +12,7 @@ from clang_tools.install import (
     is_installed,
     uninstall_clang_tools,
 )
+from clang_tools.util import Version
 
 
 @pytest.mark.parametrize("version", [str(v) for v in range(7, 17)] + ["12.0.1"])
@@ -48,7 +49,7 @@ def test_create_symlink(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     # intentionally overwrite symlink
     assert create_sym_link(tool_name, version, str(tmp_path), True)
 
-    # test safegaurd that doesn't overwrite a file that isn't a symlink
+    # test safeguard that doesn't overwrite a file that isn't a symlink
     os.remove(str(tmp_path / f"{tool_name}{suffix}"))
     Path(tmp_path / f"{tool_name}{suffix}").write_bytes(b"som data")
     assert not create_sym_link(tool_name, version, str(tmp_path), True)
@@ -73,7 +74,7 @@ def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version:
 @pytest.mark.parametrize("version", ["0"])
 def test_is_installed(version: str):
     """Test if installed version matches specified ``version``"""
-    tool_path = is_installed("clang-format", version=version)
+    tool_path = is_installed("clang-format", version=Version(version))
     assert tool_path is None
 
 
@@ -84,9 +85,9 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     2. indicates a failure to download a tool
     """
     try:
-        install_clang_tools("x", "x", ".", False, False)
+        install_clang_tools(Version("0"), "x", ".", False, False)
     except OSError as exc:
-        if install_dir_name(".") not in os.environ.get("PATH"):  # pragma: no cover
+        if install_dir_name(".") not in os.environ.get("PATH", ""):  # pragma: no cover
             # this warning does not happen in an activated venv
             result = capsys.readouterr()
             assert "directory is not in your environment variable PATH" in result.out

@@ -4,38 +4,35 @@
 
 The module that performs the installation of clang-tools.
 """
+
 import os
 from pathlib import Path, PurePath
 import re
 import shutil
 import subprocess
 import sys
-from typing import Optional
-from . import release_tag
+from typing import Optional, cast
 
-from . import install_os, RESET_COLOR, suffix, YELLOW
-from .util import download_file, verify_sha512, get_sha_checksum
+from . import release_tag, install_os, RESET_COLOR, suffix, YELLOW
+from .util import download_file, verify_sha512, get_sha_checksum, Version
 
 
 #: This pattern is designed to match only the major version number.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
 
 
-def is_installed(tool_name: str, version: str) -> Optional[Path]:
+def is_installed(tool_name: str, version: Version) -> Optional[Path]:
     """Detect if the specified tool is installed.
 
     :param tool_name: The name of the specified tool.
-    :param version: The specific version to expect.
+    :param version: The specific major version to expect.
 
     :returns: The path to the detected tool (if found), otherwise `None`.
     """
-    version_tuple = version.split(".")
-    ver_major = version_tuple[0]
-    if len(version_tuple) < 3:
-        # append minor and patch version numbers if not specified
-        version_tuple += ("0",) * (3 - len(version_tuple))
     exe_name = (
-        f"{tool_name}" + (f"-{ver_major}" if install_os != "windows" else "") + suffix
+        f"{tool_name}"
+        + (f"-{version.info[0]}" if install_os != "windows" else "")
+        + suffix
     )
     try:
         result = subprocess.run(
@@ -47,19 +44,21 @@ def is_installed(tool_name: str, version: str) -> Optional[Path]:
     except (FileNotFoundError, subprocess.CalledProcessError):
         return None  # tool is not installed
     ver_num = RE_PARSE_VERSION.search(result.stdout)
+    assert ver_num is not None, "Failed to parse version from tool output"
+    ver_match = cast(bytes, ver_num.groups(0)[0]).decode(encoding="utf-8")
     print(
         f"Found a installed version of {tool_name}:",
-        ver_num.groups(0)[0].decode(encoding="utf-8"),
+        ver_match,
         end=" ",
     )
-    path = shutil.which(exe_name)  # find the installed binary
-    if path is None:
+    exe_path = shutil.which(exe_name)  # find the installed binary
+    if exe_path is None:
         print()  # print end-of-line
         return None  # failed to locate the binary
-    path = Path(path).resolve()
+    path = Path(exe_path).resolve()
     print("at", str(path))
-    ver_num = ver_num.groups(0)[0].decode(encoding="utf-8").split(".")
-    if ver_num is None or ver_num[0] != ver_major:
+    ver_tuple = ver_match.split(".")
+    if ver_tuple is None or ver_tuple[0] != str(version.info[0]):
         return None  # version is unknown or not the desired major release
     return path
 
@@ -160,7 +159,7 @@ def create_sym_link(
     version: str,
     install_dir: str,
     overwrite: bool = False,
-    target: Path = None,
+    target: Optional[Path] = None,
 ) -> bool:
     """Create a symlink to the installed binary that
     doesn't have the version number appended.
@@ -249,7 +248,7 @@ def uninstall_clang_tools(version: str, directory: str):
 
 
 def install_clang_tools(
-    version: str, tools: str, directory: str, overwrite: bool, no_progress_bar: bool
+    version: Version, tools: str, directory: str, overwrite: bool, no_progress_bar: bool
 ) -> None:
     """Wraps functions used to individually install tools.
 
@@ -261,7 +260,7 @@ def install_clang_tools(
     :param no_progress_bar: A flag used to disable the downloads' progress bar.
     """
     install_dir = install_dir_name(directory)
-    if install_dir.rstrip(os.sep) not in os.environ.get("PATH"):
+    if install_dir.rstrip(os.sep) not in os.environ.get("PATH", ""):
         print(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
@@ -270,7 +269,7 @@ def install_clang_tools(
         native_bin = is_installed(tool_name, version)
         if native_bin is None:  # (not already installed)
             # `install_tool()` guarantees that the binary exists now
-            install_tool(tool_name, version, install_dir, no_progress_bar)
+            install_tool(tool_name, version.string, install_dir, no_progress_bar)
         create_sym_link(  # pragma: no cover
-            tool_name, version, install_dir, overwrite, native_bin
+            tool_name, version.string, install_dir, overwrite, native_bin
         )

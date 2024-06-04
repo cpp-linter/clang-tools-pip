@@ -1,43 +1,45 @@
 Command Line Interface Options
 ==============================
 
+.. code-block:: text
+    :caption: Usage
+    :class: no-copy
 
-.. option:: -h, --help
+    clang-tools [-h] [-i VERSION] [-t TOOL [TOOL ...]] [-d DIR] [-f] [-b]
+                [-u VERSION]
 
-    show this help message and exit
+.. std:option:: -i, --install
 
-.. option:: -i VERSION, --install VERSION
+    :badge-version:`0.1.0` 
 
-    :Default: ``None``
+    Install clang-tools about a specific version. This can be in the form of a semantic version specification (``x.y.z``, ``x.y``, ``x``). NOTE: A malformed version specification will cause a silent failure.
 
-    Install clang-tools about a specific version.
+.. std:option:: -t, --tool
 
-.. option:: -t TOOL [TOOL ...], --tool TOOL [TOOL ...]
-
-    :Default: ``['clang-format', 'clang-tidy']``
+    :badge-version:`0.11.0` :badge-default:`clang-format clang-tidy` 
 
     Specify which tool(s) to install.
 
-.. option:: -d DIR, --directory DIR
+.. std:option:: -d, --directory
 
-    :Default: ``''``
+    :badge-version:`0.2.0` 
 
     The directory where the clang-tools are installed.
 
-.. option:: -f, --overwrite
+.. std:option:: -f, --overwrite
 
-    :Default: ``False``
+    :badge-version:`0.3.0` :badge-switch:`Accepts no value` 
 
     Force overwriting the symlink to the installed binary. This will only overwrite an existing symlink.
 
-.. option:: -b, --no-progress-bar
+.. std:option:: -b, --no-progress-bar
 
-    :Default: ``False``
+    :badge-version:`0.5.0` :badge-switch:`Accepts no value` 
 
     Do not display a progress bar for downloads.
 
-.. option:: -u VERSION, --uninstall VERSION
+.. std:option:: -u, --uninstall
 
-    :Default: ``None``
+    :badge-version:`0.5.0` 
 
     Uninstall clang-tools with specific version. This is done before any install.

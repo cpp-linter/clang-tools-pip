@@ -122,7 +122,4 @@ class Version:
         try:
             self.info = tuple([int(x) for x in version_tuple])  # type: ignore[assignment]
         except ValueError:
-            assert Path(
-                user_input
-            ).exists(), "specified version is not a semantic or a path"
             self.info = (0, 0, 0)

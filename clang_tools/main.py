@@ -21,8 +21,8 @@ def get_parser() -> argparse.ArgumentParser:
         "--install",
         metavar="VERSION",
         help="Install clang-tools about a specific version. This can be in the form of"
-        " a semantic version specification (``x.y.z``, ``x.y``, ``x``) or a path that "
-        "points to the directory where the binaries already exist.",
+        " a semantic version specification (``x.y.z``, ``x.y``, ``x``). NOTE: A "
+        "malformed version specification will cause a silent failure.",
     )
     parser.add_argument(
         "-t",

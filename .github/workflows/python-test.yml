@@ -119,7 +119,7 @@ jobs:
         shell: bash
         run: |
           case "${{ matrix.version }}" in
-            15|16)
+            15|16|18)
               clang-format.exe --version
               clang-tidy.exe --version
               clang-query.exe --version

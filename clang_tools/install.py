@@ -234,7 +234,7 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
         symlink.unlink()
 
 
-def uninstall_clang_tools(version: str, tools: str, directory: str):
+def uninstall_clang_tools(tools: str, version: str, directory: str):
     """Uninstall a clang tool of a given version.
 
     :param version: The version of the clang-tools to remove.

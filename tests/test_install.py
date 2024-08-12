@@ -55,20 +55,22 @@ def test_create_symlink(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     assert not create_sym_link(tool_name, version, str(tmp_path), True)
 
 
+@pytest.mark.parametrize(
+    "tool_name",
+    ["clang-format", "clang-tidy", "clang-query", "clang-apply-replacements"],
+)
 @pytest.mark.parametrize("version", ["12"])
-def test_install_tools(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version: str):
+def test_install_tools(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, tool_name: str, version: str
+):
     """Test install tools to a temp directory."""
     monkeypatch.chdir(tmp_path)
-    tool_name = "clang-format"
-
     assert install_tool(tool_name, version, str(tmp_path), False)
     # invoking again should return False
     assert not install_tool(tool_name, version, str(tmp_path), False)
     # uninstall the tool deliberately
     uninstall_clang_tools(tool_name, version, str(tmp_path))
-    assert f"{tool_name}-{version}{suffix}" not in [
-        fd.name for fd in tmp_path.iterdir()
-    ]
+    assert f"{tool_name}-{version}{suffix}" in [fd.name for fd in tmp_path.iterdir()]
 
 
 @pytest.mark.parametrize("version", ["0"])

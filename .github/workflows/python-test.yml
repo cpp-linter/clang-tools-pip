@@ -46,6 +46,7 @@ jobs:
         with:
           name: coverage-data-${{ runner.os }}
           path: .coverage*
+          include-hidden-files: true
 
   coverage-report:
     needs: [test]

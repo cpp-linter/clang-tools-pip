@@ -76,7 +76,7 @@ jobs:
     needs: [build]
     strategy:
       matrix:
-        version: [ 7, 8, 9, 10, 11, 12, 12.0.1, 13, 14, 15, 16, 17, 18 ]
+        version: [ 7, 8, 9, 10, 11, 12, 12.0.1, 13, 14, 15, 16, 17, 18, 19 ]
         os: [ ubuntu-latest, macos-latest, windows-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}

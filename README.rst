@@ -142,6 +142,7 @@ clang-format, clang-tidy, clang-query, clang-apply-replacements
 .. warning::
     All clang-tidy v14+ builds for MacOS are still ~1.7 GB in size.
 
+.. caution::
     clang-tidy-19_macosx-amd64 size > 2GB, unable to upload to GitHub releases and get by clang-tools CLI.
 
 ------------

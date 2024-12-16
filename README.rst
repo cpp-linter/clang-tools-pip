@@ -3,7 +3,7 @@ clang-tools CLI
 
 **Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries with clang-tools CLI.**
 
-.. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools
+.. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools?color=blue
     :target: https://pypi.org/project/clang-tools/
     :alt: PyPI
 .. |python-test| image:: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg

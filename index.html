@@ -32,7 +32,7 @@
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
-        <link rel="stylesheet" type="text/css" href="_static/sphinx_immaterial_theme.37aa4caab5d1e99b4.min.css?v=2ebeb1ef" />
+        <link rel="stylesheet" type="text/css" href="_static/sphinx_immaterial_theme.4aefa47f0b4ac9379.min.css?v=eb28ea84" />
         <link rel="stylesheet" type="text/css" href="_static/extra_css.css?v=16fe202f" />
     <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -440,7 +440,7 @@
 
 <h1 id="clang-tools-cli">clang-tools CLI<a class="headerlink" href="#clang-tools-cli" title="Link to this heading">¶</a></h1>
 <p><strong>Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries with clang-tools CLI.</strong></p>
-<p><a class="reference external" href="https://pypi.org/project/clang-tools/"><img alt="PyPI" src="https://img.shields.io/pypi/v/clang-tools" /></a> <a class="reference external" href="https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml"><img alt="Python test" src="https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg" /></a> <a class="reference external" href="https://codecov.io/gh/cpp-linter/clang-tools-pip"><img alt="codecov" src="https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR" /></a> <a class="reference external" href="https://sonarcloud.io/summary/new_code?id=cpp-linter_clang-tools-pip"><img alt="sonarcloud" src="https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&amp;metric=alert_status" /></a> <a class="reference external" href="https://pypi.org/project/clang-tools/"><img alt="Platfrom" src="https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue" /></a> <a class="reference external" href="https://pypistats.org/packages/clang-tools"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dw/clang-tools" /></a></p>
+<p><a class="reference external" href="https://pypi.org/project/clang-tools/"><img alt="PyPI" src="https://img.shields.io/pypi/v/clang-tools?color=blue" /></a> <a class="reference external" href="https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml"><img alt="Python test" src="https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg" /></a> <a class="reference external" href="https://codecov.io/gh/cpp-linter/clang-tools-pip"><img alt="codecov" src="https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR" /></a> <a class="reference external" href="https://sonarcloud.io/summary/new_code?id=cpp-linter_clang-tools-pip"><img alt="sonarcloud" src="https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&amp;metric=alert_status" /></a> <a class="reference external" href="https://pypi.org/project/clang-tools/"><img alt="Platfrom" src="https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue" /></a> <a class="reference external" href="https://pypistats.org/packages/clang-tools"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dw/clang-tools" /></a></p>
 <div class="important admonition">
 <p class="admonition-title">Important</p>
 <p>This package only manages binary executables (&amp; corresponding symbolic links) that
@@ -532,6 +532,7 @@ LLVM<span class="w"> </span><span class="o">(</span>http://llvm.org/<span class=
 <table class="docutils data align-default">
 <thead>
 <tr class="row-odd"><th class="head stub"><p>Version</p></th>
+<th class="head"><p>19</p></th>
 <th class="head"><p>18</p></th>
 <th class="head"><p>17</p></th>
 <th class="head"><p>16</p></th>
@@ -560,8 +561,10 @@ LLVM<span class="w"> </span><span class="o">(</span>http://llvm.org/<span class=
 <td><p>✔️</p></td>
 <td><p>✔️</p></td>
 <td><p>✔️</p></td>
+<td><p>✔️</p></td>
 </tr>
 <tr class="row-odd"><th class="stub"><p>Windows</p></th>
+<td><p>✔️</p></td>
 <td><p>✔️</p></td>
 <td><p>✔️</p></td>
 <td><p>✔️</p></td>
@@ -588,12 +591,14 @@ LLVM<span class="w"> </span><span class="o">(</span>http://llvm.org/<span class=
 <td><p>✔️</p></td>
 <td><p>✔️</p></td>
 <td><p>✔️</p></td>
+<td><p>✔️</p></td>
 </tr>
 </tbody>
 </table>
 <div class="warning admonition">
 <p class="admonition-title">Warning</p>
 <p>All clang-tidy v14+ builds for MacOS are still ~1.7 GB in size.</p>
+<p>clang-tidy-19_macosx-amd64 size &gt; 2GB, unable to upload to GitHub releases and get by clang-tools CLI.</p>
 </div>
 <hr class="docutils" />
 <p>Thanks to the project
@@ -668,7 +673,7 @@ that fixed the clang-tidy v14+ Segmentation fault (core dumped). see <a class="r
   
     Created using
     <a href="https://www.sphinx-doc.org/" target="_blank" rel="noopener">Sphinx</a>
-    8.0.2.
+    8.1.3.
      and
     <a href="https://github.com/jbms/sphinx-immaterial/" target="_blank" rel="noopener">Sphinx-Immaterial</a>
   

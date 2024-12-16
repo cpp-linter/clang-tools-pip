@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clang_tools"
-description = "Install clang-tools (clang-format, clang-tidy) with pip"
+description = "Install clang-tools (clang-format, clang-tidy, clang-query, clang-apply-replacements) with pip"
 readme = "README.rst"
-keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format"]
+keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format", "clang-query", "clang-apply-replacements"]
 license = {text = "MIT License"}
 authors = [
     { name = "Xianpeng Shen", email = "xianpeng.shen@gmail.com" },
@@ -14,7 +14,7 @@ authors = [
 ]
 classifiers = [
     # https://pypi.org/pypi?%3Aaction=list_classifiers
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "Intended Audience :: Information Technology",

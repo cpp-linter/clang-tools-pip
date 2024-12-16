@@ -9,7 +9,7 @@ readme = "README.rst"
 keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format"]
 license = {text = "MIT License"}
 authors = [
-    { name = "Peter Shen", email = "xianpeng.shen@gmail.com" },
+    { name = "Xianpeng Shen", email = "xianpeng.shen@gmail.com" },
     { name = "Brendan Doherty", email = "2bndy5@gmail.com" },
 ]
 classifiers = [

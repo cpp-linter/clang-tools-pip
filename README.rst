@@ -3,7 +3,7 @@ clang-tools CLI
 
 **Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries with clang-tools CLI.**
 
-.. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools
+.. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools?color=blue
     :target: https://pypi.org/project/clang-tools/
     :alt: PyPI
 .. |python-test| image:: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg
@@ -132,15 +132,17 @@ Supported versions
 clang-format, clang-tidy, clang-query, clang-apply-replacements
 ***************************************************************
 .. csv-table::
-    :header: "Version", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
+    :header: "Version", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
     :stub-columns: 1
 
-    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
 .. warning::
     All clang-tidy v14+ builds for MacOS are still ~1.7 GB in size.
+
+    clang-tidy-19_macosx-amd64 size > 2GB, unable to upload to GitHub releases and get by clang-tools CLI.
 
 ------------
 

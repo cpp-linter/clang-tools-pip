@@ -8,7 +8,6 @@ description = "Install clang-tools (clang-format, clang-tidy, clang-query, clang
 readme = "README.rst"
 keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format", "clang-query", "clang-apply-replacements"]
 license = "MIT"
-license-files = [ "LICENSE" ]
 authors = [
     { name = "Xianpeng Shen", email = "xianpeng.shen@gmail.com" },
     { name = "Brendan Doherty", email = "2bndy5@gmail.com" },

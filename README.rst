@@ -15,14 +15,14 @@ clang-tools CLI
 .. |sonar-badge| image:: https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&metric=alert_status
     :target: https://sonarcloud.io/summary/new_code?id=cpp-linter_clang-tools-pip
     :alt: sonarcloud
-.. |platfrom-badge| image:: https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue
+.. |platform-badge| image:: https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue
     :target: https://pypi.org/project/clang-tools/
-    :alt: Platfrom
+    :alt: Platform
 .. |pypi-badge| image:: https://img.shields.io/pypi/dw/clang-tools
     :target: https://pypistats.org/packages/clang-tools
     :alt: PyPI - Downloads
 
-|latest-version| |python-test| |codecov-badge| |sonar-badge| |platfrom-badge| |pypi-badge|
+|latest-version| |python-test| |codecov-badge| |sonar-badge| |platform-badge| |pypi-badge|
 
 .. important::
     This package only manages binary executables (& corresponding symbolic links) that
@@ -132,7 +132,7 @@ Supported versions
 clang-format, clang-tidy, clang-query, clang-apply-replacements
 ***************************************************************
 .. csv-table::
-    :header: "Version", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7"
+    :header: "Version", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8"
     :stub-columns: 1
 
     Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
@@ -140,13 +140,4 @@ clang-format, clang-tidy, clang-query, clang-apply-replacements
     macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
 .. warning::
-    All clang-tidy v14+ builds for MacOS are still ~1.7 GB in size.
-
-    clang-tidy-19_macosx-amd64 size > 2GB, unable to upload to GitHub releases and get by clang-tools CLI.
-
-------------
-
-Thanks to the project
-`clang-tools-static-binaries <https://github.com/muttleyxd/clang-tools-static-binaries>`_.
-We now used the `fork repository <https://github.com/cpp-linter/clang-tools-static-binaries>`_
-that fixed the clang-tidy v14+ Segmentation fault (core dumped). see `#56 <https://github.com/cpp-linter/clang-tools-pip/issues/56>`_ for details and other related build issues.
+    All clang-tidy v14+ builds for MacOS are still ~1.6 GB in size.

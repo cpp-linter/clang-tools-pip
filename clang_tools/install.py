@@ -73,7 +73,7 @@ def clang_tools_binary_url(tool: str, version: str, tag: str = release_tag) -> s
     :returns: The URL used to download the specified tool.
     """
     base_url = (
-        "https://github.com/cpp-linter/clang-tools-static-binaries/releases/download/"
+        "https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/"
         + tag
     )
     download_url = f"{base_url}/{tool}-{version}_{install_os}-amd64{suffix}"

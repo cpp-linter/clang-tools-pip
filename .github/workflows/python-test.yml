@@ -9,7 +9,8 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
-      - "**.py"
+      - "clang_tools/*"
+      - "tests/*"
       - "**requirements*.txt"
       - pyproject.toml
       - .pre-commit-config.yaml

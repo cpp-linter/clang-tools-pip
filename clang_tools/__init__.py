@@ -1,4 +1,5 @@
 """The clang-tools package's base module."""
+
 from .util import check_install_os
 
 

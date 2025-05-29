@@ -10,6 +10,7 @@ on:
     branches: [ "main" ]
     paths:
       - "clang_tools/*"
+      - "clang_tools/__init__.py"
       - "tests/*"
       - "**requirements*.txt"
       - pyproject.toml

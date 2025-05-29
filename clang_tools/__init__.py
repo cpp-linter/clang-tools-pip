@@ -8,4 +8,4 @@ install_os = check_install_os()
 suffix = ".exe" if install_os == "windows" else ""
 
 # tag of https://github.com/cpp-linter/clang-tools-static-binaries/releases
-release_tag = "master-11dfa474"
+release_tag = "master-b35c5633"

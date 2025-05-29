@@ -1,4 +1,5 @@
 """Tests related to installing a clang tool."""
+
 from pathlib import PurePath, Path
 import os
 import pytest

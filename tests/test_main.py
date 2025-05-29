@@ -1,4 +1,5 @@
 """Tests that relate to the main.py module."""
+
 from typing import Optional, List
 from argparse import ArgumentParser
 import pytest

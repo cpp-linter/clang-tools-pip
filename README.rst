@@ -138,6 +138,3 @@ clang-format, clang-tidy, clang-query, clang-apply-replacements
     Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
     Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
     macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-
-.. warning::
-    All clang-tidy v14+ builds for MacOS are still ~1.6 GB in size.

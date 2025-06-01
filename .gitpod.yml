@@ -4,6 +4,5 @@
 
 tasks:
   - name: Setup & Install
-    before: pip install -r requirements-dev.txt
+    before: pip install -e .[dev]
     init: pre-commit install
-    command: pip install -e .

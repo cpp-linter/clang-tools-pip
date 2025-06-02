@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install . -r requirements-dev.txt
+          python3 -m pip install .[dev]
 
       - name: Collect Coverage
         run: coverage run -m pytest -vv

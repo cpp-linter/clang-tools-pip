@@ -1,4 +1,0 @@
-coverage[toml]
-flake8
-pre-commit
-pytest

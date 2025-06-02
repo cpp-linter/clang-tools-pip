@@ -38,8 +38,12 @@ clang-tools = "clang_tools.main:main"
 source =  "https://github.com/cpp-linter/clang-tools-pip"
 tracker = "https://github.com/cpp-linter/clang-tools-pip/issues"
 
-# ... other project metadata fields as specified in:
-#     https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+[project.optional-dependencies]
+dev = [
+    "coverage[toml]",
+    "pre-commit",
+    "pytest",
+]
 
 [tool.setuptools]
 zip-safe = false

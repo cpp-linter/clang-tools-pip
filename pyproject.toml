@@ -91,3 +91,8 @@ exclude_lines = [
     'if __name__ == "__main__"',
     "def main",
 ]
+
+[dependency-groups]
+docs = [
+    "sphinx-immaterial>=0.13.5",
+]

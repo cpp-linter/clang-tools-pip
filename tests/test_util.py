@@ -14,9 +14,6 @@ def test_check_install_os():
     assert current_os in ("linux", "windows", "macosx")
 
 
-@pytest.mark.parametrize(
-    "tag", [binary_tag, pytest.param("latest", marks=pytest.mark.xfail)]
-)
 def test_download_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Test that deliberately fails to download a file."""
     monkeypatch.chdir(str(tmp_path))

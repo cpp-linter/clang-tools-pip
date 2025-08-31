@@ -5,6 +5,8 @@
 
    self
 
+   usage
+
 .. toctree::
    :hidden:
 

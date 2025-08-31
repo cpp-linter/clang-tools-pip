@@ -11,13 +11,17 @@
       
       
       
+        <link rel="prev" href="index.html">
+      
+      
+        <link rel="next" href="cli_args.html">
       
       
       <link rel="icon" href="_static/new_favicon.ico">
     
     
       
-        <title>Python Module Index - clang-tools installer</title>
+        <title>Using a Custom Binary Repository - clang-tools installer</title>
       
     
     
@@ -47,9 +51,6 @@
     
     
     
-
-
-
   </head>
   
   
@@ -97,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Python Module Index
+              Using a Custom Binary Repository
             
           </span>
         </div>
@@ -218,9 +219,11 @@
         
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="usage.html" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="#" class="md-tabs__link">
         
   
     
@@ -343,11 +346,18 @@
       
   
   
+    
+  
+    
   
   
   
-    <li class="md-nav__item">
-      <a href="usage.html" class="md-nav__link">
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      <a href="#" class="md-nav__link md-nav__link--active">
         
   
   
@@ -358,6 +368,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -439,38 +450,22 @@
                   
 
 
-<h1>Python Module Index</h1>
-
-   <div class="modindex-jumpbox">
-   <a href="#cap-c"><strong>c</strong></a>
-   </div>
-
-   <table class="indextable modindextable">
-     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
-     <tr class="cap" id="cap-c"><td></td><td>
-       <strong>c</strong></td><td></td></tr>
-     <tr>
-       <td><img src="_static/minus.png" class="toggler"
-              id="toggle-1" style="display: none" alt="-" /></td>
-       <td>
-       <code class="xref">clang_tools</code></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&#160;&#160;&#160;
-       <a href="api.html#module-clang_tools.install"><code class="xref">clang_tools.install</code></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&#160;&#160;&#160;
-       <a href="api.html#module-clang_tools.main"><code class="xref">clang_tools.main</code></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&#160;&#160;&#160;
-       <a href="api.html#module-clang_tools.util"><code class="xref">clang_tools.util</code></a></td><td>
-       <em></em></td></tr>
-   </table>
+<h1 id="using-a-custom-binary-repository">Using a Custom Binary Repository<a class="headerlink" href="#using-a-custom-binary-repository" title="Link to this heading">¶</a></h1>
+<p>You can override the default source for downloading <strong>clang-tools</strong> by setting the following environment variables:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CLANG_TOOLS_REPO</span></code> – The URL of the binary repository
+(default: <code class="docutils literal notranslate"><span class="pre">https://github.com/cpp-linter/clang-tools-static-binaries</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CLANG_TOOLS_TAG</span></code> – The release tag to download binaries from
+(default: <code class="docutils literal notranslate"><span class="pre">master-6e612956</span></code>)</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<p>If you want to use the repository at
+<code class="docutils literal notranslate"><span class="pre">https://github.com/muttleyxd/clang-tools-static-binaries</span></code>,
+configure your environment like this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">CLANG_TOOLS_REPO</span><span class="o">=</span>https://github.com/muttleyxd/clang-tools-static-binaries
+<span class="nb">export</span><span class="w"> </span><span class="nv">CLANG_TOOLS_TAG</span><span class="o">=</span>master-6e612956<span class="w">  </span><span class="c1"># Replace with the tag you need</span>
+</code></pre></div>
+</div>
 
 
 

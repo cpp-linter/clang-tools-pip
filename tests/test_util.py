@@ -5,7 +5,6 @@ import pytest
 from clang_tools import install_os
 from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import check_install_os, download_file, get_sha_checksum, Version
-from clang_tools import binary_tag
 
 
 def test_check_install_os():
@@ -29,7 +28,7 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     expected = Path(f"clang-format-21_{install_os}-amd64.sha512sum").read_text(
         encoding="utf-8"
     )
-    url = clang_tools_binary_url("clang-format", "21", tag=binary_tag)
+    url = clang_tools_binary_url("clang-format", "21")
     assert get_sha_checksum(url) == expected
 
 

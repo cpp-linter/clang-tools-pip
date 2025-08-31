@@ -1,8 +1,5 @@
 import nox
 
-# Default tag for docker images
-TAG = "latest"
-
 
 @nox.session
 def lint(session: nox.Session) -> None:

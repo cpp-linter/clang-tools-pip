@@ -132,7 +132,7 @@ Supported versions
 clang-format, clang-tidy, clang-query, clang-apply-replacements
 ***************************************************************
 .. csv-table::
-    :header: "Version", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8"
+    :header: "Version", "21", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9"
     :stub-columns: 1
 
     Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️

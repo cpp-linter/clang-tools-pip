@@ -44,6 +44,11 @@ dev = [
     "pre-commit",
     "pytest",
 ]
+docs = [
+    "sphinx",
+    "sphinx-autobuild",
+    "sphinx_immaterial",
+]
 
 [tool.setuptools]
 zip-safe = false

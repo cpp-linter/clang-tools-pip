@@ -13,7 +13,7 @@ import subprocess
 import sys
 from typing import Optional, cast
 
-from . import release_tag, install_os, RESET_COLOR, suffix, YELLOW
+from . import binary_repo, binary_tag, install_os, RESET_COLOR, suffix, YELLOW
 from .util import download_file, verify_sha512, get_sha_checksum, Version
 
 
@@ -63,7 +63,7 @@ def is_installed(tool_name: str, version: Version) -> Optional[Path]:
     return path
 
 
-def clang_tools_binary_url(tool: str, version: str, tag: str = release_tag) -> str:
+def clang_tools_binary_url(tool: str, version: str) -> str:
     """Assemble the URL to the binary.
 
     :param tool: The name of the tool to download.
@@ -72,10 +72,7 @@ def clang_tools_binary_url(tool: str, version: str, tag: str = release_tag) -> s
 
     :returns: The URL used to download the specified tool.
     """
-    base_url = (
-        "https://github.com/cpp-linter/clang-tools-static-binaries/releases/download/"
-        + tag
-    )
+    base_url = f"{binary_repo}/releases/download/" + binary_tag
     download_url = f"{base_url}/{tool}-{version}_{install_os}-amd64{suffix}"
     return download_url.replace(" ", "")
 

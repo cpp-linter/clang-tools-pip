@@ -9,10 +9,10 @@ jobs:
   bump_version:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  #v5
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 #v5
       with:
         python-version: '3.x'
 
@@ -34,7 +34,7 @@ jobs:
         fi
 
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v7
+      uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e  #v7
       with:
         add-paths: "clang_tools/__init__.py"
         commit-message: "chore: bump clang-tools-static-binaries to ${{ steps.bump.outputs.bump_tag }}"

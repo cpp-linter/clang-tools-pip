@@ -2,6 +2,7 @@
 *build
 clang_tools.egg-info
 clang_tools/__pycache__
+__pycache__
 dist
 clang_tools/llvm-project*
 .coverage*

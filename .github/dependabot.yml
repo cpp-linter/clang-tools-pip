@@ -9,7 +9,13 @@ updates:
     directory: /
     schedule:
       interval: "weekly"
+    commit-message:
+      # Prefix commit message with "chore: "
+      prefix: "chore"
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: "weekly"
+    commit-message:
+      # Prefix commit message with "chore: "
+      prefix: "chore"

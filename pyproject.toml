@@ -30,10 +30,17 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Build Tools",
 ]
+
+dependencies = [
+    "cpp-linter-hooks>=1.1.6",
+]
+
 dynamic = ["version"]
 
 [project.scripts]
 clang-tools = "clang_tools.main:main"
+clang-tools-binary = "clang_tools.main:main"
+clang-tools-wheel = "clang_tools.wheel:main"
 
 [project.urls]
 source =  "https://github.com/cpp-linter/clang-tools-pip"

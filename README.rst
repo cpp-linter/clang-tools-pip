@@ -1,7 +1,7 @@
 clang-tools CLI
 ===============
 
-**Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries with clang-tools CLI.**
+**Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries and Python wheels with clang-tools CLI.**
 
 .. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools?color=blue
     :target: https://pypi.org/project/clang-tools/
@@ -28,6 +28,8 @@ clang-tools CLI
     This package only manages binary executables (& corresponding symbolic links) that
     are installed using this package's executable script. It does not intend to change or
     modify any binary executable installed from other sources (like LLVM releases).
+
+    For Python wheels, this CLI only support clang-format and clang-tidy tools.
 
 Features
 --------

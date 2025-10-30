@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 #v4
         with:
           name: clang-tools-pip_wheel
-          path: dist/*.whl
+          path: dist/clang_tools*.whl
 
   install:
     needs: [build]

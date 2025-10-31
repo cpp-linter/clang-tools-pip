@@ -22,17 +22,6 @@ def get_parser() -> ArgumentParser:
 def main() -> int:
     parser = get_parser()
     args = parser.parse_args()
-    args = parser.parse_args()
-    path = _resolve_install(args.tool, args.version)
-    if path:
-        print(f"{args.tool} installed at: {path}")
-        return 0
-    parser.add_argument(
-        "--version",
-        default=None,
-        help="Version to install (e.g., 21 or 21.1.2). Defaults to latest compatible version.",
-    )
-    args = parser.parse_args()
     path = _resolve_install(args.tool, args.version)
     if path:
         print(f"{args.tool} installed at: {path}")

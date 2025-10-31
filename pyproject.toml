@@ -39,7 +39,6 @@ dynamic = ["version"]
 
 [project.scripts]
 clang-tools = "clang_tools.main:main"
-clang-tools-binary = "clang_tools.main:main"
 clang-tools-wheel = "clang_tools.wheel:main"
 
 [project.urls]

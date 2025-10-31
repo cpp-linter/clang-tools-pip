@@ -2,7 +2,8 @@ from argparse import ArgumentParser
 from cpp_linter_hooks.util import _resolve_install
 
 
-def main() -> int:
+def get_parser() -> ArgumentParser:
+    """Get and parser to interpret CLI args."""
     parser = ArgumentParser(description="Install specified clang tool wheel")
     parser.add_argument(
         "--tool",
@@ -10,6 +11,22 @@ def main() -> int:
         choices=["clang-format", "clang-tidy"],
         help="Tool to install (clang-format or clang-tidy)",
     )
+    parser.add_argument(
+        "--version",
+        default=None,
+        help="Version to install (e.g., 21 or 21.1.2). Defaults to latest compatible version.",
+    )
+    return parser
+
+
+def main() -> int:
+    parser = get_parser()
+    args = parser.parse_args()
+    args = parser.parse_args()
+    path = _resolve_install(args.tool, args.version)
+    if path:
+        print(f"{args.tool} installed at: {path}")
+        return 0
     parser.add_argument(
         "--version",
         default=None,

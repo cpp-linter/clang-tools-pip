@@ -3,7 +3,7 @@ from cpp_linter_hooks.util import _resolve_install
 
 
 def get_parser() -> ArgumentParser:
-    """Get and parser to interpret CLI args."""
+    """Get a parser to interpret CLI args."""
     parser = ArgumentParser(description="Install specified clang tool wheel")
     parser.add_argument(
         "--tool",

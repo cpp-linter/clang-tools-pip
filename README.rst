@@ -1,7 +1,7 @@
 clang-tools CLI
 ===============
 
-**Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries and Python wheels with clang-tools CLI.**
+Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries and Python wheels with ``clang-tools`` CLI.
 
 .. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools?color=blue
     :target: https://pypi.org/project/clang-tools/
@@ -75,13 +75,13 @@ Install clang-tools CLI
     2. the installed path (for MacOS and Windows) is within the environment's
        variable ``PATH``.
 
-Install `clang-tools` command with pip
+Install ``clang-tools`` command with pip
 
 .. code-block:: shell
 
     pip install clang-tools
 
-Install `clang-tools` from git repo
+Install ``clang-tools`` from git repo
 
 .. code-block:: shell
 
@@ -135,10 +135,12 @@ If the installed directory is in your path, you can run the installed tools.
 Install wheels examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After installing the ``clang-tools`` CLI, you can install the Python wheels by running: ``clang-tools-wheel`` command.
+After installing the ``clang-tools`` CLI, you can install the Python wheels using the ``clang-tools-wheel`` command.
 
 .. important::
-    It is just used for cpp-linter projects to install clang tools Python wheels. For other use cases, please install the wheels with ``pip``, ``pipx``, ``uv``, or other tools.
+
+    The ``clang-tools-wheel`` command is primarily intended for cpp-linter projects to simplify installing clang tools Python wheels.
+    For general use, it is recommended to install the wheels directly using ``pip``, ``pipx``, ``uv``, or similar tools.
 
 
 .. code-block:: shell

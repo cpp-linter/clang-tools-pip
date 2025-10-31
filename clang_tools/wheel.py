@@ -27,7 +27,8 @@ def main() -> int:
         print(f"{args.tool} installed at: {path}")
         return 0
     else:
-        print(f"Failed to install {args.tool} version {args.version}")
+        version_str = f" version {args.version}" if args.version else ""
+        print(f"Failed to install {args.tool}{version_str}")
         return 1
 
 

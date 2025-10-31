@@ -150,6 +150,37 @@ jobs:
             clang-apply-replacements-${{ matrix.version }} --version
           fi
 
+      - name: Install clang-tools wheels
+        run: |
+          clang-tools-wheel --tool clang-format --version ${{ matrix.version }}
+          clang-tools-wheel --tool clang-tidy --version ${{ matrix.version }}
+
+      - name: Check clang tool wheels
+        run: |
+          set -e
+          echo "Checking clang-format and clang-tidy versions..."
+          clang-format --version
+          clang-tidy --version
+
+          # Verify versions contain expected string
+          clang_format_version=$(clang-format --version)
+          clang_tidy_version=$(clang-tidy --version)
+
+          echo "clang-format version: $clang_format_version"
+          echo "clang-tidy version: $clang_tidy_version"
+
+          if ! echo "$clang_format_version" | grep -q "version ${{ matrix.version }}"; then
+            echo "❌ Unexpected clang-format version!"
+            exit 1
+          fi
+
+          if ! echo "$clang_tidy_version" | grep -q "version ${{ matrix.version }}"; then
+            echo "❌ Unexpected clang-tidy version!"
+            exit 1
+          fi
+
+          echo "✅ Versions are correct."
+
   docs:
     uses: cpp-linter/.github/.github/workflows/sphinx.yml@main
     with:

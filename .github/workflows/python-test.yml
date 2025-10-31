@@ -151,11 +151,14 @@ jobs:
           fi
 
       - name: Install clang-tools wheels
+        if: matrix.version >= 13 # Only versions 13 and above have wheels
         run: |
           clang-tools-wheel --tool clang-format --version ${{ matrix.version }}
           clang-tools-wheel --tool clang-tidy --version ${{ matrix.version }}
 
       - name: Check clang tool wheels
+        if: matrix.version >= 13
+        shell: bash
         run: |
           set -e
           echo "Checking clang-format and clang-tidy versions..."

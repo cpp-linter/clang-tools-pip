@@ -154,7 +154,7 @@ After installing the ``clang-tools`` CLI, you can install the Python wheels usin
 
     # Install latest clang-tidy wheel
     clang-tools-wheel --tool clang-tidy
-    # Install latest clang-tidy wheel
+    # Install specific version clang-tidy wheel
     clang-tools-wheel --tool clang-tidy --version 21
 
 

@@ -1,14 +1,14 @@
 clang-tools CLI
 ===============
 
-Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries and Python wheels with ``clang-tools`` CLI.
+Easily install clang-format, clang-tidy, clang-query, and clang-apply-replacements static binaries or Python wheels using the ``clang-tools`` CLI.
 
 .. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools?color=blue
     :target: https://pypi.org/project/clang-tools/
     :alt: PyPI
-.. |python-test| image:: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg
-    :target: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml
-    :alt: Python test
+.. |test| image:: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/test.yml/badge.svg
+    :target: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/test.yml
+    :alt: test
 .. |codecov-badge| image:: https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR
     :target: https://codecov.io/gh/cpp-linter/clang-tools-pip
     :alt: codecov
@@ -22,7 +22,7 @@ Install clang-format, clang-tidy, clang-query, and clang-apply-replacements bina
     :target: https://pypistats.org/packages/clang-tools
     :alt: PyPI - Downloads
 
-|latest-version| |python-test| |codecov-badge| |sonar-badge| |platform-badge| |pypi-badge|
+|latest-version| |test| |codecov-badge| |sonar-badge| |platform-badge| |pypi-badge|
 
 .. important::
     This package only manages binary executables (& corresponding symbolic links) that
@@ -146,7 +146,12 @@ After installing the ``clang-tools`` CLI, you can install the Python wheels usin
 .. code-block:: shell
 
     # Install latest clang-format wheel
+    clang-tools-wheel --tool clang-format
+    # Install specific version clang-format wheel
     clang-tools-wheel --tool clang-format --version 21
+
+    # Install latest clang-tidy wheel
+    clang-tools-wheel --tool clang-tidy
     # Install latest clang-tidy wheel
     clang-tools-wheel --tool clang-tidy --version 21
 

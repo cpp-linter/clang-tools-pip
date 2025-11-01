@@ -14,6 +14,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxRole
 from sphinx_immaterial.inline_icons import load_svg_into_builder_env
 from clang_tools.main import get_parser
+from clang_tools.wheel import get_parser as get_wheel_parser
 
 # -- Path setup --------------------------------------------------------------
 
@@ -207,38 +208,49 @@ def setup(app: Sphinx):
     app.add_role("badge-default", CliBadgeDefault())
     app.add_role("badge-switch", CliBadgeSwitch())
 
-    cli_doc = Path(app.srcdir, "cli_args.rst")
-    with open(cli_doc, mode="w") as doc:
-        doc.write("Command Line Interface Options\n==============================\n\n")
-        parser = get_parser()
-        doc.write(".. code-block:: text\n    :caption: Usage\n    :class: no-copy\n\n")
-        parser.prog = "clang-tools"
-        str_buf = StringIO()
-        parser.print_usage(str_buf)
-        usage = str_buf.getvalue()
-        start = usage.find(parser.prog)
-        for line in usage.splitlines():
-            doc.write(f"    {line[start:]}\n")
+    def write_cli_doc(doc_path, parser, prog_name):
+        with open(doc_path, mode="w") as doc:
+            doc.write(f"{prog_name} --help\n{'=' * 30}\n\n")
+            doc.write(
+                ".. code-block:: text\n    :caption: Usage\n    :class: no-copy\n\n"
+            )
+            parser.prog = prog_name
+            str_buf = StringIO()
+            parser.print_usage(str_buf)
+            usage = str_buf.getvalue()
+            start = usage.find(parser.prog)
+            for line in usage.splitlines():
+                doc.write(f"    {line[start:]}\n")
+            args = parser._optionals._actions
+            for arg in args:
+                aliases = arg.option_strings
+                if not aliases or arg.default == "==SUPPRESS==":
+                    continue
+                assert arg.help is not None
+                doc.write("\n.. std:option:: " + ", ".join(aliases) + "\n")
+                req_ver = next(
+                    (
+                        ver
+                        for ver, names in REQUIRED_VERSIONS.items()
+                        if arg.dest in names
+                    ),
+                    "0.1.0",
+                )
+                doc.write(f"\n    :badge-version:`{req_ver}` ")
+                if arg.default:
+                    default = (
+                        " ".join(arg.default)
+                        if isinstance(arg.default, list)
+                        else arg.default
+                    )
+                    doc.write(f":badge-default:`{default}` ")
+                if isinstance(arg, _StoreTrueAction):
+                    doc.write(":badge-switch:`Accepts no value` ")
+                doc.write("\n\n    ")
+                doc.write("\n    ".join(arg.help.splitlines()) + "\n")
 
-        args = parser._optionals._actions
-        for arg in args:
-            aliases = arg.option_strings
-            if not aliases or arg.default == "==SUPPRESS==":
-                continue
-            assert arg.help is not None
-            doc.write("\n.. std:option:: " + ", ".join(aliases) + "\n")
-            req_ver = "0.1.0"
-            for ver, names in REQUIRED_VERSIONS.items():
-                if arg.dest in names:
-                    req_ver = ver
-                    break
-            doc.write(f"\n    :badge-version:`{req_ver}` ")
-            if arg.default:
-                default = arg.default
-                if isinstance(arg.default, list):
-                    default = " ".join(arg.default)
-                doc.write(f":badge-default:`{default}` ")
-            if isinstance(arg, _StoreTrueAction):
-                doc.write(":badge-switch:`Accepts no value` ")
-            doc.write("\n\n    ")
-            doc.write("\n    ".join(arg.help.splitlines()) + "\n")
+    cli_doc = Path(app.srcdir, "cli_args.rst")
+    write_cli_doc(cli_doc, get_parser(), "clang-tools")
+
+    wheel_cli_doc = Path(app.srcdir, "wheel_cli_args.rst")
+    write_cli_doc(wheel_cli_doc, get_wheel_parser(), "clang-tools-wheel")

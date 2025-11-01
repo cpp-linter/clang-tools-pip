@@ -1,14 +1,12 @@
 clang-tools CLI
 ===============
 
-**Install clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries with clang-tools CLI.**
-
 .. |latest-version| image:: https://img.shields.io/pypi/v/clang-tools?color=blue
     :target: https://pypi.org/project/clang-tools/
     :alt: PyPI
-.. |python-test| image:: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml/badge.svg
-    :target: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/python-test.yml
-    :alt: Python test
+.. |test| image:: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/test.yml/badge.svg
+    :target: https://github.com/cpp-linter/clang-tools-pip/actions/workflows/test.yml
+    :alt: test
 .. |codecov-badge| image:: https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR
     :target: https://codecov.io/gh/cpp-linter/clang-tools-pip
     :alt: codecov
@@ -22,16 +20,23 @@ clang-tools CLI
     :target: https://pypistats.org/packages/clang-tools
     :alt: PyPI - Downloads
 
-|latest-version| |python-test| |codecov-badge| |sonar-badge| |platform-badge| |pypi-badge|
+|latest-version| |test| |codecov-badge| |sonar-badge| |platform-badge| |pypi-badge|
+
+
+Easily install clang-format, clang-tidy, clang-query, and clang-apply-replacements static binaries or Python wheels using the ``clang-tools`` CLI.
+
 
 .. important::
     This package only manages binary executables (& corresponding symbolic links) that
     are installed using this package's executable script. It does not intend to change or
     modify any binary executable installed from other sources (like LLVM releases).
 
+    For Python wheels, this CLI only support clang-format and clang-tidy tools.
+
 Features
 --------
 
+- Support clang tools binaries and Python wheels.
 - Binaries are statically linked for improved portability.
 - Binaries can be specified installed for increased flexibility.
 - Binaries are checked with SHA512 checksum. This ensures:
@@ -47,6 +52,7 @@ Features
       from the Windows settings under "Privacy & security" > "For developers"
       category.
 - Customizable install path.
+
 
 Install clang-tools CLI
 -----------------------
@@ -71,17 +77,18 @@ Install clang-tools CLI
     2. the installed path (for MacOS and Windows) is within the environment's
        variable ``PATH``.
 
-Install `clang-tools` command with pip
+Install ``clang-tools`` command with pip
 
 .. code-block:: shell
 
     pip install clang-tools
 
-Install `clang-tools` from git repo
+Install ``clang-tools`` from git repo
 
 .. code-block:: shell
 
     pip install git+https://github.com/cpp-linter/clang-tools-pip.git@main
+
 
 CLI Usage
 ---------
@@ -89,8 +96,8 @@ CLI Usage
 For a list of supported Command Line Interface options, see
 `the CLI documentation <https://cpp-linter.github.io/clang-tools-pip/cli_args.html>`_
 
-Examples
-********
+Install binaries examples
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``clang-tools`` command to install version 13 binaries.
 
@@ -126,13 +133,42 @@ If the installed directory is in your path, you can run the installed tools.
       Default target: x86_64-unknown-linux-gnu
       Host CPU: skylake
 
-Supported versions
+
+Install wheels examples
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After installing the ``clang-tools`` CLI, you can install the Python wheels using the ``clang-tools-wheel`` command.
+
+.. important::
+
+    The ``clang-tools-wheel`` command is primarily intended for cpp-linter projects to simplify installing clang tools Python wheels.
+    For general use, it is recommended to install the wheels directly using ``pip``, ``pipx``, ``uv``, or similar tools.
+
+
+.. code-block:: shell
+
+    # Install latest clang-format wheel
+    clang-tools-wheel --tool clang-format
+    # Install specific version clang-format wheel
+    clang-tools-wheel --tool clang-format --version 21
+
+    # Install latest clang-tidy wheel
+    clang-tools-wheel --tool clang-tidy
+    # Install specific version clang-tidy wheel
+    clang-tools-wheel --tool clang-tidy --version 21
+
+
+Supported Versions
 ------------------
 
-clang-format, clang-tidy, clang-query, clang-apply-replacements
-***************************************************************
+
+clang tools binaries
+~~~~~~~~~~~~~~~~~~~~
+
+The following table shows the supported versions of clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries for each platform:
+
 .. csv-table::
-    :header: "Version", "21", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9"
+    :header: "Platform", "21", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9"
     :stub-columns: 1
 
     Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
@@ -140,3 +176,13 @@ clang-format, clang-tidy, clang-query, clang-apply-replacements
     macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
 For more details, visit the `clang-tools-static-binaries <https://github.com/cpp-linter/clang-tools-static-binaries>`_ repository.
+
+clang tools Python wheels
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following Python wheels are supported:
+
+- `clang-format <https://pypi.org/project/clang-format/#history>`_
+- `clang-tidy <https://pypi.org/project/clang-tidy/#history>`_
+
+Check the respective PyPI pages for available versions and platform support.

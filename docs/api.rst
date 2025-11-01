@@ -9,3 +9,6 @@ API Reference
 
 .. automodule:: clang_tools.util
     :members:
+
+.. automodule:: clang_tools.wheel
+    :members:

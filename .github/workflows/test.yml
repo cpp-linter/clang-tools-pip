@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: Test
 
 on:
@@ -71,7 +68,7 @@ jobs:
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 #v4
         with:
           name: clang-tools-pip_wheel
-          path: dist/*.whl
+          path: dist/clang_tools*.whl
 
   install:
     needs: [build]
@@ -101,7 +98,7 @@ jobs:
       - name: Install clang-tools binaries
         run: clang-tools --install ${{ matrix.version }} --tool clang-format clang-tidy clang-query clang-apply-replacements
 
-      - name: Show path of binaries
+      - name: Show path of clang-tools binaries
         shell: bash
         run: |
           if [ "${{ matrix.version }}" = "15" -o "${{ matrix.version }}" = "16" ] && [ "${{ matrix.os }}" = "windows-latest" ]; then
@@ -116,7 +113,7 @@ jobs:
               which "clang-apply-replacements-${{ matrix.version }}"
           fi
 
-      - name: Check clang-tools on Windows
+      - name: Check clang-tools binaries on Windows
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
@@ -135,7 +132,7 @@ jobs:
               ;;
           esac
 
-      - name: Check clang-tools on Unix
+      - name: Check clang-tools binaries on Unix
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           if [ "${{ matrix.version }}" = "12.0.1" -a "${{ matrix.os }}" = "ubuntu-latest" ]; then
@@ -149,6 +146,50 @@ jobs:
             clang-query-${{ matrix.version }} --version
             clang-apply-replacements-${{ matrix.version }} --version
           fi
+
+      - name: Install and check clang-format wheels
+        if: ${{ matrix.version != '12.0.1' && fromJSON(matrix.version) >= 10 }} # Skip 12.0.1
+        shell: bash
+        run: |
+          set -e
+          clang-tools-wheel --tool clang-format --version ${{ matrix.version }}
+
+          echo "Checking clang-format versions..."
+          clang-format --version
+
+          # Verify versions contain expected string
+          clang_format_version=$(clang-format --version)
+
+          echo "clang-format version: $clang_format_version"
+
+          if ! echo "$clang_format_version" | grep -q "version ${{ matrix.version }}"; then
+            echo "❌ Unexpected clang-format version!"
+            exit 1
+          fi
+
+          echo "✅ clang-format Versions are correct."
+
+      - name: Install and check clang-tidy wheels
+        if: ${{ matrix.version != '12.0.1' && fromJSON(matrix.version) >= 13 }}
+        shell: bash
+        run: |
+          set -e
+          clang-tools-wheel --tool clang-tidy --version ${{ matrix.version }}
+
+          echo "Checking clang-tidy versions..."
+          clang-tidy --version
+
+          # Verify versions contain expected string
+          clang_tidy_version=$(clang-tidy --version)
+
+          echo "clang-tidy version: $clang_tidy_version"
+
+          if ! echo "$clang_tidy_version" | grep -q "version ${{ matrix.version }}"; then
+            echo "❌ Unexpected clang-tidy version!"
+            exit 1
+          fi
+
+          echo "✅ clang-tidy Versions are correct."
 
   docs:
     uses: cpp-linter/.github/.github/workflows/sphinx.yml@main

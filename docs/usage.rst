@@ -1,5 +1,5 @@
-Using a Custom Binary Repository
---------------------------------
+Custom Binary Repository
+------------------------
 
 You can override the default source for downloading **clang-tools** by setting the following environment variables:
 

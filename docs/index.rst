@@ -11,6 +11,7 @@
    :hidden:
 
    cli_args
+   wheel_cli_args
 
 .. toctree::
    :hidden:

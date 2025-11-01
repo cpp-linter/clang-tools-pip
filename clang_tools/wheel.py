@@ -8,6 +8,7 @@ def get_parser() -> ArgumentParser:
     parser.add_argument(
         "--tool",
         default="clang-format",
+        required=True,
         choices=["clang-format", "clang-tidy"],
         help="Tool to install (clang-format or clang-tidy)",
     )

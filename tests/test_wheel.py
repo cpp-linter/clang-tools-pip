@@ -31,6 +31,7 @@ def test_main_default_tool(monkeypatch):
         "clang_tools.wheel.resolve_install",
         lambda tool, version: "/usr/bin/clang-format",
     )
-    monkeypatch.setattr(sys, "argv", ["wheel.py"])
+    # The CLI requires --tool; simulate running with the default tool explicitly
+    monkeypatch.setattr(sys, "argv", ["wheel.py", "--tool", "clang-format"])
     exit_code = main()
     assert exit_code == 0

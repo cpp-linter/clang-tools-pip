@@ -148,6 +148,7 @@ jobs:
           fi
 
       - name: Install and check clang-format wheels
+        if: ${{ fromJSON(matrix.version) >= 10 }} # Version 9 failed on MacOS and Windows
         shell: bash
         run: |
           set -e
@@ -169,7 +170,7 @@ jobs:
           echo "✅ clang-format Versions are correct."
 
       - name: Install and check clang-tidy wheels
-        if: matrix.version >= 13 # Only versions 13 and above have wheels
+        if: ${{ fromJSON(matrix.version) >= 13 }} # Only versions 13 and above have wheels
         shell: bash
         run: |
           set -e

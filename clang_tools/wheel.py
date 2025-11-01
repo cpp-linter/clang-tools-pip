@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from cpp_linter_hooks.util import _resolve_install
+from cpp_linter_hooks.util import resolve_install
 
 
 def get_parser() -> ArgumentParser:
@@ -22,7 +22,7 @@ def get_parser() -> ArgumentParser:
 def main() -> int:
     parser = get_parser()
     args = parser.parse_args()
-    path = _resolve_install(args.tool, args.version)
+    path = resolve_install(args.tool, args.version)
     version_str = f" version {args.version}" if args.version else " latest version"
     if path:
         print(f"{args.tool}{version_str} installed at: {path}")

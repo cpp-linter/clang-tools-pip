@@ -9,6 +9,10 @@ updates:
     directory: /
     schedule:
       interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"
     commit-message:
       # Prefix commit message with "chore: "
       prefix: "chore"
@@ -16,6 +20,10 @@ updates:
     directory: /
     schedule:
       interval: "weekly"
+    groups:
+      pip:
+        patterns:
+          - "*"
     commit-message:
       # Prefix commit message with "chore: "
       prefix: "chore"

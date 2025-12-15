@@ -40,7 +40,7 @@ jobs:
         run: coverage run -m pytest -vv
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@v5.0.0
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: coverage-data-${{ runner.os }}
           path: .coverage*
@@ -65,7 +65,7 @@ jobs:
         run: python -m pip wheel -w dist .
 
       - name: Upload wheel as artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 #v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f #v6.0.0
         with:
           name: clang-tools-pip_wheel
           path: dist/clang_tools*.whl

@@ -12,4 +12,4 @@ suffix = ".exe" if install_os == "windows" else ""
 binary_repo = os.getenv(
     "CLANG_TOOLS_REPO", "https://github.com/cpp-linter/clang-tools-static-binaries"
 )
-binary_tag = os.getenv("CLANG_TOOLS_TAG", "master-6e612956")
+binary_tag = os.getenv("CLANG_TOOLS_TAG", "master-63858060")

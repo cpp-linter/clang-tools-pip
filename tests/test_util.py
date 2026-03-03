@@ -4,7 +4,13 @@ from pathlib import Path, PurePath
 import pytest
 from clang_tools import install_arch, install_os
 from clang_tools.install import clang_tools_binary_url
-from clang_tools.util import check_install_arch, check_install_os, download_file, get_sha_checksum, Version
+from clang_tools.util import (
+    check_install_arch,
+    check_install_os,
+    download_file,
+    get_sha_checksum,
+    Version,
+)
 
 
 def test_check_install_os():
@@ -32,7 +38,9 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     releases' corresponding SHA512 checksum."""
     monkeypatch.chdir(PurePath(__file__).parent.as_posix())
     if install_os == "macosx":
-        platform_str = "macosx-arm64" if install_arch == "arm64" else "macos-intel-amd64"
+        platform_str = (
+            "macosx-arm64" if install_arch == "arm64" else "macos-intel-amd64"
+        )
     else:
         platform_str = f"{install_os}-amd64"
     expected = Path(f"clang-format-21_{platform_str}.sha512sum").read_text(

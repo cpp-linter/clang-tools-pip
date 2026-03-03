@@ -14,6 +14,17 @@ from urllib.error import HTTPError
 from http.client import HTTPResponse
 
 
+def check_install_arch() -> str:
+    """Identify the CPU architecture.
+
+    :returns: ``"arm64"`` for ARM processors, ``"amd64"`` otherwise.
+    """
+    machine = platform.machine().lower()
+    if machine in ("arm64", "aarch64"):
+        return "arm64"
+    return "amd64"
+
+
 def check_install_os() -> str:
     """Identify this Operating System.
 

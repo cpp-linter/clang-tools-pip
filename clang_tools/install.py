@@ -13,7 +13,15 @@ import subprocess
 import sys
 from typing import Optional, cast
 
-from . import binary_repo, binary_tag, install_os, RESET_COLOR, suffix, YELLOW
+from . import (
+    binary_repo,
+    binary_tag,
+    install_arch,
+    install_os,
+    RESET_COLOR,
+    suffix,
+    YELLOW,
+)
 from .util import download_file, verify_sha512, get_sha_checksum, Version
 
 
@@ -73,7 +81,13 @@ def clang_tools_binary_url(tool: str, version: str) -> str:
     :returns: The URL used to download the specified tool.
     """
     base_url = f"{binary_repo}/releases/download/" + binary_tag
-    download_url = f"{base_url}/{tool}-{version}_{install_os}-amd64{suffix}"
+    if install_os == "macosx":
+        platform_str = (
+            "macosx-arm64" if install_arch == "arm64" else "macos-intel-amd64"
+        )
+    else:
+        platform_str = f"{install_os}-amd64"
+    download_url = f"{base_url}/{tool}-{version}_{platform_str}{suffix}"
     return download_url.replace(" ", "")
 
 

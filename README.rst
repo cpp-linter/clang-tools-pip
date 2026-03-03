@@ -168,12 +168,12 @@ clang tools binaries
 The following table shows the supported versions of clang-format, clang-tidy, clang-query, and clang-apply-replacements binaries for each platform:
 
 .. csv-table::
-    :header: "Platform", "21", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9"
+    :header: "Platform", "22", "21", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11"
     :stub-columns: 1
 
-    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
-    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Linux,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    Windows,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
+    macOS,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️,✔️
 
 For more details, visit the `clang-tools-static-binaries <https://github.com/cpp-linter/clang-tools-static-binaries>`_ repository.
 

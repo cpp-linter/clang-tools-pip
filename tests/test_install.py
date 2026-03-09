@@ -12,6 +12,8 @@ from clang_tools.install import (
     install_clang_tools,
     is_installed,
     uninstall_clang_tools,
+    MIN_VERSION,
+    MAX_VERSION,
 )
 from clang_tools.util import Version
 
@@ -91,13 +93,20 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     """Explicitly fail to download a set of tools to test the prompts that
 
     1. warns users about using a dir not in env var PATH.
-    2. indicates a failure to download a tool
+    2. indicates a failure when the requested version is out of the supported range
     """
     try:
-        install_clang_tools(Version("0"), "x", ".", False, False)
-    except OSError as exc:
+        install_clang_tools(Version("0"), ["x"], ".", False, False)
+    except ValueError as exc:
         if install_dir_name(".") not in os.environ.get("PATH", ""):  # pragma: no cover
             # this warning does not happen in an activated venv
             result = capsys.readouterr()
             assert "directory is not in your environment variable PATH" in result.out
-        assert "Failed to download" in exc.args[0]
+        assert "is not available in static binary builds" in exc.args[0]
+
+
+@pytest.mark.parametrize("version", [str(MIN_VERSION - 1), str(MAX_VERSION + 1)])
+def test_unsupported_version(version: str):
+    """Test that an unsupported version raises a ValueError with a helpful message."""
+    with pytest.raises(ValueError, match="is not available in static binary builds"):
+        install_clang_tools(Version(version), ["clang-format"], ".", False, False)

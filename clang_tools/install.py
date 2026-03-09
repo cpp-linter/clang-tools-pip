@@ -28,6 +28,11 @@ from .util import download_file, verify_sha512, get_sha_checksum, Version
 #: This pattern is designed to match only the major version number.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
 
+#: The minimum major version supported by the static binary builds.
+MIN_VERSION = 11
+#: The maximum major version supported by the static binary builds.
+MAX_VERSION = 22
+
 
 def is_installed(tool_name: str, version: Version) -> Optional[Path]:
     """Detect if the specified tool is installed.
@@ -275,6 +280,11 @@ def install_clang_tools(
         print(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
+        )
+    if version.info[0] not in range(MIN_VERSION, MAX_VERSION + 1):
+        raise ValueError(
+            f"{version.info[0]} is not available in static binary builds. "
+            f"Only versions {MIN_VERSION} to {MAX_VERSION} are available."
         )
     for tool_name in tools:
         native_bin = is_installed(tool_name, version)

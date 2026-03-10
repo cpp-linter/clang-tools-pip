@@ -3,7 +3,7 @@
 from pathlib import PurePath, Path
 import os
 import pytest
-from clang_tools import install_arch, install_os, suffix
+from clang_tools import install_arch, install_os, suffix, MIN_VERSION, MAX_VERSION
 from clang_tools.install import (
     clang_tools_binary_url,
     install_dir_name,
@@ -12,8 +12,6 @@ from clang_tools.install import (
     install_clang_tools,
     is_installed,
     uninstall_clang_tools,
-    MIN_VERSION,
-    MAX_VERSION,
 )
 from clang_tools.util import Version
 

@@ -18,6 +18,8 @@ from . import (
     binary_tag,
     install_arch,
     install_os,
+    MIN_VERSION,
+    MAX_VERSION,
     RESET_COLOR,
     suffix,
     YELLOW,
@@ -27,11 +29,6 @@ from .util import download_file, verify_sha512, get_sha_checksum, Version
 
 #: This pattern is designed to match only the major version number.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
-
-#: The minimum major version supported by the static binary builds.
-MIN_VERSION = 11
-#: The maximum major version supported by the static binary builds.
-MAX_VERSION = 22
 
 
 def is_installed(tool_name: str, version: Version) -> Optional[Path]:

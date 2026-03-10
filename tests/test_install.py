@@ -94,7 +94,7 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     2. indicates a failure when the requested version is out of the supported range
     """
     try:
-        install_clang_tools(Version("0"), ["x"], ".", False, False)
+        install_clang_tools(Version("0"), "x", ".", False, False)
     except ValueError as exc:
         if install_dir_name(".") not in os.environ.get("PATH", ""):  # pragma: no cover
             # this warning does not happen in an activated venv

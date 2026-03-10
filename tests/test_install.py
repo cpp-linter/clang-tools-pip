@@ -107,4 +107,4 @@ def test_path_warning(capsys: pytest.CaptureFixture):
 def test_unsupported_version(version: str):
     """Test that an unsupported version raises a ValueError with a helpful message."""
     with pytest.raises(ValueError, match="is not available in static binary builds"):
-        install_clang_tools(Version(version), ["clang-format"], ".", False, False)
+        install_clang_tools(Version(version), "clang-format", ".", False, False)

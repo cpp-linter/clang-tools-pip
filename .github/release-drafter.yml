@@ -1,1 +1,1 @@
-_extends: .github
+_extends: github:cpp-linter/.github:/.github/release-drafter.yml

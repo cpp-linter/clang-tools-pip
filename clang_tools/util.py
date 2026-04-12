@@ -48,6 +48,7 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[s
 
     :param url: The URL to download from.
     :param file_name: The file name to download.
+    :param no_progress_bar: If `True`, suppresses the progress bar during download.
 
     :returns: The path to downloaded file if  successful, otherwise `None`.
     """
@@ -94,7 +95,10 @@ def get_sha_checksum(binary_url: str) -> str:
     with urllib.request.urlopen(
         binary_url.replace(".exe", "") + ".sha512sum"
     ) as response:
-        return response.read(response.length).decode(encoding="utf-8")
+        length = response.length
+        if length is None:
+            return response.read().decode(encoding="utf-8")
+        return response.read(length).decode(encoding="utf-8")
 
 
 def verify_sha512(checksum: str, exe: bytes) -> bool:
@@ -131,6 +135,6 @@ class Version:
             # append minor and patch version numbers if not specified
             version_tuple += ["0"] * (3 - len(version_tuple))
         try:
-            self.info = tuple([int(x) for x in version_tuple])  # type: ignore[assignment]
+            self.info = tuple(int(x) for x in version_tuple)  # type: ignore[assignment]
         except ValueError:
             self.info = (0, 0, 0)

@@ -11,7 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import Optional, cast
+from typing import List, Optional, cast
 
 from . import (
     binary_repo,
@@ -25,7 +25,7 @@ from . import (
 from .util import download_file, verify_sha512, get_sha_checksum, Version
 
 
-#: This pattern is designed to match only the major version number.
+#: This pattern is designed to match the full version number from tool output.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
 
 
@@ -52,7 +52,8 @@ def is_installed(tool_name: str, version: Version) -> Optional[Path]:
     except (FileNotFoundError, subprocess.CalledProcessError):
         return None  # tool is not installed
     ver_num = RE_PARSE_VERSION.search(result.stdout)
-    assert ver_num is not None, "Failed to parse version from tool output"
+    if ver_num is None:
+        raise RuntimeError(f"Failed to parse version from {tool_name} --version output")
     ver_match = cast(bytes, ver_num.groups(0)[0]).decode(encoding="utf-8")
     print(
         f"Found a installed version of {tool_name}:",
@@ -135,9 +136,9 @@ def install_dir_name(directory: str) -> str:
     :returns: The install directory name (in absolute form).
     """
     if directory:
-        return os.path.abspath(directory)
+        return str(Path(directory).resolve())
     if install_os == "linux":
-        return os.path.expanduser("~/.local/bin/")
+        return str(Path("~/.local/bin/").expanduser())
     # if install_os == "windows":
     #     # C:\Users\{username}\AppData\Local\clang-tools
     #     return os.path.join(os.getenv("LOCALAPPDATA"), "clang-tools")
@@ -154,10 +155,11 @@ def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -
     """
     print("Installing", new_bin_name, "to", install_dir)
     try:
-        if not os.path.isdir(install_dir):
-            os.makedirs(install_dir)
-        shutil.move(old_bin_name, f"{install_dir}/{new_bin_name}")
-        os.chmod(os.path.join(install_dir, new_bin_name), 0o755)
+        install_path = Path(install_dir)
+        if not install_path.is_dir():
+            install_path.mkdir(parents=True)
+        shutil.move(old_bin_name, str(install_path / new_bin_name))
+        os.chmod(str(install_path / new_bin_name), 0o755)
     except PermissionError as exc:  # pragma: no cover
         raise SystemExit(
             f"Don't have permission to install {new_bin_name} to {install_dir}."
@@ -209,7 +211,8 @@ def create_sym_link(
             return False
         link.unlink()
         print("Overwriting symbolic link", str(link))
-    assert target.exists()
+    if not target.exists():
+        raise FileNotFoundError(f"Target binary not found: {target}")
     try:
         link.symlink_to(target)
         print("Symbolic link created", str(link))
@@ -245,10 +248,11 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
         symlink.unlink()
 
 
-def uninstall_clang_tools(tools: str, version: str, directory: str):
-    """Uninstall a clang tool of a given version.
+def uninstall_clang_tools(version: str, tools: List[str], directory: str):
+    """Uninstall clang tools of a given version.
 
     :param version: The version of the clang-tools to remove.
+    :param tools: The list of tool(s) to uninstall.
     :param directory: The directory from which to remove the
         installed clang-tools.
     """
@@ -259,7 +263,11 @@ def uninstall_clang_tools(tools: str, version: str, directory: str):
 
 
 def install_clang_tools(
-    version: Version, tools: str, directory: str, overwrite: bool, no_progress_bar: bool
+    version: Version,
+    tools: List[str],
+    directory: str,
+    overwrite: bool,
+    no_progress_bar: bool,
 ) -> None:
     """Wraps functions used to individually install tools.
 

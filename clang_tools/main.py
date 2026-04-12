@@ -6,6 +6,7 @@ The module containing main entrypoint function.
 """
 
 import argparse
+import sys
 
 from .install import install_clang_tools, uninstall_clang_tools
 from . import RESET_COLOR, YELLOW
@@ -13,7 +14,7 @@ from .util import Version
 
 
 def get_parser() -> argparse.ArgumentParser:
-    """Get and parser to interpret CLI args."""
+    """Get the parser to interpret CLI args."""
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -62,7 +63,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main():
+def main() -> int:
     """The main entrypoint to the CLI program."""
     parser = get_parser()
     args = parser.parse_args()
@@ -81,16 +82,21 @@ def main():
             )
         else:
             print(
-                f"{YELLOW}The version specified is not a semantic",
-                f"specification{RESET_COLOR}",
+                f"{YELLOW}The version specified is not a semantic"
+                f" specification{RESET_COLOR}",
+                file=sys.stderr,
             )
+            return 1
     else:
         print(
-            f"{YELLOW}Nothing to do because `--install` and `--uninstall`",
-            f"was not specified.{RESET_COLOR}",
+            f"{YELLOW}Nothing to do because `--install` and `--uninstall`"
+            f" was not specified.{RESET_COLOR}",
+            file=sys.stderr,
         )
         parser.print_help()
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

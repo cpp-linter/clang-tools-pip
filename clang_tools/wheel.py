@@ -20,6 +20,7 @@ def get_parser() -> ArgumentParser:
 
 
 def main() -> int:
+    """The main entrypoint for the wheel-based tool installer CLI."""
     parser = get_parser()
     args = parser.parse_args()
     path = resolve_install(args.tool, args.version)

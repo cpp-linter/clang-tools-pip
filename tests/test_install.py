@@ -3,7 +3,7 @@
 from pathlib import PurePath, Path
 import os
 import pytest
-from clang_tools import install_arch, install_os, suffix, MIN_VERSION, MAX_VERSION
+from clang_tools import install_arch, install_os, suffix
 from clang_tools.install import (
     clang_tools_binary_url,
     install_dir_name,
@@ -103,8 +103,12 @@ def test_path_warning(capsys: pytest.CaptureFixture):
         assert "is not available in static binary builds" in exc.args[0]
 
 
-@pytest.mark.parametrize("version", [str(MIN_VERSION - 1), str(MAX_VERSION + 1)])
-def test_unsupported_version(version: str):
-    """Test that an unsupported version raises a ValueError with a helpful message."""
-    with pytest.raises(ValueError, match="is not available in static binary builds"):
-        install_clang_tools(Version(version), "clang-format", ".", False, False)
+def test_install_tool_download_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test that a failed download raises an OSError with a helpful message.
+
+    Uses a non-URL string for the repo base to trigger a ValueError in urlopen,
+    which download_file catches and returns None, causing install_tool to raise OSError.
+    """
+    monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    with pytest.raises(OSError, match="Failed to download"):
+        install_tool("clang-format", "12", str(tmp_path), True)

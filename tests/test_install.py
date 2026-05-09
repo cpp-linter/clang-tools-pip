@@ -91,13 +91,38 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     """Explicitly fail to download a set of tools to test the prompts that
 
     1. warns users about using a dir not in env var PATH.
-    2. indicates a failure to download a tool
+    2. indicates a failure when the requested version is out of the supported range
     """
     try:
         install_clang_tools(Version("0"), "x", ".", False, False)
-    except OSError as exc:
+    except ValueError as exc:
         if install_dir_name(".") not in os.environ.get("PATH", ""):  # pragma: no cover
             # this warning does not happen in an activated venv
             result = capsys.readouterr()
             assert "directory is not in your environment variable PATH" in result.out
-        assert "Failed to download" in exc.args[0]
+        assert "is not available in static binary builds" in exc.args[0]
+
+
+def test_install_tool_download_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test that a failed download raises an OSError with a helpful message.
+
+    Uses a non-URL string for the repo base to trigger a ValueError in urlopen,
+    which download_file catches and returns None, causing install_tool to raise OSError.
+    """
+    monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    with pytest.raises(OSError, match="Failed to download"):
+        install_tool("clang-format", "12", str(tmp_path), True)
+
+
+def test_install_clang_tools_download_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Test that a download failure inside install_clang_tools raises OSError.
+
+    Covers the loop body (lines that iterate tools and call install_tool) by using a
+    valid version with a broken repo URL, so the version check passes but the download
+    fails.
+    """
+    monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    with pytest.raises(OSError, match="Failed to download"):
+        install_clang_tools(Version("12"), "clang-format", str(tmp_path), False, True)

@@ -18,6 +18,8 @@ from . import (
     binary_tag,
     install_arch,
     install_os,
+    MIN_VERSION,
+    MAX_VERSION,
     RESET_COLOR,
     suffix,
     YELLOW,
@@ -275,6 +277,11 @@ def install_clang_tools(
         print(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
+        )
+    if version.info[0] not in range(MIN_VERSION, MAX_VERSION + 1):
+        raise ValueError(
+            f"{version.info[0]} is not available in static binary builds. "
+            f"Only versions {MIN_VERSION} to {MAX_VERSION} are available."
         )
     for tool_name in tools:
         native_bin = is_installed(tool_name, version)

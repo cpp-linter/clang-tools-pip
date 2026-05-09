@@ -14,3 +14,8 @@ binary_repo = os.getenv(
     "CLANG_TOOLS_REPO", "https://github.com/cpp-linter/clang-tools-static-binaries"
 )
 binary_tag = os.getenv("CLANG_TOOLS_TAG", "master-63858060")
+
+#: The minimum major version supported by the static binary builds.
+MIN_VERSION = 11
+#: The maximum major version supported by the static binary builds.
+MAX_VERSION = 22

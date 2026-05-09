@@ -112,3 +112,17 @@ def test_install_tool_download_error(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
     with pytest.raises(OSError, match="Failed to download"):
         install_tool("clang-format", "12", str(tmp_path), True)
+
+
+def test_install_clang_tools_download_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Test that a download failure inside install_clang_tools raises OSError.
+
+    Covers the loop body (lines that iterate tools and call install_tool) by using a
+    valid version with a broken repo URL, so the version check passes but the download
+    fails.
+    """
+    monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    with pytest.raises(OSError, match="Failed to download"):
+        install_clang_tools(Version("12"), "clang-format", str(tmp_path), False, True)

@@ -308,14 +308,14 @@ def test_uninstall_tool_nonexistent(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     uninstall_tool("clang-format", "99", str(tmp_path))
 
 
-def test_install_dir_name_default(monkeypatch: pytest.MonkeyPatch):
-    """Test install_dir_name returns the Python executable dir when no dir given."""
-    # On macOS, the default path goes to sys.executable's dir
+def test_install_dir_name_default():
+    """Test install_dir_name returns proper default when no dir given."""
     result = install_dir_name("")
-    # On macOS, this should be the directory of sys.executable
-    import sys
-
-    assert result == os.path.dirname(sys.executable)
+    if install_os == "linux":
+        assert result == os.path.expanduser("~/.local/bin/")
+    else:
+        import sys
+        assert result == os.path.dirname(sys.executable)
 
 
 def test_install_clang_tools_path_not_in_env(
@@ -324,8 +324,6 @@ def test_install_clang_tools_path_not_in_env(
     """Test install_clang_tools warns when install dir is not in PATH."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
-    # Ensure PATH does not contain the install dir
-    original_path = os.environ.get("PATH", "")
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
     with pytest.raises(OSError):

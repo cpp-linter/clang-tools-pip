@@ -2,6 +2,8 @@
 
 from pathlib import PurePath, Path
 import os
+import subprocess
+from unittest.mock import Mock
 import pytest
 from clang_tools import install_arch, install_os, suffix
 from clang_tools.install import (
@@ -11,6 +13,8 @@ from clang_tools.install import (
     install_tool,
     install_clang_tools,
     is_installed,
+    move_and_chmod_bin,
+    uninstall_tool,
     uninstall_clang_tools,
 )
 from clang_tools.util import Version
@@ -126,3 +130,205 @@ def test_install_clang_tools_download_error(
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
     with pytest.raises(OSError, match="Failed to download"):
         install_clang_tools(Version("12"), "clang-format", str(tmp_path), False, True)
+
+
+def test_is_installed_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test is_installed when the tool exists and has a matching major version."""
+    tool_name = "clang-format"
+    version = Version("12")
+    exe_name = f"{tool_name}-{version.info[0]}{suffix}"
+    fake_bin = tmp_path / exe_name
+    fake_bin.write_bytes(b"fake binary")
+    fake_bin.chmod(0o755)
+
+    # Mock subprocess to return matching version output
+    mock_result = Mock()
+    mock_result.stdout = b"LLVM version 12.0.1\n"
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mock_result)
+    monkeypatch.setattr("shutil.which", lambda x: str(fake_bin))
+
+    result = is_installed(tool_name, version)
+    assert result == fake_bin.resolve()
+
+
+def test_is_installed_wrong_major_version(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Test is_installed when the tool exists but has a different major version."""
+    tool_name = "clang-format"
+    version = Version("12")
+    exe_name = f"{tool_name}-{version.info[0]}{suffix}"
+    fake_bin = tmp_path / exe_name
+    fake_bin.write_bytes(b"fake binary")
+    fake_bin.chmod(0o755)
+
+    # subprocess succeeds but returns a different major version
+    mock_result = Mock()
+    mock_result.stdout = b"LLVM version 14.0.0\n"
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mock_result)
+    monkeypatch.setattr("shutil.which", lambda x: str(fake_bin))
+
+    result = is_installed(tool_name, version)
+    assert result is None
+
+
+def test_is_installed_not_found_in_path(monkeypatch: pytest.MonkeyPatch):
+    """Test is_installed when the tool runs but shutil.which can't find it."""
+    tool_name = "clang-format"
+    version = Version("15")
+
+    mock_result = Mock()
+    mock_result.stdout = b"LLVM version 15.0.0\n"
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mock_result)
+    monkeypatch.setattr("shutil.which", lambda x: None)
+
+    result = is_installed(tool_name, version)
+    assert result is None
+
+
+def test_install_tool_sha512_mismatch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test install_tool when existing binary has an invalid sha512 checksum.
+
+    This forces a re-download."""
+    monkeypatch.chdir(tmp_path)
+    tool_name = "clang-format"
+    version = "12"
+    bin_name = f"{tool_name}-{version}{suffix}"
+
+    # Pre-create the binary with invalid content
+    existing_bin = tmp_path / bin_name
+    existing_bin.write_bytes(b"corrupted binary data")
+
+    # install_tool should detect invalid sha, uninstall, and re-download
+    assert install_tool(tool_name, version, str(tmp_path), False)
+    assert existing_bin.exists()
+
+
+def test_move_and_chmod_bin(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test move_and_chmod_bin directly."""
+    monkeypatch.chdir(tmp_path)
+    old_name = "downloaded-file"
+    new_name = "clang-format-12"
+    src_file = tmp_path / old_name
+    src_file.write_bytes(b"binary content")
+
+    install_dir = tmp_path / "bin"
+    move_and_chmod_bin(old_name, new_name, str(install_dir))
+
+    target = install_dir / new_name
+    assert target.exists()
+    assert not src_file.exists()  # moved, not copied
+    assert os.access(target, os.X_OK)
+
+
+def test_move_and_chmod_bin_create_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test move_and_chmod_bin creates install directory if it doesn't exist."""
+    monkeypatch.chdir(tmp_path)
+    old_name = "downloaded-file"
+    new_name = "clang-format-12"
+    src_file = tmp_path / old_name
+    src_file.write_bytes(b"binary content")
+
+    install_dir = tmp_path / "nested" / "bin"
+    # directory does not exist yet
+    assert not install_dir.exists()
+    move_and_chmod_bin(old_name, new_name, str(install_dir))
+
+    target = install_dir / new_name
+    assert target.exists()
+    assert os.access(target, os.X_OK)
+
+
+def test_create_symlink_with_target(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test create_sym_link with an explicit target parameter."""
+    monkeypatch.chdir(str(tmp_path))
+    tool_name = "clang-tool"
+    version = "1"
+
+    # Create the target in a different location
+    target_dir = tmp_path / "targets"
+    target_dir.mkdir()
+    target = target_dir / f"{tool_name}-{version}{suffix}"
+    target.write_bytes(b"some binary data")
+
+    # Create symlink pointing to the explicit target
+    assert create_sym_link(tool_name, version, str(tmp_path), False, target=target)
+    link = tmp_path / f"{tool_name}{suffix}"
+    assert link.is_symlink()
+    assert link.resolve() == target
+
+
+def test_uninstall_tool_direct(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test uninstall_tool directly."""
+    monkeypatch.chdir(str(tmp_path))
+    tool_name = "clang-format"
+    version = "12"
+    bin_name = f"{tool_name}-{version}{suffix}"
+    tool_path = tmp_path / bin_name
+    tool_path.write_bytes(b"binary")
+
+    assert tool_path.exists()
+    uninstall_tool(tool_name, version, str(tmp_path))
+    assert not tool_path.exists()
+
+
+def test_uninstall_tool_with_dead_symlink(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Test uninstall_tool cleans up a dead symlink."""
+    monkeypatch.chdir(str(tmp_path))
+    tool_name = "clang-format"
+    version = "12"
+    bin_name = f"{tool_name}-{version}{suffix}"
+
+    # Create the actual tool binary
+    tool_path = tmp_path / bin_name
+    tool_path.write_bytes(b"binary")
+
+    # Create a symlink
+    link = tmp_path / f"{tool_name}{suffix}"
+    link.symlink_to(tool_path)
+
+    # Remove the actual binary to make the symlink dead
+    tool_path.unlink()
+
+    # Now the symlink exists but points to nothing
+    assert link.is_symlink()
+    assert not link.exists()
+
+    # uninstall_tool should clean up the dead symlink
+    uninstall_tool(tool_name, version, str(tmp_path))
+    assert not link.exists()
+
+
+def test_uninstall_tool_nonexistent(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test uninstall_tool with a tool that doesn't exist (no-op)."""
+    monkeypatch.chdir(str(tmp_path))
+    # Should not raise any error
+    uninstall_tool("clang-format", "99", str(tmp_path))
+
+
+def test_install_dir_name_default():
+    """Test install_dir_name returns proper default when no dir given."""
+    result = install_dir_name("")
+    if install_os == "linux":
+        assert result == os.path.expanduser("~/.local/bin/")
+    else:
+        import sys
+
+        assert result == os.path.dirname(sys.executable)
+
+
+def test_install_clang_tools_path_not_in_env(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture
+):
+    """Test install_clang_tools warns when install dir is not in PATH."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+
+    with pytest.raises(OSError):
+        install_clang_tools(Version("12"), "clang-format", str(tmp_path), False, True)
+
+    result = capsys.readouterr()
+    assert "directory is not in your environment variable PATH" in result.out

@@ -1,6 +1,9 @@
 """Tests related to the utility functions."""
 
+import hashlib
 from pathlib import Path, PurePath
+from urllib.error import HTTPError
+from unittest.mock import Mock
 import pytest
 from clang_tools import install_arch, install_os
 from clang_tools.install import clang_tools_binary_url
@@ -9,6 +12,7 @@ from clang_tools.util import (
     check_install_os,
     download_file,
     get_sha_checksum,
+    verify_sha512,
     Version,
 )
 
@@ -54,3 +58,96 @@ def test_version_path():
     """Tests version parsing when given specification is a path."""
     version = str(Path(__file__).parent)
     assert Version(version).info == (0, 0, 0)
+
+
+def test_version_non_numeric():
+    """Tests version parsing when given specification is non-numeric."""
+    assert Version("abc").info == (0, 0, 0)
+    assert Version("12.abc").info == (0, 0, 0)
+
+
+def test_version_full_semver():
+    """Tests version parsing with full semver specification."""
+    v = Version("12.0.1")
+    assert v.info == (12, 0, 1)
+    assert v.string == "12.0.1"
+
+
+def test_version_major_only():
+    """Tests version parsing with only major version."""
+    v = Version("15")
+    assert v.info == (15, 0, 0)
+
+
+def test_version_major_minor():
+    """Tests version parsing with major.minor."""
+    v = Version("15.3")
+    assert v.info == (15, 3, 0)
+
+
+def test_verify_sha512_valid():
+    """Tests that sha512 verification returns True for matching hash."""
+    data = b"test binary data"
+    checksum = hashlib.sha512(data).hexdigest()
+    assert verify_sha512(checksum, data)
+
+
+def test_verify_sha512_invalid():
+    """Tests that sha512 verification returns False for non-matching hash."""
+    data = b"test binary data"
+    checksum = hashlib.sha512(b"different data").hexdigest()
+    assert not verify_sha512(checksum, data)
+
+
+def test_verify_sha512_with_filename_in_checksum():
+    """Tests that sha512 verification works when checksum includes a filename."""
+    data = b"test binary data"
+    checksum = hashlib.sha512(data).hexdigest() + "  clang-format-21_linux-amd64"
+    assert verify_sha512(checksum, data)
+
+
+def test_download_file_http_error(monkeypatch: pytest.MonkeyPatch):
+    """Tests that download_file returns None on HTTP error."""
+    monkeypatch.setattr(
+        "clang_tools.util.urllib.request.urlopen",
+        Mock(side_effect=HTTPError("http://fake", 404, "Not Found", {}, None)),
+    )
+    result = download_file("http://fake/file.tar.gz", "file.tar.gz", True)
+    assert result is None
+
+
+def test_download_file_value_error(monkeypatch: pytest.MonkeyPatch):
+    """Tests that download_file returns None on ValueError (invalid URL)."""
+    monkeypatch.setattr(
+        "clang_tools.util.urllib.request.urlopen",
+        Mock(side_effect=ValueError("invalid URL")),
+    )
+    result = download_file("not-a-url", "file.tar.gz", True)
+    assert result is None
+
+
+def test_download_file_bad_status(monkeypatch: pytest.MonkeyPatch):
+    """Tests that download_file returns None when HTTP status is not 200."""
+    mock_response = Mock()
+    mock_response.status = 404
+    monkeypatch.setattr(
+        "clang_tools.util.urllib.request.urlopen",
+        Mock(return_value=mock_response),
+    )
+    result = download_file("http://fake/file.tar.gz", "file.tar.gz", True)
+    assert result is None
+
+
+def test_download_file_with_progress_bar(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Tests download_file with progress bar enabled (no_progress_bar=False)."""
+    monkeypatch.chdir(str(tmp_path))
+    url = clang_tools_binary_url("clang-format", "21")
+    file_name = download_file(url, "file.tar.gz", False)
+    assert file_name is not None
+
+
+def test_check_install_os_unsupported(monkeypatch: pytest.MonkeyPatch):
+    """Tests that check_install_os raises SystemExit for unsupported OS."""
+    monkeypatch.setattr("platform.system", lambda: "SunOS")
+    with pytest.raises(SystemExit, match="sunos is not currently supported"):
+        check_install_os()

@@ -315,6 +315,7 @@ def test_install_dir_name_default():
         assert result == os.path.expanduser("~/.local/bin/")
     else:
         import sys
+
         assert result == os.path.dirname(sys.executable)
 
 

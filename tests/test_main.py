@@ -58,12 +58,17 @@ def test_main_uninstall(monkeypatch: pytest.MonkeyPatch, tmp_path, capsys):
     dummy_bin.write_bytes(b"dummy")
 
     monkeypatch.setattr(
-        sys, "argv", [
+        sys,
+        "argv",
+        [
             "clang-tools",
-            "--uninstall", version,
-            "--tool", tool_name,
-            "--directory", install_dir,
-        ]
+            "--uninstall",
+            version,
+            "--tool",
+            tool_name,
+            "--directory",
+            install_dir,
+        ],
     )
     main()
     # Verifies uninstall path was entered (printed the uninstall message)
@@ -75,13 +80,18 @@ def test_main_install(monkeypatch: pytest.MonkeyPatch, tmp_path):
     """Test main() with --install flag."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(
-        sys, "argv", [
+        sys,
+        "argv",
+        [
             "clang-tools",
-            "--install", "12",
-            "--tool", "clang-format",
-            "--directory", str(tmp_path),
+            "--install",
+            "12",
+            "--tool",
+            "clang-format",
+            "--directory",
+            str(tmp_path),
             "--no-progress-bar",
-        ]
+        ],
     )
     main()
     # Binary should be installed
@@ -92,11 +102,15 @@ def test_main_install(monkeypatch: pytest.MonkeyPatch, tmp_path):
 def test_main_install_invalid_version(monkeypatch: pytest.MonkeyPatch, capsys):
     """Test main() with --install using a non-semver version."""
     monkeypatch.setattr(
-        sys, "argv", [
+        sys,
+        "argv",
+        [
             "clang-tools",
-            "--install", "not-a-version",
-            "--tool", "clang-format",
-        ]
+            "--install",
+            "not-a-version",
+            "--tool",
+            "clang-format",
+        ],
     )
     main()
     result = capsys.readouterr()

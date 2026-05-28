@@ -138,7 +138,9 @@ def test_download_file_bad_status(monkeypatch: pytest.MonkeyPatch):
     assert result is None
 
 
-def test_download_file_with_progress_bar(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_download_file_with_progress_bar(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
     """Tests download_file with progress bar enabled (no_progress_bar=False)."""
     monkeypatch.chdir(str(tmp_path))
     url = clang_tools_binary_url("clang-format", "21")

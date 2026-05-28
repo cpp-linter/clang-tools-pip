@@ -151,7 +151,9 @@ def test_is_installed_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     assert result == fake_bin.resolve()
 
 
-def test_is_installed_wrong_major_version(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_is_installed_wrong_major_version(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
     """Test is_installed when the tool exists but has a different major version."""
     tool_name = "clang-format"
     version = Version("12")
@@ -270,7 +272,9 @@ def test_uninstall_tool_direct(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     assert not tool_path.exists()
 
 
-def test_uninstall_tool_with_dead_symlink(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_uninstall_tool_with_dead_symlink(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
     """Test uninstall_tool cleans up a dead symlink."""
     monkeypatch.chdir(str(tmp_path))
     tool_name = "clang-format"
@@ -310,6 +314,7 @@ def test_install_dir_name_default(monkeypatch: pytest.MonkeyPatch):
     result = install_dir_name("")
     # On macOS, this should be the directory of sys.executable
     import sys
+
     assert result == os.path.dirname(sys.executable)
 
 

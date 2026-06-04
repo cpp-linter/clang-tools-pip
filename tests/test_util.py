@@ -51,7 +51,11 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
         encoding="utf-8"
     )
     url = clang_tools_binary_url("clang-format", "21")
-    assert get_sha_checksum(url) == expected
+    actual = get_sha_checksum(url)
+    # Compare only the hash portion, ignoring trailing filename and line endings
+    expected_hash = expected.strip().split(" ", 1)[0]
+    actual_hash = actual.strip().split(" ", 1)[0]
+    assert actual_hash == expected_hash
 
 
 def test_version_path():

@@ -13,7 +13,7 @@ clang-tools CLI
 .. |sonar-badge| image:: https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&metric=alert_status
     :target: https://sonarcloud.io/summary/new_code?id=cpp-linter_clang-tools-pip
     :alt: sonarcloud
-.. |platform-badge| image:: https://img.shields.io/badge/platform-linux--64%20%7C%20win--64%20%7C%20osx--64%20-blue
+.. |platform-badge| image:: https://img.shields.io/badge/platform-linux--64%20%7C%20linux--arm64%20%7C%20win--64%20%7C%20osx--64%20%7C%20osx--arm64%20-blue
     :target: https://pypi.org/project/clang-tools/
     :alt: Platform
 .. |pypi-badge| image:: https://img.shields.io/pypi/dw/clang-tools

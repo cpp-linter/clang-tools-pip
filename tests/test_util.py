@@ -43,10 +43,12 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.chdir(PurePath(__file__).parent.as_posix())
     if install_os == "macosx":
         platform_str = (
-            "macosx-arm64" if install_arch == "arm64" else "macos-intel-amd64"
+            "macos-arm64" if install_arch == "arm64" else "macos-amd64"
         )
     else:
-        platform_str = f"{install_os}-amd64"
+        platform_str = (
+            f"{install_os}-arm64" if install_arch == "arm64" else f"{install_os}-amd64"
+        )
     expected = Path(f"clang-format-21_{platform_str}.sha512sum").read_text(
         encoding="utf-8"
     )

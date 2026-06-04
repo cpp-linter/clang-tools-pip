@@ -30,11 +30,16 @@ def test_clang_tools_binary_url(tool_name: str, version: str):
     url = clang_tools_binary_url(tool_name, version)
     if install_os == "macosx":
         if install_arch == "arm64":
-            assert f"{tool_name}-{version}_macosx-arm64" in url
+            assert f"{tool_name}-{version}_macos-arm64" in url
         else:
-            assert f"{tool_name}-{version}_macos-intel-amd64" in url
+            assert f"{tool_name}-{version}_macos-amd64" in url
     else:
-        assert f"{tool_name}-{version}_{install_os}-amd64" in url
+        platform_str = (
+            f"{install_os}-arm64"
+            if install_arch == "arm64"
+            else f"{install_os}-amd64"
+        )
+        assert f"{tool_name}-{version}_{platform_str}" in url
 
 
 @pytest.mark.parametrize("directory", ["", "."])

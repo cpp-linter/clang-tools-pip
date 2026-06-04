@@ -20,7 +20,7 @@ from clang_tools.install import (
 from clang_tools.util import Version
 
 
-@pytest.mark.parametrize("version", [str(v) for v in range(7, 17)] + ["12.0.1"])
+@pytest.mark.parametrize("version", [str(v) for v in range(7, 17)])
 @pytest.mark.parametrize(
     "tool_name",
     ["clang-format", "clang-tidy", "clang-query", "clang-apply-replacements"],

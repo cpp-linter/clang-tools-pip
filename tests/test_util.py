@@ -70,9 +70,9 @@ def test_version_non_numeric():
 
 def test_version_full_semver():
     """Tests version parsing with full semver specification."""
-    v = Version("12.0.1")
-    assert v.info == (12, 0, 1)
-    assert v.string == "12.0.1"
+    v = Version("14.0.1")
+    assert v.info == (14, 0, 1)
+    assert v.string == "14.0.1"
 
 
 def test_version_major_only():

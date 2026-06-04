@@ -84,9 +84,7 @@ def clang_tools_binary_url(tool: str, version: str) -> str:
     """
     base_url = f"{binary_repo}/releases/download/" + binary_tag
     if install_os == "macosx":
-        platform_str = (
-            "macos-arm64" if install_arch == "arm64" else "macos-amd64"
-        )
+        platform_str = "macos-arm64" if install_arch == "arm64" else "macos-amd64"
     else:
         platform_str = (
             f"{install_os}-arm64" if install_arch == "arm64" else f"{install_os}-amd64"

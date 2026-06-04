@@ -35,9 +35,7 @@ def test_clang_tools_binary_url(tool_name: str, version: str):
             assert f"{tool_name}-{version}_macos-amd64" in url
     else:
         platform_str = (
-            f"{install_os}-arm64"
-            if install_arch == "arm64"
-            else f"{install_os}-amd64"
+            f"{install_os}-arm64" if install_arch == "arm64" else f"{install_os}-amd64"
         )
         assert f"{tool_name}-{version}_{platform_str}" in url
 

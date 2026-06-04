@@ -42,9 +42,7 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     releases' corresponding SHA512 checksum."""
     monkeypatch.chdir(PurePath(__file__).parent.as_posix())
     if install_os == "macosx":
-        platform_str = (
-            "macos-arm64" if install_arch == "arm64" else "macos-amd64"
-        )
+        platform_str = "macos-arm64" if install_arch == "arm64" else "macos-amd64"
     else:
         platform_str = (
             f"{install_os}-arm64" if install_arch == "arm64" else f"{install_os}-amd64"

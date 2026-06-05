@@ -13,7 +13,7 @@ suffix = ".exe" if install_os == "windows" else ""
 binary_repo = os.getenv(
     "CLANG_TOOLS_REPO", "https://github.com/cpp-linter/clang-tools-static-binaries"
 )
-binary_tag = os.getenv("CLANG_TOOLS_TAG", "master-63858060")
+binary_tag = os.getenv("CLANG_TOOLS_TAG", "master-14db129d")
 
 #: The minimum major version supported by the static binary builds.
 MIN_VERSION = 11

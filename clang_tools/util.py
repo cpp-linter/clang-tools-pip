@@ -91,9 +91,7 @@ def get_sha_checksum(binary_url: str) -> str:
     :returns: A `str` containing the contents of the SHA512sum file given
         ``binary_url``.
     """
-    with urllib.request.urlopen(
-        binary_url.replace(".exe", "") + ".sha512sum"
-    ) as response:
+    with urllib.request.urlopen(binary_url + ".sha512sum") as response:
         return response.read(response.length).decode(encoding="utf-8")
 
 

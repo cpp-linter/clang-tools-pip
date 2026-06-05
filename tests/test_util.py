@@ -42,16 +42,20 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     releases' corresponding SHA512 checksum."""
     monkeypatch.chdir(PurePath(__file__).parent.as_posix())
     if install_os == "macosx":
-        platform_str = (
-            "macosx-arm64" if install_arch == "arm64" else "macos-intel-amd64"
-        )
+        platform_str = "macos-arm64" if install_arch == "arm64" else "macos-amd64"
     else:
-        platform_str = f"{install_os}-amd64"
+        platform_str = (
+            f"{install_os}-arm64" if install_arch == "arm64" else f"{install_os}-amd64"
+        )
     expected = Path(f"clang-format-21_{platform_str}.sha512sum").read_text(
         encoding="utf-8"
     )
     url = clang_tools_binary_url("clang-format", "21")
-    assert get_sha_checksum(url) == expected
+    actual = get_sha_checksum(url)
+    # Compare only the hash portion, ignoring trailing filename and line endings
+    expected_hash = expected.strip().split(" ", 1)[0]
+    actual_hash = actual.strip().split(" ", 1)[0]
+    assert actual_hash == expected_hash
 
 
 def test_version_path():
@@ -68,9 +72,9 @@ def test_version_non_numeric():
 
 def test_version_full_semver():
     """Tests version parsing with full semver specification."""
-    v = Version("12.0.1")
-    assert v.info == (12, 0, 1)
-    assert v.string == "12.0.1"
+    v = Version("14.0.1")
+    assert v.info == (14, 0, 1)
+    assert v.string == "14.0.1"
 
 
 def test_version_major_only():

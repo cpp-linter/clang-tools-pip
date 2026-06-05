@@ -74,7 +74,7 @@ jobs:
     needs: [build]
     strategy:
       matrix:
-        version: [ 11, 12, 12.0.1, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 ]
+        version: [ 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 ]
         os: [ ubuntu-latest, macos-15-intel, macos-latest, windows-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -135,20 +135,13 @@ jobs:
       - name: Check clang-tools binaries on Unix
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
-          if [ "${{ matrix.version }}" = "12.0.1" -a "${{ runner.os }}" = "Linux" ]; then
-            clang-format-12.0.1 --version
-            clang-tidy-12.0.1 --version
-            clang-query-12.0.1 --version
-            clang-apply-replacements-12.0.1 --version
-          else
-            clang-format-${{ matrix.version }} --version
-            clang-tidy-${{ matrix.version }} --version
-            clang-query-${{ matrix.version }} --version
-            clang-apply-replacements-${{ matrix.version }} --version
-          fi
+          clang-format-${{ matrix.version }} --version
+          clang-tidy-${{ matrix.version }} --version
+          clang-query-${{ matrix.version }} --version
+          clang-apply-replacements-${{ matrix.version }} --version
 
       - name: Install and check clang-format wheels
-        if: ${{ matrix.version != '12.0.1' && fromJSON(matrix.version) >= 10 }} # Skip 12.0.1
+        if: ${{ fromJSON(matrix.version) >= 10 }}
         shell: bash
         run: |
           set -e
@@ -170,7 +163,7 @@ jobs:
           echo "✅ clang-format Versions are correct."
 
       - name: Install and check clang-tidy wheels
-        if: ${{ matrix.version != '12.0.1' && fromJSON(matrix.version) >= 13 }}
+        if: ${{ fromJSON(matrix.version) >= 13 }}
         shell: bash
         run: |
           set -e

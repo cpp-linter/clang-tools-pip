@@ -20,7 +20,7 @@ clang-tools CLI
     :target: https://pypistats.org/packages/clang-tools
     :alt: PyPI - Downloads
 
-|latest-version| |test| |codecov-badge| |sonar-badge| |platform-badge| |pypi-badge|
+|latest-version| |test| |codecov-badge| |sonar-badge| |platform-badge|
 
 
 Easily install clang-format, clang-tidy, clang-query, and clang-apply-replacements static binaries or Python wheels using the ``clang-tools`` CLI.

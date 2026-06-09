@@ -83,7 +83,6 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 #v6.2.0
         with:
           python-version: "3.10"
-          cache: ""
 
       - name: Download wheel artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -94,7 +93,7 @@ jobs:
       - name: Install pkg from wheel
         # using a wildcard as filename on Windows requires a bash shell
         shell: bash
-        run: pip install dist/*.whl
+        run: pip install --no-cache-dir dist/*.whl
 
       - name: Install clang-tools binaries
         run: clang-tools --install ${{ matrix.version }} --tool clang-format clang-tidy clang-query clang-apply-replacements

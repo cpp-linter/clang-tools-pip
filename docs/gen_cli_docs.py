@@ -47,20 +47,14 @@ def _write_cli_doc(parser, prog_name: str, filename: str) -> str:
         lines.append(f"### `{', '.join(aliases)}`\n")
 
         req_ver = next(
-            (
-                ver
-                for ver, names in REQUIRED_VERSIONS.items()
-                if arg.dest in names
-            ),
+            (ver for ver, names in REQUIRED_VERSIONS.items() if arg.dest in names),
             "0.1.0",
         )
         badges = [f":material-tag-outline: **v{req_ver}**"]
 
         if arg.default:
             default = (
-                " ".join(arg.default)
-                if isinstance(arg.default, list)
-                else arg.default
+                " ".join(arg.default) if isinstance(arg.default, list) else arg.default
             )
             badges.append(f"Default: `{default}`")
         if isinstance(arg, _StoreTrueAction):

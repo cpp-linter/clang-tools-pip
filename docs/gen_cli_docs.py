@@ -41,7 +41,9 @@ def _write_cli_doc(parser, prog_name: str, filename: str) -> str:
         aliases = arg.option_strings
         if not aliases or arg.default == "==SUPPRESS==":
             continue
-        assert arg.help is not None
+        if arg.help is None:
+            msg = f"Argument {aliases[0] if aliases else arg.dest} missing help text"
+            raise ValueError(msg)
         lines.append(f"### `{', '.join(aliases)}`\n")
 
         req_ver = next(

@@ -185,6 +185,4 @@ jobs:
           echo "✅ clang-tidy Versions are correct."
 
   docs:
-    uses: cpp-linter/.github/.github/workflows/sphinx.yml@main
-    with:
-      path-to-doc: docs/_build/html
+    uses: cpp-linter/.github/.github/workflows/mkdocs.yml@main

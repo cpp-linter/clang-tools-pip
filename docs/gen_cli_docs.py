@@ -6,8 +6,6 @@ the `cli_args.md` and `wheel_cli_args.md` pages from argparse.
 
 from argparse import _StoreTrueAction
 from io import StringIO
-from pathlib import Path
-
 import mkdocs_gen_files
 from clang_tools.main import get_parser
 from clang_tools.wheel import get_parser as get_wheel_parser

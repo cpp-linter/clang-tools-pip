@@ -57,6 +57,15 @@ docs = [
     "mkdocs-gen-files>=0.5",
 ]
 
+[tool.uv]
+
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocs-gen-files>=0.5",
+]
+
 [tool.setuptools]
 zip-safe = false
 packages = ["clang_tools"]

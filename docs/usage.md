@@ -1,6 +1,5 @@
-# Custom Binary Repository
-
-You can override the default source for downloading **clang-tools** by setting the following environment variables:
+You can override the default source for downloading **clang-tools**
+by setting the following environment variables:
 
 - `CLANG_TOOLS_REPO` – The URL of the binary repository
   (default: `https://github.com/cpp-linter/clang-tools-static-binaries`)

@@ -7,8 +7,8 @@ edit_uri: "edit/main/docs/"
 copyright: "© 2021-2026, cpp-linter"
 
 nav:
-  - Home: index.md
-  - Usage: usage.md
+  - clang-tools CLI: index.md
+  - Custom Binary Repository: usage.md
   - CLI Reference:
       - clang-tools: cli_args.md
       - clang-tools-wheel: wheel_cli_args.md

@@ -4,7 +4,6 @@ This script is used as a `gen-files` plugin to auto-generate
 the `cli_args.md` and `wheel_cli_args.md` pages from argparse.
 """
 
-from argparse import _StoreTrueAction
 from io import StringIO
 import mkdocs_gen_files
 from clang_tools.main import get_parser
@@ -19,7 +18,7 @@ REQUIRED_VERSIONS = {
 }
 
 
-def _write_cli_doc(parser, prog_name: str, filename: str) -> str:
+def _write_cli_doc(parser, prog_name: str) -> str:
     """Generate markdown documentation from an argparse parser."""
     lines = []
     lines.append(f"---\ntitle: {prog_name} CLI\n---\n")
@@ -36,7 +35,7 @@ def _write_cli_doc(parser, prog_name: str, filename: str) -> str:
     lines.append("```\n")
     lines.append("## Options\n")
 
-    args = parser._optionals._actions  # noqa: SLF001
+    args = parser._actions
     for arg in args:
         aliases = arg.option_strings
         if not aliases or arg.default == "==SUPPRESS==":
@@ -52,12 +51,12 @@ def _write_cli_doc(parser, prog_name: str, filename: str) -> str:
         )
         badges = [f":material-tag-outline: **v{req_ver}**"]
 
-        if arg.default:
+        if arg.default is not None:
             default = (
                 " ".join(arg.default) if isinstance(arg.default, list) else arg.default
             )
             badges.append(f"Default: `{default}`")
-        if isinstance(arg, _StoreTrueAction):
+        if arg.default is False and arg.const is True:
             badges.append("Accepts no value")
 
         lines.append(" &nbsp; ".join(badges) + "\n")
@@ -72,8 +71,8 @@ def _generate(filename: str, content: str) -> None:
     mkdocs_gen_files.set_edit_path(filename, "gen_cli_docs.py")
 
 
-_generate("cli_args.md", _write_cli_doc(get_parser(), "clang-tools", "cli_args.md"))
+_generate("cli_args.md", _write_cli_doc(get_parser(), "clang-tools"))
 _generate(
     "wheel_cli_args.md",
-    _write_cli_doc(get_wheel_parser(), "clang-tools-wheel", "wheel_cli_args.md"),
+    _write_cli_doc(get_wheel_parser(), "clang-tools-wheel"),
 )

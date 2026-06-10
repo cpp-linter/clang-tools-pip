@@ -1,5 +1,3 @@
-# API Reference
-
 The `clang-tools` package exposes the following Python modules:
 
 ## `clang_tools.main`
@@ -8,7 +6,8 @@ Main entry point for the `clang-tools` CLI.
 
 [:octicons-code-16: View source](https://github.com/cpp-linter/clang-tools-pip/blob/main/clang_tools/main.py)
 
-Provides the `clang-tools` command-line interface for installing and managing clang tool binaries.
+Provides the `clang-tools` command-line interface for installing
+and managing clang tool binaries.
 
 ---
 
@@ -18,7 +17,8 @@ Installation logic for clang tool binaries.
 
 [:octicons-code-16: View source](https://github.com/cpp-linter/clang-tools-pip/blob/main/clang_tools/install.py)
 
-Handles downloading, verifying (SHA512), and symlinking clang tool binaries from static binary releases.
+Handles downloading, verifying (SHA512), and symlinking clang tool
+binaries from static binary releases.
 
 ---
 
@@ -36,4 +36,5 @@ Python wheel installation entry point.
 
 [:octicons-code-16: View source](https://github.com/cpp-linter/clang-tools-pip/blob/main/clang_tools/wheel.py)
 
-Provides the `clang-tools-wheel` command-line interface for installing clang tool Python wheels.
+Provides the `clang-tools-wheel` command-line interface for installing
+clang tool Python wheels.

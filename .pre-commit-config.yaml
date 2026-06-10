@@ -9,6 +9,7 @@ repos:
       - id: check-docstring-first
       - id: check-added-large-files
       - id: check-yaml
+        exclude: ^mkdocs\.yml$
       - id: debug-statements
       - id: requirements-txt-fixer
   - repo: https://github.com/asottile/pyupgrade

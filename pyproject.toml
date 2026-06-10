@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "clang_tools"
 description = "Install clang-tools (clang-format, clang-tidy, clang-query, clang-apply-replacements) with pip"
-readme = "README.rst"
+readme = "README.md"
 keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format", "clang-query", "clang-apply-replacements"]
 license = "MIT"
 authors = [
@@ -52,9 +52,18 @@ dev = [
     "pytest",
 ]
 docs = [
-    "sphinx",
-    "sphinx-autobuild",
-    "sphinx_immaterial",
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocs-gen-files>=0.5",
+]
+
+[tool.uv]
+
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocs-gen-files>=0.5",
 ]
 
 [tool.setuptools]
@@ -102,9 +111,4 @@ exclude_lines = [
     # ignore any branch that makes the module executable
     'if __name__ == "__main__"',
     "def main",
-]
-
-[dependency-groups]
-docs = [
-    "sphinx-immaterial>=0.13.5",
 ]

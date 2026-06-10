@@ -93,7 +93,7 @@ jobs:
       - name: Install pkg from wheel
         # using a wildcard as filename on Windows requires a bash shell
         shell: bash
-        run: pip install dist/*.whl
+        run: pip install --no-cache-dir dist/*.whl
 
       - name: Install clang-tools binaries
         run: clang-tools --install ${{ matrix.version }} --tool clang-format clang-tidy clang-query clang-apply-replacements
@@ -185,6 +185,4 @@ jobs:
           echo "✅ clang-tidy Versions are correct."
 
   docs:
-    uses: cpp-linter/.github/.github/workflows/sphinx.yml@main
-    with:
-      path-to-doc: docs/_build/html
+    uses: cpp-linter/.github/.github/workflows/mkdocs.yml@main

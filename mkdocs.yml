@@ -1,0 +1,93 @@
+site_name: clang-tools CLI
+site_description: "Install clang-format, clang-tidy, clang-query, and clang-apply-replacements with pip."
+site_url: "https://cpp-linter.github.io/clang-tools-pip/"
+repo_url: "https://github.com/cpp-linter/clang-tools-pip"
+repo_name: "cpp-linter/clang-tools-pip"
+edit_uri: "edit/main/docs/"
+copyright: "© 2021-2026, cpp-linter"
+
+nav:
+  - clang-tools CLI: index.md
+  - Custom Binary Repository: usage.md
+  - CLI Reference:
+      - clang-tools: cli_args.md
+      - clang-tools-wheel: wheel_cli_args.md
+  - API Reference: api.md
+  - "← cpp-linter hub": https://cpp-linter.github.io/
+
+theme:
+  name: material
+  features:
+    - navigation.top
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.footer
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - content.tooltips
+    - search.suggest
+    - search.share
+    - toc.follow
+  logo: images/logo.png
+  favicon: images/favicon.ico
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/lightbulb
+        name: Switch to system preference
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/cpp-linter
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - docs/gen_cli_docs.py
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      linenums_style: pymdownx-inline
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      check_paths: true
+  - toc:
+      permalink: true

@@ -1,13 +1,12 @@
 """Generate CLI argument documentation pages for MkDocs.
 
 This script is used as a `gen-files` plugin to auto-generate
-the `cli_args.md` and `wheel_cli_args.md` pages from argparse.
+the `cli_args.md` page from argparse.
 """
 
 from io import StringIO
 import mkdocs_gen_files
 from clang_tools.main import get_parser
-from clang_tools.wheel import get_parser as get_wheel_parser
 
 REQUIRED_VERSIONS = {
     "0.1.0": ["install"],
@@ -72,7 +71,3 @@ def _generate(filename: str, content: str) -> None:
 
 
 _generate("cli_args.md", _write_cli_doc(get_parser(), "clang-tools"))
-_generate(
-    "wheel_cli_args.md",
-    _write_cli_doc(get_wheel_parser(), "clang-tools-wheel"),
-)

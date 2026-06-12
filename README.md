@@ -71,14 +71,17 @@ For a full list of CLI options, see the [documentation](https://cpp-linter.githu
 ### Install binaries
 
 ```bash
-# Install version 13 binaries
-clang-tools --install 13
+# Install version 13 binaries (auto-detects binary vs wheel)
+clang-tools install 13
+
+# Force binary installation
+clang-tools install 13 --binary
 
 # Install to a specified directory
-clang-tools --install 13 --directory .
+clang-tools install 13 --directory .
 
 # Install specific tools
-clang-tools --install 14 --tool clang-format clang-query
+clang-tools install 14 --tool clang-format clang-query
 ```
 
 If the installed directory is in your path:
@@ -92,14 +95,14 @@ clang-format-13 --version
 
 ```bash
 # Install latest clang-format wheel
-clang-tools-wheel --tool clang-format
+clang-tools install clang-format --wheel
 
 # Install specific version
-clang-tools-wheel --tool clang-format --version 21
+clang-tools install clang-format --wheel --version 21
 ```
 
 > [!IMPORTANT]
-> The `clang-tools-wheel` command is primarily intended for
+> Wheel installation is primarily intended for
 > cpp-linter projects. For general use, install wheels directly
 > using `pip`, `pipx`, or `uv`.
 

@@ -11,7 +11,6 @@ nav:
   - Custom Binary Repository: usage.md
   - CLI Reference:
       - clang-tools: cli_args.md
-      - clang-tools-wheel: wheel_cli_args.md
   - API Reference: api.md
   - "← cpp-linter hub": https://cpp-linter.github.io/
 

@@ -12,7 +12,7 @@ import sys
 from typing import Optional
 
 from .install import install_clang_tools, uninstall_clang_tools
-from . import RESET_COLOR, YELLOW, MIN_VERSION, MAX_VERSION
+from . import RESET_COLOR, YELLOW
 from .util import Version
 
 
@@ -49,6 +49,118 @@ def _wheel_install(tools: list[str], version: Optional[str]) -> int:
             print(f"Failed to install {tool}{version_str}", file=sys.stderr)
             ok = False
     return 0 if ok else 1
+
+
+def _validate_wheel_tool(target: str) -> bool:
+    """Print an error and return `False` if *target* is not a wheel tool.
+    """
+    if target not in WHEEL_TOOLS:
+        print(
+            f"{YELLOW}Error: '{target}' is not available as a"
+            f" wheel. Supported: "
+            f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _handle_wheel(args: argparse.Namespace) -> int:
+    """Handle ``install --wheel`` subcommand."""
+    target: str = args.target
+    if _is_version_like(target):
+        return _wheel_install(args.tool, target)
+    if not _validate_wheel_tool(target):
+        return 1
+    return _wheel_install([target], args.explicit_version)
+
+
+def _handle_binary(args: argparse.Namespace) -> int:
+    """Handle ``install --binary`` subcommand."""
+    target: str = args.target
+    if not _is_version_like(target):
+        print(
+            f"{YELLOW}Error: --binary requires a version number"
+            f" (got '{target}'){RESET_COLOR}",
+            file=sys.stderr,
+        )
+        return 1
+    version = Version(target)
+    if version.info == (0, 0, 0):
+        print(
+            f"{YELLOW}The version specified is not a semantic"
+            f" specification{RESET_COLOR}",
+            file=sys.stderr,
+        )
+        return 1
+    install_clang_tools(
+        version,
+        args.tool,
+        args.directory,
+        args.overwrite,
+        args.no_progress_bar,
+    )
+    return 0
+
+
+def _handle_auto_detect(args: argparse.Namespace) -> int:
+    """Handle ``install`` without --binary/--wheel (auto-detect mode)."""
+    target: str = args.target
+    if not _is_version_like(target):
+        if target not in WHEEL_TOOLS:
+            print(
+                f"{YELLOW}Unknown target '{target}'. Expected a"
+                f" version number or one of: "
+                f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
+                file=sys.stderr,
+            )
+            return 1
+        return _wheel_install([target], args.explicit_version)
+
+    version = Version(target)
+    if version.info == (0, 0, 0):
+        print(
+            f"{YELLOW}The version specified is not a semantic"
+            f" specification{RESET_COLOR}",
+            file=sys.stderr,
+        )
+        return 1
+
+    # try binary first, fall back to wheel
+    try:
+        install_clang_tools(
+            version,
+            args.tool,
+            args.directory,
+            args.overwrite,
+            args.no_progress_bar,
+        )
+        return 0
+    except (OSError, ValueError, SystemExit) as exc:
+        print(
+            f"{YELLOW}Binary install failed"
+            f" ({exc}), falling back to"
+            f" wheel...{RESET_COLOR}",
+            file=sys.stderr,
+        )
+    return _wheel_install(args.tool, target)
+
+
+def _handle_install(args: argparse.Namespace) -> int:
+    """Dispatch ``install`` subcommand based on flags."""
+    if args.binary and args.wheel:
+        print(
+            f"{YELLOW}Error: --binary and --wheel are mutually"
+            f" exclusive{RESET_COLOR}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if args.wheel:
+        return _handle_wheel(args)
+    if args.binary:
+        return _handle_binary(args)
+    return _handle_auto_detect(args)
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -139,7 +251,6 @@ def main() -> int:
     parser = get_parser()
     args = parser.parse_args()
 
-    # ---- No subcommand → nothing to do ----------------------------------
     if args.command is None:
         print(
             f"{YELLOW}Nothing to do. Use 'install' or 'uninstall'"
@@ -149,110 +260,12 @@ def main() -> int:
         parser.print_help()
         return 0
 
-    # ---- ``uninstall`` subcommand ------------------------------------
     if args.command == "uninstall":
         uninstall_clang_tools(args.version, args.tool, args.directory)
         return 0
 
-    # ---- ``install`` subcommand --------------------------------------
     if args.command == "install":
-        target: str = args.target
-        binary: bool = args.binary
-        wheel: bool = args.wheel
-
-        # safety: --binary and --wheel are mutually exclusive
-        if binary and wheel:
-            print(
-                f"{YELLOW}Error: --binary and --wheel are mutually"
-                f" exclusive{RESET_COLOR}",
-                file=sys.stderr,
-            )
-            return 1
-
-        # ---- Case: --wheel (target may be tool name or version) -----
-        if wheel:
-            if _is_version_like(target):
-                # ``clang-tools install 18 --wheel``
-                return _wheel_install(args.tool, target)
-            else:
-                # ``clang-tools install clang-format --wheel``
-                if target not in WHEEL_TOOLS:
-                    print(
-                        f"{YELLOW}Error: '{target}' is not available as a"
-                        f" wheel. Supported: "
-                        f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
-                        file=sys.stderr,
-                    )
-                    return 1
-                return _wheel_install([target], args.explicit_version)
-
-        # ---- Case: --binary (target must be a version) --------------
-        if binary:
-            if not _is_version_like(target):
-                print(
-                    f"{YELLOW}Error: --binary requires a version number"
-                    f" (got '{target}'){RESET_COLOR}",
-                    file=sys.stderr,
-                )
-                return 1
-            version = Version(target)
-            if version.info != (0, 0, 0):
-                install_clang_tools(
-                    version,
-                    args.tool,
-                    args.directory,
-                    args.overwrite,
-                    args.no_progress_bar,
-                )
-                return 0
-            print(
-                f"{YELLOW}The version specified is not a semantic"
-                f" specification{RESET_COLOR}",
-                file=sys.stderr,
-            )
-            return 1
-
-        # ---- Auto-detect (no --binary or --wheel flag) --------------
-        if _is_version_like(target):
-            version = Version(target)
-            if version.info != (0, 0, 0):
-                # try binary first, fall back to wheel
-                try:
-                    install_clang_tools(
-                        version,
-                        args.tool,
-                        args.directory,
-                        args.overwrite,
-                        args.no_progress_bar,
-                    )
-                    return 0
-                except Exception as exc:
-                    print(
-                        f"{YELLOW}Binary install failed"
-                        f" ({exc}), falling back to"
-                        f" wheel...{RESET_COLOR}",
-                        file=sys.stderr,
-                    )
-                # fallback to wheel
-                return _wheel_install(args.tool, target)
-            else:
-                print(
-                    f"{YELLOW}The version specified is not a semantic"
-                    f" specification{RESET_COLOR}",
-                    file=sys.stderr,
-                )
-                return 1
-        else:
-            # target is a tool name → install via wheel
-            if target not in WHEEL_TOOLS:
-                print(
-                    f"{YELLOW}Unknown target '{target}'. Expected a"
-                    f" version number or one of: "
-                    f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
-                    file=sys.stderr,
-                )
-                return 1
-            return _wheel_install([target], args.explicit_version)
+        return _handle_install(args)
 
     return 0  # unreachable
 

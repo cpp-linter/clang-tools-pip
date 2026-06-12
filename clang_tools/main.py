@@ -29,9 +29,7 @@ def _is_version_like(target: str) -> bool:
 
 
 #: Known tool names supported by wheel installs
-WHEEL_TOOLS = {
-    "clang-format", "clang-tidy", "clang-query", "clang-apply-replacements",
-}
+WHEEL_TOOLS = {"clang-format", "clang-tidy"}
 
 
 def _wheel_install(tools: list[str], version: Optional[str]) -> int:
@@ -178,6 +176,14 @@ def main() -> int:
                 return _wheel_install(args.tool, target)
             else:
                 # ``clang-tools install clang-format --wheel``
+                if target not in WHEEL_TOOLS:
+                    print(
+                        f"{YELLOW}Error: '{target}' is not available as a"
+                        f" wheel. Supported: "
+                        f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
+                        file=sys.stderr,
+                    )
+                    return 1
                 return _wheel_install([target], args.explicit_version)
 
         # ---- Case: --binary (target must be a version) --------------

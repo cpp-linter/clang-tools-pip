@@ -200,6 +200,21 @@ def test_main_install_wheel_success(monkeypatch: pytest.MonkeyPatch, capsys):
     assert result.err == ""
 
 
+def test_main_install_wheel_unsupported_tool(
+    monkeypatch: pytest.MonkeyPatch, capsys
+):
+    """``--wheel`` with a binary-only tool name shows error."""
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["clang-tools", "install", "clang-query", "--wheel"],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert "is not available as a wheel" in result.err
+    assert exit_code == 1
+
+
 def test_main_install_wheel_failure(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--wheel`` with a failing _wheel_install returns 1."""
     monkeypatch.setattr(

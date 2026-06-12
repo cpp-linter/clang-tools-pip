@@ -9,6 +9,7 @@ via a single ``clang-tools`` command.
 
 import argparse
 import sys
+from typing import Optional
 
 from .install import install_clang_tools, uninstall_clang_tools
 from . import RESET_COLOR, YELLOW, MIN_VERSION, MAX_VERSION
@@ -28,10 +29,12 @@ def _is_version_like(target: str) -> bool:
 
 
 #: Known tool names supported by wheel installs
-WHEEL_TOOLS = {"clang-format", "clang-tidy", "clang-query", "clang-apply-replacements"}
+WHEEL_TOOLS = {
+    "clang-format", "clang-tidy", "clang-query", "clang-apply-replacements",
+}
 
 
-def _wheel_install(tools: list[str], version: str | None) -> int:
+def _wheel_install(tools: list[str], version: Optional[str]) -> int:
     """Install tool(s) via wheel (cpp_linter_hooks).
 
     :returns: exit code (0 on success, 1 on failure).
@@ -55,56 +58,6 @@ def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Install and manage clang-tools (clang-format, clang-tidy, etc.)"
     )
-
-    # ------------------------------------------------------------------
-    #  Backward-compatible top-level flags (deprecated – kept for
-    #  compatibility with older scripts / workflows)
-    # ------------------------------------------------------------------
-    parser.add_argument(
-        "-i",
-        "--install",
-        metavar="VERSION",
-        help="(deprecated) Use 'clang-tools install <version>' instead",
-        dest="_legacy_install",
-    )
-    parser.add_argument(
-        "-u",
-        "--uninstall",
-        metavar="VERSION",
-        help="(deprecated) Use 'clang-tools uninstall <version>' instead",
-        dest="_legacy_uninstall",
-    )
-    parser.add_argument(
-        "-t",
-        "--tool",
-        nargs="+",
-        default=["clang-format", "clang-tidy"],
-        metavar="TOOL",
-        help="Specify which tool(s) to install.",
-    )
-    parser.add_argument(
-        "-d",
-        "--directory",
-        default="",
-        metavar="DIR",
-        help="The directory where the clang-tools are installed.",
-    )
-    parser.add_argument(
-        "-f",
-        "--overwrite",
-        action="store_true",
-        help="Force overwriting the symlink to the installed binary.",
-    )
-    parser.add_argument(
-        "-b",
-        "--no-progress-bar",
-        action="store_true",
-        help="Do not display a progress bar for downloads.",
-    )
-
-    # ------------------------------------------------------------------
-    #  Subcommands (new-style CLI)
-    # ------------------------------------------------------------------
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # --- ``clang-tools install <target>`` ---------------------------------
@@ -188,36 +141,11 @@ def main() -> int:
     parser = get_parser()
     args = parser.parse_args()
 
-    # ---- Legacy backward-compat path ----------------------------------
-    if args._legacy_uninstall or args._legacy_install:
-        if args._legacy_uninstall:
-            uninstall_clang_tools(
-                args._legacy_uninstall, args.tool, args.directory
-            )
-        if args._legacy_install:
-            version = Version(args._legacy_install)
-            if version.info != (0, 0, 0):
-                install_clang_tools(
-                    version,
-                    args.tool,
-                    args.directory,
-                    args.overwrite,
-                    args.no_progress_bar,
-                )
-            else:
-                print(
-                    f"{YELLOW}The version specified is not a semantic",
-                    f"specification{RESET_COLOR}",
-                    file=sys.stderr,
-                )
-                return 1
-        return 0
-
-    # ---- No subcommand, no legacy flags → nothing to do --------------
+    # ---- No subcommand → nothing to do ----------------------------------
     if args.command is None:
         print(
-            f"{YELLOW}Nothing to do. Use 'install' or 'uninstall' subcommand,"
-            f" or --install/--uninstall flags.{RESET_COLOR}",
+            f"{YELLOW}Nothing to do. Use 'install' or 'uninstall'"
+            f" subcommand.{RESET_COLOR}",
             file=sys.stderr,
         )
         parser.print_help()
@@ -250,7 +178,6 @@ def main() -> int:
                 return _wheel_install(args.tool, target)
             else:
                 # ``clang-tools install clang-format --wheel``
-                # Install the target as the tool (ignore default --tool)
                 return _wheel_install([target], args.explicit_version)
 
         # ---- Case: --binary (target must be a version) --------------

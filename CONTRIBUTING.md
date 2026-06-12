@@ -18,10 +18,10 @@ Install `clang-tools` from source code
 
 ```bash
 $ git clone git@github.com:cpp-linter/clang-tools-pip.git
-# Need root permission
-$ sudo python3 setup.py install
+$ cd clang-tools-pip
+$ pip install -e .
 # Install clang-tools version 13
-$ sudo python3 main.py --install true --version 13
+$ clang-tools install 13
 ```
 
 ### Test

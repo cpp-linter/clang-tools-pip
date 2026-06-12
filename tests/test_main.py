@@ -1,24 +1,10 @@
 """Tests that relate to the unified main.py CLI."""
 
-from typing import Optional, List
-from argparse import ArgumentParser
 import sys
+from argparse import ArgumentParser
 import pytest
 from clang_tools import suffix
 from clang_tools.main import get_parser, main, _is_version_like
-
-
-class Args:
-    """Pseudo namespace for testing argparse defaults (legacy top-level flags)."""
-
-    command: Optional[str] = None
-    directory: str = ""
-    _legacy_install: Optional[str] = None
-    overlay: bool = False
-    overwrite: bool = False
-    no_progress_bar: bool = False
-    _legacy_uninstall: Optional[str] = None
-    tool: List[str] = ["clang-format", "clang-tidy"]
 
 
 # ---------------------------------------------------------------------------
@@ -41,7 +27,7 @@ def test_is_version_like(target: str, expected: bool):
 
 
 # ---------------------------------------------------------------------------
-#  Parser – new subcommands
+#  Parser – install subcommand
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
@@ -113,32 +99,6 @@ def test_uninstall_subcommand_defaults(parser: ArgumentParser):
 
 
 # ---------------------------------------------------------------------------
-#  Backward-compat legacy flags (still work)
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("arg_name", ["install", "uninstall"])
-@pytest.mark.parametrize("arg_value", [str(v) for v in range(7, 17)])
-def test_legacy_arg_parser(arg_name: str, arg_value: str, parser: ArgumentParser):
-    """Test legacy --install/--uninstall flags still parse."""
-    args = parser.parse_args([f"--{arg_name}={arg_value}"])
-    assert getattr(args, f"_legacy_{arg_name}") == arg_value
-
-
-@pytest.mark.parametrize("switch_name", ["overwrite", "no-progress-bar"])
-def test_legacy_cli_switch(switch_name: str, parser: ArgumentParser):
-    """Test legacy switches/flags."""
-    args = parser.parse_args([f"--{switch_name}"])
-    assert getattr(args, switch_name.replace("-", "_"))
-
-
-def test_legacy_default_args(parser: ArgumentParser):
-    """Test legacy default values."""
-    args = parser.parse_args([])
-    for name, value in args.__dict__.items():
-        assert getattr(Args, name) == value
-
-
-# ---------------------------------------------------------------------------
 #  Integration / functional tests
 # ---------------------------------------------------------------------------
 
@@ -151,80 +111,7 @@ def test_main_no_args(monkeypatch: pytest.MonkeyPatch, capsys):
     assert exit_code == 0
 
 
-def test_main_legacy_uninstall(
-    monkeypatch: pytest.MonkeyPatch, tmp_path, capsys
-):
-    """Legacy ``--uninstall`` flag still works."""
-    tool_name = "clang-format"
-    version = "12"
-    install_dir = str(tmp_path)
-    dummy_bin = tmp_path / f"{tool_name}-{version}{suffix}"
-    dummy_bin.write_bytes(b"dummy")
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "clang-tools",
-            "--uninstall",
-            version,
-            "--tool",
-            tool_name,
-            "--directory",
-            install_dir,
-        ],
-    )
-    exit_code = main()
-    result = capsys.readouterr()
-    assert "Uninstalling" in result.out
-    assert exit_code == 0
-
-
-def test_main_legacy_install(monkeypatch: pytest.MonkeyPatch, tmp_path):
-    """Legacy ``--install`` flag still works."""
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "clang-tools",
-            "--install",
-            "12",
-            "--tool",
-            "clang-format",
-            "--directory",
-            str(tmp_path),
-            "--no-progress-bar",
-        ],
-    )
-    exit_code = main()
-    assert exit_code == 0
-    bin_path = tmp_path / f"clang-format-12{suffix}"
-    assert bin_path.exists()
-
-
-def test_main_legacy_install_invalid_version(
-    monkeypatch: pytest.MonkeyPatch, capsys
-):
-    """Legacy ``--install`` with invalid version shows error."""
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "clang-tools",
-            "--install",
-            "not-a-version",
-            "--tool",
-            "clang-format",
-        ],
-    )
-    exit_code = main()
-    result = capsys.readouterr()
-    assert "not a semantic" in result.err
-    assert exit_code == 1
-
-
-# ---- New ``install`` subcommand ---------------------------------------
+# ---- ``install`` subcommand -------------------------------------------
 
 
 def test_main_install_binary(monkeypatch: pytest.MonkeyPatch, tmp_path):
@@ -258,12 +145,7 @@ def test_main_install_binary_requires_version(
     monkeypatch.setattr(
         sys,
         "argv",
-        [
-            "clang-tools",
-            "install",
-            "clang-format",
-            "--binary",
-        ],
+        ["clang-tools", "install", "clang-format", "--binary"],
     )
     exit_code = main()
     result = capsys.readouterr()
@@ -274,16 +156,11 @@ def test_main_install_binary_requires_version(
 def test_main_install_binary_invalid_version(
     monkeypatch: pytest.MonkeyPatch, capsys
 ):
-    """``--binary`` with a non-version target shows 'requires a version number'."""
+    """``--binary`` with a non-version target shows error."""
     monkeypatch.setattr(
         sys,
         "argv",
-        [
-            "clang-tools",
-            "install",
-            "not-a-version",
-            "--binary",
-        ],
+        ["clang-tools", "install", "not-a-version", "--binary"],
     )
     exit_code = main()
     result = capsys.readouterr()
@@ -298,13 +175,7 @@ def test_main_install_binary_and_wheel_mutex(
     monkeypatch.setattr(
         sys,
         "argv",
-        [
-            "clang-tools",
-            "install",
-            "18",
-            "--binary",
-            "--wheel",
-        ],
+        ["clang-tools", "install", "18", "--binary", "--wheel"],
     )
     exit_code = main()
     result = capsys.readouterr()
@@ -355,7 +226,14 @@ def test_main_install_wheel_version_arg(monkeypatch: pytest.MonkeyPatch, capsys)
     monkeypatch.setattr(
         sys,
         "argv",
-        ["clang-tools", "install", "clang-format", "--wheel", "--version", "15.0.7"],
+        [
+            "clang-tools",
+            "install",
+            "clang-format",
+            "--wheel",
+            "--version",
+            "15.0.7",
+        ],
     )
     exit_code = main()
     assert exit_code == 0
@@ -376,14 +254,7 @@ def test_main_install_wheel_with_version_as_target(
     monkeypatch.setattr(
         sys,
         "argv",
-        [
-            "clang-tools",
-            "install",
-            "18",
-            "--wheel",
-            "-t",
-            "clang-tidy",
-        ],
+        ["clang-tools", "install", "18", "--wheel", "-t", "clang-tidy"],
     )
     exit_code = main()
     assert exit_code == 0
@@ -419,7 +290,6 @@ def test_main_install_auto_detect_fallback(
     monkeypatch: pytest.MonkeyPatch, tmp_path, capsys
 ):
     """Auto-detect falls back to wheel when binary fails."""
-    # Cause binary install to fail
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
     monkeypatch.setattr(
         "clang_tools.main._wheel_install",
@@ -460,7 +330,6 @@ def test_main_install_auto_detect_non_version(
         ["clang-tools", "install", "clang-tidy"],
     )
     exit_code = main()
-    result = capsys.readouterr()
     assert exit_code == 0
     assert tracked_install == [(["clang-tidy"], None)]
 
@@ -468,9 +337,7 @@ def test_main_install_auto_detect_non_version(
 def test_main_install_auto_detect_out_of_range_version(
     monkeypatch: pytest.MonkeyPatch, capsys
 ):
-    """Auto-detect goes straight to wheel for out-of-range versions."""
-    # Version 99 is outside MIN_VERSION..MAX_VERSION, install_clang_tools
-    # raises ValueError → caught → fallback to wheel
+    """Auto-detect falls back to wheel for out-of-range versions."""
     monkeypatch.setattr(
         "clang_tools.main._wheel_install",
         lambda tools, ver: 0,
@@ -478,13 +345,7 @@ def test_main_install_auto_detect_out_of_range_version(
     monkeypatch.setattr(
         sys,
         "argv",
-        [
-            "clang-tools",
-            "install",
-            "99",
-            "--tool",
-            "clang-format",
-        ],
+        ["clang-tools", "install", "99", "--tool", "clang-format"],
     )
     exit_code = main()
     result = capsys.readouterr()
@@ -507,7 +368,7 @@ def test_main_install_auto_detect_invalid_version(
     assert exit_code == 1
 
 
-# ---- New ``uninstall`` subcommand -------------------------------------
+# ---- ``uninstall`` subcommand -----------------------------------------
 
 
 def test_main_uninstall_subcommand(
@@ -531,39 +392,6 @@ def test_main_uninstall_subcommand(
             tool_name,
             "--directory",
             install_dir,
-        ],
-    )
-    exit_code = main()
-    result = capsys.readouterr()
-    assert exit_code == 0
-    assert "Uninstalling" in result.out
-
-
-def test_main_legacy_install_and_uninstall(
-    monkeypatch: pytest.MonkeyPatch, tmp_path, capsys
-):
-    """Legacy combined ``--install`` and ``--uninstall`` flags."""
-    monkeypatch.chdir(tmp_path)
-    version = "12"
-    tool_name = "clang-format"
-    # pre-create dummy to uninstall
-    dummy_bin = tmp_path / f"{tool_name}-{version}{suffix}"
-    dummy_bin.write_bytes(b"dummy")
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "clang-tools",
-            "--uninstall",
-            version,
-            "--install",
-            version,
-            "--tool",
-            tool_name,
-            "--directory",
-            str(tmp_path),
-            "--no-progress-bar",
         ],
     )
     exit_code = main()

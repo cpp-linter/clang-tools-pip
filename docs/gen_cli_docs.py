@@ -5,6 +5,7 @@ the `cli_args.md` page from argparse.
 """
 
 from io import StringIO
+import argparse
 import mkdocs_gen_files
 from clang_tools.main import get_parser
 
@@ -79,7 +80,7 @@ def _write_cli_doc(parser, prog_name: str) -> str:
     if subparsers_action is not None:
         for name, sub in subparsers_action.choices.items():
             lines.append(f"---\n\n## `{prog_name} {name}`\n")
-            lines.append(f"```text")
+            lines.append("```text")
             sub.prog = f"{prog_name} {name}"
             str_buf = StringIO()
             sub.print_usage(str_buf)

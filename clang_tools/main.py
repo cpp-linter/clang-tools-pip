@@ -17,8 +17,7 @@ from .util import Version
 
 
 def _is_version_like(target: str) -> bool:
-    """Check if *target* looks like a version number (e.g. ``"18"``, ``"18.1"``).
-    """
+    """Check if *target* looks like a version number (e.g. ``"18"``, ``"18.1"``)."""
     try:
         parts = target.split(".")
         for p in parts:
@@ -52,8 +51,7 @@ def _wheel_install(tools: list[str], version: Optional[str]) -> int:
 
 
 def _validate_wheel_tool(target: str) -> bool:
-    """Print an error and return `False` if *target* is not a wheel tool.
-    """
+    """Print an error and return `False` if *target* is not a wheel tool."""
     if target not in WHEEL_TOOLS:
         print(
             f"{YELLOW}Error: '{target}' is not available as a"
@@ -150,8 +148,7 @@ def _handle_install(args: argparse.Namespace) -> int:
     """Dispatch ``install`` subcommand based on flags."""
     if args.binary and args.wheel:
         print(
-            f"{YELLOW}Error: --binary and --wheel are mutually"
-            f" exclusive{RESET_COLOR}",
+            f"{YELLOW}Error: --binary and --wheel are mutually exclusive{RESET_COLOR}",
             file=sys.stderr,
         )
         return 1

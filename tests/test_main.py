@@ -11,6 +11,7 @@ from clang_tools.main import get_parser, main, _is_version_like
 #  _is_version_like helper
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "target,expected",
     [
@@ -29,6 +30,7 @@ def test_is_version_like(target: str, expected: bool):
 # ---------------------------------------------------------------------------
 #  Parser – install subcommand
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def parser() -> ArgumentParser:
@@ -102,6 +104,7 @@ def test_uninstall_subcommand_defaults(parser: ArgumentParser):
 #  Integration / functional tests
 # ---------------------------------------------------------------------------
 
+
 def test_main_no_args(monkeypatch: pytest.MonkeyPatch, capsys):
     """``clang-tools`` with no args prints help."""
     monkeypatch.setattr(sys, "argv", ["clang-tools"])
@@ -138,9 +141,7 @@ def test_main_install_binary(monkeypatch: pytest.MonkeyPatch, tmp_path):
     assert bin_path.exists()
 
 
-def test_main_install_binary_requires_version(
-    monkeypatch: pytest.MonkeyPatch, capsys
-):
+def test_main_install_binary_requires_version(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--binary`` with a non-version target is an error."""
     monkeypatch.setattr(
         sys,
@@ -153,9 +154,7 @@ def test_main_install_binary_requires_version(
     assert exit_code == 1
 
 
-def test_main_install_binary_invalid_version(
-    monkeypatch: pytest.MonkeyPatch, capsys
-):
+def test_main_install_binary_invalid_version(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--binary`` with a non-version target shows error."""
     monkeypatch.setattr(
         sys,
@@ -168,9 +167,7 @@ def test_main_install_binary_invalid_version(
     assert exit_code == 1
 
 
-def test_main_install_binary_and_wheel_mutex(
-    monkeypatch: pytest.MonkeyPatch, capsys
-):
+def test_main_install_binary_and_wheel_mutex(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--binary`` and ``--wheel`` together is an error."""
     monkeypatch.setattr(
         sys,
@@ -200,9 +197,7 @@ def test_main_install_wheel_success(monkeypatch: pytest.MonkeyPatch, capsys):
     assert result.err == ""
 
 
-def test_main_install_wheel_unsupported_tool(
-    monkeypatch: pytest.MonkeyPatch, capsys
-):
+def test_main_install_wheel_unsupported_tool(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--wheel`` with a binary-only tool name shows error."""
     monkeypatch.setattr(
         sys,
@@ -217,9 +212,7 @@ def test_main_install_wheel_unsupported_tool(
 
 def test_main_install_wheel_failure(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--wheel`` with a failing _wheel_install returns 1."""
-    monkeypatch.setattr(
-        "clang_tools.main._wheel_install", lambda tools, ver: 1
-    )
+    monkeypatch.setattr("clang_tools.main._wheel_install", lambda tools, ver: 1)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -276,9 +269,7 @@ def test_main_install_wheel_with_version_as_target(
     assert tracked == [(["clang-tidy"], "18")]
 
 
-def test_main_install_auto_detect_binary(
-    monkeypatch: pytest.MonkeyPatch, tmp_path
-):
+def test_main_install_auto_detect_binary(monkeypatch: pytest.MonkeyPatch, tmp_path):
     """Auto-detect installs binary for version in supported range."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(
@@ -328,9 +319,7 @@ def test_main_install_auto_detect_fallback(
     assert "falling back to wheel" in result.err
 
 
-def test_main_install_auto_detect_non_version(
-    monkeypatch: pytest.MonkeyPatch, capsys
-):
+def test_main_install_auto_detect_non_version(monkeypatch: pytest.MonkeyPatch, capsys):
     """Auto-detect treats non-version target as tool name (wheel install)."""
     tracked_install: list = []
 
@@ -386,9 +375,7 @@ def test_main_install_auto_detect_invalid_version(
 # ---- ``uninstall`` subcommand -----------------------------------------
 
 
-def test_main_uninstall_subcommand(
-    monkeypatch: pytest.MonkeyPatch, tmp_path, capsys
-):
+def test_main_uninstall_subcommand(monkeypatch: pytest.MonkeyPatch, tmp_path, capsys):
     """``clang-tools uninstall 12`` removes installed tools."""
     tool_name = "clang-format"
     version = "12"

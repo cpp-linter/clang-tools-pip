@@ -32,7 +32,10 @@ WHEEL_TOOLS = {"clang-format", "clang-tidy"}
 
 
 def _wheel_install(tools: list[str], version: Optional[str]) -> int:
-    """Install tool(s) via wheel (cpp_linter_hooks).
+    """Install tool(s) as Python wheels using ``cpp_linter_hooks``.
+
+    Delegates to :func:`cpp_linter_hooks.util.resolve_install` for version
+    resolution and pip-based installation.
 
     :returns: exit code (0 on success, 1 on failure).
     """

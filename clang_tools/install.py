@@ -261,7 +261,11 @@ def uninstall_clang_tools(tools: list[str], version: str, directory: str):
 
 
 def install_clang_tools(
-    version: Version, tools: list[str], directory: str, overwrite: bool, no_progress_bar: bool
+    version: Version,
+    tools: list[str],
+    directory: str,
+    overwrite: bool,
+    no_progress_bar: bool,
 ) -> None:
     """Wraps functions used to individually install tools.
 

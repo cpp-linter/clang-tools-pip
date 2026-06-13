@@ -258,7 +258,7 @@ def main() -> int:
         return 0
 
     if args.command == "uninstall":
-        uninstall_clang_tools(args.version, args.tool, args.directory)
+        uninstall_clang_tools(args.tool, args.version, args.directory)
         return 0
 
     if args.command == "install":

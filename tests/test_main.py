@@ -400,3 +400,4 @@ def test_main_uninstall_subcommand(monkeypatch: pytest.MonkeyPatch, tmp_path, ca
     result = capsys.readouterr()
     assert exit_code == 0
     assert "Uninstalling" in result.out
+    assert not dummy_bin.exists()

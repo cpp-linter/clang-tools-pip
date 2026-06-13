@@ -117,6 +117,10 @@ class Version:
     """
 
     def __init__(self, user_input: str):
+        """Construct a :class:`Version` from *user_input*.
+
+        :param user_input: The version specification as a string.
+        """
         #: The version input in string form
         self.string = user_input
         version_tuple = user_input.split(".")

@@ -247,9 +247,10 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
         symlink.unlink()
 
 
-def uninstall_clang_tools(tools: str, version: str, directory: str):
+def uninstall_clang_tools(tools: list[str], version: str, directory: str):
     """Uninstall a clang tool of a given version.
 
+    :param tools: The list of tool names to uninstall.
     :param version: The version of the clang-tools to remove.
     :param directory: The directory from which to remove the
         installed clang-tools.
@@ -261,7 +262,11 @@ def uninstall_clang_tools(tools: str, version: str, directory: str):
 
 
 def install_clang_tools(
-    version: Version, tools: str, directory: str, overwrite: bool, no_progress_bar: bool
+    version: Version,
+    tools: list[str],
+    directory: str,
+    overwrite: bool,
+    no_progress_bar: bool,
 ) -> None:
     """Wraps functions used to individually install tools.
 

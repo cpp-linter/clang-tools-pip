@@ -69,22 +69,21 @@ Install `clang-tools` from git repo:
 For a list of supported Command Line Interface options, see:
 
 - [`clang-tools` CLI Reference](cli_args.md)
-- [`clang-tools-wheel` CLI Reference](wheel_cli_args.md)
 
 ### Install binaries examples
 
 Use `clang-tools` command to install version 13 binaries:
 
-    clang-tools --install 13
+    clang-tools install 13
 
 Or install to a specified directory:
 
-    clang-tools --install 13 --directory .
+    clang-tools install 13 --directory .
 
 Or install a specified tool, such as `clang-format` and
 `clang-query` version 14:
 
-    clang-tools --install 14 --tool clang-format clang-query
+    clang-tools install 14 --tool clang-format clang-query
 
 If the installed directory is in your path, you can run the installed tools:
 
@@ -101,23 +100,25 @@ If the installed directory is in your path, you can run the installed tools:
 ### Install wheels examples
 
 After installing the `clang-tools` CLI, you can install the
-Python wheels using the `clang-tools-wheel` command.
+Python wheels using the unified `clang-tools` command.
 
 !!! important
-    The `clang-tools-wheel` command is primarily intended for
+    Wheel installation is primarily intended for
     cpp-linter projects to simplify installing clang tools Python wheels.
     For general use, it is recommended to install the wheels directly
     using `pip`, `pipx`, `uv`, or similar tools.
 
+    ```bash
     # Install latest clang-format wheel
-    clang-tools-wheel --tool clang-format
+    clang-tools install clang-format --wheel
     # Install specific version clang-format wheel
-    clang-tools-wheel --tool clang-format --version 21
+    clang-tools install clang-format --wheel --version 21
 
     # Install latest clang-tidy wheel
-    clang-tools-wheel --tool clang-tidy
+    clang-tools install clang-tidy --wheel
     # Install specific version clang-tidy wheel
-    clang-tools-wheel --tool clang-tidy --version 21
+    clang-tools install clang-tidy --wheel --version 21
+    ```
 
 ## Supported Versions
 

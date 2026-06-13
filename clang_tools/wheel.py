@@ -20,6 +20,13 @@ def get_parser() -> ArgumentParser:
 
 
 def main() -> int:
+    """Entry point for the wheel-based tool installer.
+
+    Parses CLI args and delegates to
+    :func:`cpp_linter_hooks.util.resolve_install`.
+
+    :returns: exit code (0 on success, 1 on failure).
+    """
     parser = get_parser()
     args = parser.parse_args()
     path = resolve_install(args.tool, args.version)

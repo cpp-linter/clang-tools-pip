@@ -101,7 +101,7 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     2. indicates a failure when the requested version is out of the supported range
     """
     try:
-        install_clang_tools(Version("0"), "x", ".", False, False)
+        install_clang_tools(Version("0"), ["x"], ".", False, False)
     except ValueError as exc:
         if install_dir_name(".") not in os.environ.get("PATH", ""):  # pragma: no cover
             # this warning does not happen in an activated venv
@@ -132,7 +132,7 @@ def test_install_clang_tools_download_error(
     """
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
     with pytest.raises(OSError, match="Failed to download"):
-        install_clang_tools(Version("12"), "clang-format", str(tmp_path), False, True)
+        install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
 
 
 def test_is_installed_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -331,7 +331,42 @@ def test_install_clang_tools_path_not_in_env(
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
     with pytest.raises(OSError):
-        install_clang_tools(Version("12"), "clang-format", str(tmp_path), False, True)
+        install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
 
     result = capsys.readouterr()
     assert "directory is not in your environment variable PATH" in result.out
+
+
+def test_clang_tools_binary_url_non_macos(monkeypatch: pytest.MonkeyPatch):
+    """Test clang_tools_binary_url with a non-macOS platform string."""
+    monkeypatch.setattr("clang_tools.install.install_os", "linux")
+    monkeypatch.setattr("clang_tools.install.install_arch", "amd64")
+    url = clang_tools_binary_url("clang-format", "12")
+    assert "linux-amd64" in url
+
+
+def test_install_dir_name_linux_default(monkeypatch: pytest.MonkeyPatch):
+    """Test install_dir_name returns ~/.local/bin/ on Linux when no dir given."""
+    monkeypatch.setattr("clang_tools.install.install_os", "linux")
+    result = install_dir_name("")
+    assert result == os.path.expanduser("~/.local/bin/")
+
+
+def test_create_sym_link_nonexistent_dir(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Test create_sym_link creates the install directory if it doesn't exist."""
+    monkeypatch.chdir(str(tmp_path))
+    tool_name, version = "clang-tool", "1"
+    # Create the target binary in tmp_path
+    target = tmp_path / f"{tool_name}-{version}{suffix}"
+    target.write_bytes(b"some binary data")
+
+    # Use a nested subdir that does not exist yet
+    new_dir = tmp_path / "new_install_dir"
+    assert not new_dir.exists()
+
+    assert create_sym_link(tool_name, version, str(new_dir), False, target=target)
+    assert new_dir.exists()
+    link = new_dir / f"{tool_name}{suffix}"
+    assert link.is_symlink()

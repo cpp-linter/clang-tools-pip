@@ -157,3 +157,9 @@ def test_check_install_os_unsupported(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr("platform.system", lambda: "SunOS")
     with pytest.raises(SystemExit, match="sunos is not currently supported"):
         check_install_os()
+
+
+def test_check_install_arch_amd64(monkeypatch: pytest.MonkeyPatch):
+    """Tests check_install_arch returns 'amd64' for x86_64 machines."""
+    monkeypatch.setattr("platform.machine", lambda: "x86_64")
+    assert check_install_arch() == "amd64"

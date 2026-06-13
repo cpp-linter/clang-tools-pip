@@ -96,7 +96,7 @@ jobs:
         run: pip install --no-cache-dir dist/*.whl
 
       - name: Install clang-tools binaries
-        run: clang-tools --install ${{ matrix.version }} --tool clang-format clang-tidy clang-query clang-apply-replacements
+        run: clang-tools install ${{ matrix.version }} --tool clang-format clang-tidy clang-query clang-apply-replacements
 
       - name: Show path of clang-tools binaries
         shell: bash
@@ -145,7 +145,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          clang-tools-wheel --tool clang-format --version ${{ matrix.version }}
+          clang-tools install clang-format --wheel --version ${{ matrix.version }}
 
           echo "Checking clang-format versions..."
           clang-format --version
@@ -167,7 +167,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          clang-tools-wheel --tool clang-tidy --version ${{ matrix.version }}
+          clang-tools install clang-tidy --wheel --version ${{ matrix.version }}
 
           echo "Checking clang-tidy versions..."
           clang-tidy --version

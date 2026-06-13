@@ -101,7 +101,7 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     2. indicates a failure when the requested version is out of the supported range
     """
     try:
-        install_clang_tools(Version("0"), "x", ".", False, False)
+        install_clang_tools(Version("0"), ["x"], ".", False, False)
     except ValueError as exc:
         if install_dir_name(".") not in os.environ.get("PATH", ""):  # pragma: no cover
             # this warning does not happen in an activated venv
@@ -132,7 +132,7 @@ def test_install_clang_tools_download_error(
     """
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
     with pytest.raises(OSError, match="Failed to download"):
-        install_clang_tools(Version("12"), "clang-format", str(tmp_path), False, True)
+        install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
 
 
 def test_is_installed_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -331,7 +331,7 @@ def test_install_clang_tools_path_not_in_env(
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
     with pytest.raises(OSError):
-        install_clang_tools(Version("12"), "clang-format", str(tmp_path), False, True)
+        install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
 
     result = capsys.readouterr()
     assert "directory is not in your environment variable PATH" in result.out

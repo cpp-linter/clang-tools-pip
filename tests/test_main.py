@@ -434,3 +434,68 @@ def test_main_uninstall_subcommand(monkeypatch: pytest.MonkeyPatch, tmp_path, ca
     assert exit_code == 0
     assert "Uninstalling" in result.out
     assert not dummy_bin.exists()
+
+
+# ---------------------------------------------------------------------------
+#  Additional _wheel_install coverage (version=None, multi-tool mix)
+# ---------------------------------------------------------------------------
+
+
+def test_wheel_install_latest_success(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Test _wheel_install with version=None ("latest version" path, success)."""
+    from clang_tools.main import _wheel_install
+
+    monkeypatch.setattr(
+        "cpp_linter_hooks.util.resolve_install", lambda t, v: f"/fake/{t}"
+    )
+    assert _wheel_install(["clang-format"], None) == 0
+    result = capsys.readouterr()
+    assert "latest version" in result.out
+    assert "installed at:" in result.out
+
+
+def test_wheel_install_latest_failure(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Test _wheel_install with version=None ("latest version" path, failure)."""
+    from clang_tools.main import _wheel_install
+
+    monkeypatch.setattr("cpp_linter_hooks.util.resolve_install", lambda t, v: None)
+    assert _wheel_install(["clang-tidy"], None) == 1
+    result = capsys.readouterr()
+    assert "latest version" in result.err
+    assert "Failed to install" in result.err
+
+
+def test_wheel_install_multiple_tools_mixed(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Test _wheel_install with multiple tools where one fails and one succeeds."""
+    from clang_tools.main import _wheel_install
+
+    def mock_resolve(tool, version):
+        if tool == "clang-tidy":
+            return None  # fails
+        return f"/fake/{tool}"  # succeeds
+
+    monkeypatch.setattr("cpp_linter_hooks.util.resolve_install", mock_resolve)
+    assert _wheel_install(["clang-format", "clang-tidy"], "18") == 1
+    result = capsys.readouterr()
+    assert "installed at: /fake/clang-format" in result.out
+    assert "Failed to install clang-tidy" in result.err
+
+
+# ---------------------------------------------------------------------------
+#  Additional _handle_auto_detect coverage (bad semver path)
+# ---------------------------------------------------------------------------
+
+
+def test_main_install_auto_detect_bad_semver(
+    monkeypatch: pytest.MonkeyPatch, capsys
+):
+    """Auto-detect with a version that parses to (0,0,0) shows error."""
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["clang-tools", "install", "0.0.0"],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert exit_code == 1
+    assert "not a semantic" in result.err

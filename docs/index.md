@@ -108,6 +108,7 @@ Python wheels using the unified `clang-tools` command.
     For general use, it is recommended to install the wheels directly
     using `pip`, `pipx`, `uv`, or similar tools.
 
+    ```bash
     # Install latest clang-format wheel
     clang-tools install clang-format --wheel
     # Install specific version clang-format wheel
@@ -117,6 +118,7 @@ Python wheels using the unified `clang-tools` command.
     clang-tools install clang-tidy --wheel
     # Install specific version clang-tidy wheel
     clang-tools install clang-tidy --wheel --version 21
+    ```
 
 ## Supported Versions
 

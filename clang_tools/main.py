@@ -134,7 +134,7 @@ def _handle_auto_detect(args: argparse.Namespace) -> int:
             args.no_progress_bar,
         )
         return 0
-    except (OSError, ValueError, SystemExit) as exc:
+    except (OSError, ValueError) as exc:
         print(
             f"{YELLOW}Binary install failed"
             f" ({exc}), falling back to"

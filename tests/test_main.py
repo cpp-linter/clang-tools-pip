@@ -375,6 +375,39 @@ def test_main_install_auto_detect_invalid_version(
 # ---- ``uninstall`` subcommand -----------------------------------------
 
 
+def test_wheel_install_success(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Test _wheel_install directly with a mocked resolve_install (success)."""
+    from clang_tools.main import _wheel_install
+
+    monkeypatch.setattr(
+        "cpp_linter_hooks.util.resolve_install", lambda t, v: f"/fake/{t}"
+    )
+    assert _wheel_install(["clang-format"], "18") == 0
+    assert "installed at:" in capsys.readouterr().out
+
+
+def test_wheel_install_failure(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Test _wheel_install directly with a failing resolve_install."""
+    from clang_tools.main import _wheel_install
+
+    monkeypatch.setattr("cpp_linter_hooks.util.resolve_install", lambda t, v: None)
+    assert _wheel_install(["clang-tidy"], "21") == 1
+    assert "Failed to install" in capsys.readouterr().err
+
+
+def test_main_install_binary_bad_semver(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``--binary`` with a version-like but zeroed-out version (e.g. 0.0.0)."""
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["clang-tools", "install", "0.0.0", "--binary"],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert exit_code == 1
+    assert "not a semantic" in result.err
+
+
 def test_main_uninstall_subcommand(monkeypatch: pytest.MonkeyPatch, tmp_path, capsys):
     """``clang-tools uninstall 12`` removes installed tools."""
     tool_name = "clang-format"

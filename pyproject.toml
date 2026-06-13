@@ -46,6 +46,7 @@ tracker = "https://github.com/cpp-linter/clang-tools-pip/issues"
 
 [project.optional-dependencies]
 dev = [
+    "bandit[toml]",
     "coverage[toml]",
     "pre-commit",
     "pytest",
@@ -85,6 +86,9 @@ testpaths = ["tests"]
 [tool.mypy]
 show_error_codes = true
 show_column_numbers = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
 
 [tool.coverage]
 [tool.coverage.run]

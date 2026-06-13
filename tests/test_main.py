@@ -486,9 +486,7 @@ def test_wheel_install_multiple_tools_mixed(monkeypatch: pytest.MonkeyPatch, cap
 # ---------------------------------------------------------------------------
 
 
-def test_main_install_auto_detect_bad_semver(
-    monkeypatch: pytest.MonkeyPatch, capsys
-):
+def test_main_install_auto_detect_bad_semver(monkeypatch: pytest.MonkeyPatch, capsys):
     """Auto-detect with a version that parses to (0,0,0) shows error."""
     monkeypatch.setattr(
         sys,

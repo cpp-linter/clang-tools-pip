@@ -47,12 +47,14 @@ tracker = "https://github.com/cpp-linter/clang-tools-pip/issues"
 dev = [
     "coverage[toml]",
     "pre-commit",
+    "pygments>=2.20.0",
     "pytest",
 ]
 docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
     "mkdocs-gen-files>=0.5",
+    "pygments>=2.20.0",
 ]
 
 [tool.uv]
@@ -62,6 +64,7 @@ docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
     "mkdocs-gen-files>=0.5",
+    "pygments>=2.20.0",
 ]
 
 [tool.setuptools]

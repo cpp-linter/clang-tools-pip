@@ -244,23 +244,34 @@ def test_main_install_wheel_apply_replacements(monkeypatch: pytest.MonkeyPatch, 
     assert result.err == ""
 
 
-def test_main_install_auto_detect_new_wheel_tools(monkeypatch: pytest.MonkeyPatch, capsys):
+def test_main_install_auto_detect_new_wheel_tools(
+    monkeypatch: pytest.MonkeyPatch, capsys
+):
     """Auto-detect treats clang-include-cleaner / clang-apply-replacements as wheel."""
     tracked = []
+
     def mock_wheel(tools, version):
         tracked.append((tools, version))
         return 0
+
     monkeypatch.setattr("clang_tools.main._wheel_install", mock_wheel)
 
     # Test clang-include-cleaner
-    monkeypatch.setattr(sys, "argv", ["clang-tools", "install", "clang-include-cleaner"])
+    monkeypatch.setattr(
+        sys, "argv", ["clang-tools", "install", "clang-include-cleaner"]
+    )
     assert main() == 0
 
     # Test clang-apply-replacements
-    monkeypatch.setattr(sys, "argv", ["clang-tools", "install", "clang-apply-replacements"])
+    monkeypatch.setattr(
+        sys, "argv", ["clang-tools", "install", "clang-apply-replacements"]
+    )
     assert main() == 0
 
-    assert tracked == [(["clang-include-cleaner"], None), (["clang-apply-replacements"], None)]
+    assert tracked == [
+        (["clang-include-cleaner"], None),
+        (["clang-apply-replacements"], None),
+    ]
 
 
 def test_main_install_wheel_failure(monkeypatch: pytest.MonkeyPatch, capsys):

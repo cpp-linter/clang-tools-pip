@@ -28,7 +28,12 @@ def _is_version_like(target: str) -> bool:
 
 
 #: Known tool names supported by wheel installs
-WHEEL_TOOLS = {"clang-format", "clang-tidy", "clang-include-cleaner", "clang-apply-replacements"}
+WHEEL_TOOLS = {
+    "clang-format",
+    "clang-tidy",
+    "clang-include-cleaner",
+    "clang-apply-replacements",
+}
 
 
 def _wheel_install(tools: list[str], version: Optional[str]) -> int:

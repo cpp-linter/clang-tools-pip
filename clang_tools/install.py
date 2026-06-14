@@ -5,6 +5,18 @@
 The module that performs the installation of clang-tools.
 """
 
+__all__ = [
+    "is_installed",
+    "clang_tools_binary_url",
+    "install_tool",
+    "install_dir_name",
+    "move_and_chmod_bin",
+    "create_sym_link",
+    "uninstall_tool",
+    "uninstall_clang_tools",
+    "install_clang_tools",
+]
+
 import os
 from pathlib import Path, PurePath
 import re

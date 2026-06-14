@@ -3,6 +3,18 @@
 import os
 from .util import check_install_arch, check_install_os
 
+__all__ = [
+    "RESET_COLOR",
+    "YELLOW",
+    "install_os",
+    "install_arch",
+    "suffix",
+    "binary_repo",
+    "binary_tag",
+    "MIN_VERSION",
+    "MAX_VERSION",
+]
+
 
 RESET_COLOR = "\033[0m"
 YELLOW = "\033[93m"

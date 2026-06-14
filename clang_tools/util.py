@@ -5,6 +5,15 @@
 A module containing utility functions.
 """
 
+__all__ = [
+    "check_install_arch",
+    "check_install_os",
+    "download_file",
+    "get_sha_checksum",
+    "verify_sha512",
+    "Version",
+]
+
 import platform
 import hashlib
 from pathlib import Path

@@ -439,6 +439,19 @@ def test_main_install_auto_detect_invalid_version(
 # ---- ``uninstall`` subcommand -----------------------------------------
 
 
+def test_wheel_install_none_none_fallback(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Test _wheel_install when resolve_wheel_install returns (None, None) —
+    a defensive fallback branch."""
+    from clang_tools.main import _wheel_install
+
+    monkeypatch.setattr(
+        "clang_tools.wheel_install.resolve_wheel_install",
+        lambda t, v: (None, None),
+    )
+    assert _wheel_install(["clang-format"], "18") == 1
+    assert "Failed to install clang-format" in capsys.readouterr().err
+
+
 def test_wheel_install_success(monkeypatch: pytest.MonkeyPatch, capsys):
     """Test _wheel_install directly with a mocked resolve_wheel_install (success)."""
     from clang_tools.main import _wheel_install

@@ -14,4 +14,3 @@ tests/__pycache__/
 .eggs
 .mypy_cache/
 *env
-docs/cli_args.rst

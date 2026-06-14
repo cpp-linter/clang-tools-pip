@@ -27,15 +27,17 @@ $ clang-tools install 13
 ### Test
 
 ```bash
-# run test
+# run all tests
 $ pytest
-# run test with code covarege
+
+# run tests with code coverage
 $ coverage run -m pytest
 ```
 
 ## Code format
 
 ```bash
-# check code format with flake8
-$ flake8 .
+# check code format with ruff
+$ ruff check .
+$ ruff format --check .
 ```

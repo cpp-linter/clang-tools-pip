@@ -21,15 +21,16 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
+        python-version: ["3.10", "3.12", "3.14"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  #v6.0.3
 
-      - name: Set up Python 3.10
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 #v6.2.0
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
@@ -42,7 +43,7 @@ jobs:
       - name: Upload coverage data
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: coverage-data-${{ runner.os }}
+          name: coverage-data-${{ runner.os }}-py${{ matrix.python-version }}
           path: .coverage*
           include-hidden-files: true
 

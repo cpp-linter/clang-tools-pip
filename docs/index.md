@@ -5,9 +5,9 @@
 [![Platform](https://img.shields.io/badge/platform-linux--64%20%7C%20linux--arm64%20%7C%20win--64%20%7C%20osx--64%20%7C%20osx--arm64%20-blue)](https://pypi.org/project/clang-tools/)
 [![Downloads](https://img.shields.io/pypi/dw/clang-tools)](https://pypistats.org/packages/clang-tools)
 
-Easily install `clang-format`, `clang-tidy`, `clang-query`, and
-`clang-apply-replacements` static binaries or Python wheels using the
-`clang-tools` CLI.
+Easily install `clang-format`, `clang-tidy`, `clang-query`,
+`clang-apply-replacements`, and `clang-include-cleaner` static binaries or
+Python wheels using the `clang-tools` CLI.
 
 !!! important
     This package only manages binary executables
@@ -15,8 +15,8 @@ Easily install `clang-format`, `clang-tidy`, `clang-query`, and
     executable script. It does not intend to change or modify any binary
     executable installed from other sources (like LLVM releases).
 
-    For Python wheels, this CLI only supports `clang-format` and
-    `clang-tidy` tools.
+    For Python wheels, this CLI supports `clang-format`, `clang-tidy`,
+    `clang-include-cleaner`, and `clang-apply-replacements` tools.
 
 ## Features
 
@@ -144,5 +144,7 @@ The following Python wheels are supported:
 
 - [clang-format](https://pypi.org/project/clang-format/#history)
 - [clang-tidy](https://pypi.org/project/clang-tidy/#history)
+- [clang-include-cleaner](https://pypi.org/project/clang-include-cleaner/#history)
+- [clang-apply-replacements](https://pypi.org/project/clang-apply-replacements/#history)
 
 Check the respective PyPI pages for available versions and platform support.

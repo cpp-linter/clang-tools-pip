@@ -210,6 +210,59 @@ def test_main_install_wheel_unsupported_tool(monkeypatch: pytest.MonkeyPatch, ca
     assert exit_code == 1
 
 
+def test_main_install_wheel_include_cleaner(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``--wheel`` with clang-include-cleaner succeeds via mocked _wheel_install."""
+    monkeypatch.setattr(
+        "clang_tools.main._wheel_install",
+        lambda tools, ver: 0,
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["clang-tools", "install", "clang-include-cleaner", "--wheel"],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert exit_code == 0
+    assert result.err == ""
+
+
+def test_main_install_wheel_apply_replacements(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``--wheel`` with clang-apply-replacements succeeds via mocked _wheel_install."""
+    monkeypatch.setattr(
+        "clang_tools.main._wheel_install",
+        lambda tools, ver: 0,
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["clang-tools", "install", "clang-apply-replacements", "--wheel"],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert exit_code == 0
+    assert result.err == ""
+
+
+def test_main_install_auto_detect_new_wheel_tools(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Auto-detect treats clang-include-cleaner / clang-apply-replacements as wheel."""
+    tracked = []
+    def mock_wheel(tools, version):
+        tracked.append((tools, version))
+        return 0
+    monkeypatch.setattr("clang_tools.main._wheel_install", mock_wheel)
+
+    # Test clang-include-cleaner
+    monkeypatch.setattr(sys, "argv", ["clang-tools", "install", "clang-include-cleaner"])
+    assert main() == 0
+
+    # Test clang-apply-replacements
+    monkeypatch.setattr(sys, "argv", ["clang-tools", "install", "clang-apply-replacements"])
+    assert main() == 0
+
+    assert tracked == [(["clang-include-cleaner"], None), (["clang-apply-replacements"], None)]
+
+
 def test_main_install_wheel_failure(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--wheel`` with a failing _wheel_install returns 1."""
     monkeypatch.setattr("clang_tools.main._wheel_install", lambda tools, ver: 1)

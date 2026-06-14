@@ -39,18 +39,18 @@ WHEEL_TOOLS = {
 
 
 def _wheel_install(tools: list[str], version: Optional[str]) -> int:
-    """Install tool(s) as Python wheels using ``cpp_linter_hooks``.
+    """Install tool(s) as Python wheels.
 
-    Tool versions are resolved dynamically from PyPI — no hardcoded
-    list is maintained in-tree.
+    Tool versions are resolved dynamically from the PyPI JSON API —
+    no hardcoded list is maintained in-tree.
 
     :returns: exit code (0 on success, 1 on failure).
     """
-    from cpp_linter_hooks.util import resolve_install_with_diagnostics
+    from .wheel_install import resolve_wheel_install
 
     ok = True
     for tool in tools:
-        path, error = resolve_install_with_diagnostics(tool, version)
+        path, error = resolve_wheel_install(tool, version)
         if error is not None:
             print(f"{YELLOW}{error}{RESET_COLOR}", file=sys.stderr)
             ok = False
@@ -194,7 +194,7 @@ def get_parser() -> argparse.ArgumentParser:
     install_p.add_argument(
         "--wheel",
         action="store_true",
-        help="Force wheel installation via cpp-linter-hooks",
+        help="Force wheel installation (resolves versions from PyPI)",
     )
     install_p.add_argument(
         "--version",

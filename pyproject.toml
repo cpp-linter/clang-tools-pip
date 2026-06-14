@@ -99,10 +99,6 @@ quote-style = "double"
 dynamic_context = "test_function"
 parallel = true
 relative_files = true
-omit = [
-    # don't include tests in coverage
-    # "tests/*",
-]
 
 [tool.coverage.json]
 pretty_print = true

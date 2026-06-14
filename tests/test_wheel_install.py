@@ -61,8 +61,13 @@ def test_get_pypi_versions_success():
 
     assert latest == "21.1.1"
     assert versions == [
-        "21.1.1", "21.1.0", "20.1.8", "20.1.0",
-        "19.1.1", "19.1.0", "18.1.8",
+        "21.1.1",
+        "21.1.0",
+        "20.1.8",
+        "20.1.0",
+        "19.1.1",
+        "19.1.0",
+        "18.1.8",
     ]
     assert "20.1.3rc1" not in versions
     assert "21.0.0.dev1" not in versions
@@ -118,7 +123,8 @@ def test_detect_installed_version_found():
     with (
         patch("shutil.which", return_value="/usr/bin/clang-format"),
         patch.object(
-            subprocess, "run",
+            subprocess,
+            "run",
             return_value=MagicMock(
                 stdout="clang-format version 18.1.8\n",
                 spec=subprocess.CompletedProcess,
@@ -151,7 +157,8 @@ def test_detect_installed_version_no_version_in_output():
     with (
         patch("shutil.which", return_value="/usr/bin/clang-format"),
         patch.object(
-            subprocess, "run",
+            subprocess,
+            "run",
             return_value=MagicMock(
                 stdout="unknown output\n",
                 spec=subprocess.CompletedProcess,
@@ -191,9 +198,15 @@ def test_resolve_version_exact_match():
 
 def test_resolve_version_prefix_match():
     """Prefix match picks the newest version starting with the prefix."""
-    resp = _pypi_response({
-        "18.1.8": [], "19.1.0": [], "19.1.1": [], "19.1.7": [], "20.1.8": [],
-    })
+    resp = _pypi_response(
+        {
+            "18.1.8": [],
+            "19.1.0": [],
+            "19.1.1": [],
+            "19.1.7": [],
+            "20.1.8": [],
+        }
+    )
 
     with patch.object(urllib.request, "urlopen", return_value=resp):
         resolved, error = _resolve_version("clang-format", "19")
@@ -219,10 +232,13 @@ def test_resolve_version_no_match():
 def test_resolve_version_pypi_unreachable_no_input():
     """When PyPI is unreachable and user gives no version, fall back to local."""
     with (
-        patch.object(urllib.request, "urlopen", side_effect=urllib.request.URLError("timeout")),
+        patch.object(
+            urllib.request, "urlopen", side_effect=urllib.request.URLError("timeout")
+        ),
         patch("shutil.which", return_value="/usr/bin/clang-format"),
         patch.object(
-            subprocess, "run",
+            subprocess,
+            "run",
             return_value=MagicMock(
                 stdout="clang-format version 18.1.8\n",
                 spec=subprocess.CompletedProcess,
@@ -238,7 +254,9 @@ def test_resolve_version_pypi_unreachable_no_input():
 def test_resolve_version_pypi_unreachable_no_local():
     """When PyPI is unreachable AND no local tool, return error."""
     with (
-        patch.object(urllib.request, "urlopen", side_effect=urllib.request.URLError("timeout")),
+        patch.object(
+            urllib.request, "urlopen", side_effect=urllib.request.URLError("timeout")
+        ),
         patch("shutil.which", return_value=None),
     ):
         resolved, error = _resolve_version("clang-format", None)
@@ -270,7 +288,8 @@ def test_is_version_installed_found():
     with (
         patch("shutil.which", return_value="/usr/bin/clang-format"),
         patch.object(
-            subprocess, "run",
+            subprocess,
+            "run",
             return_value=MagicMock(
                 stdout="clang-format version 18.1.8\n",
                 spec=subprocess.CompletedProcess,
@@ -293,7 +312,8 @@ def test_is_version_installed_wrong_version():
     with (
         patch("shutil.which", return_value="/usr/bin/clang-format"),
         patch.object(
-            subprocess, "run",
+            subprocess,
+            "run",
             return_value=MagicMock(
                 stdout="clang-format version 19.1.0\n",
                 spec=subprocess.CompletedProcess,
@@ -313,7 +333,8 @@ def test_install_tool_success():
     """Successful pip install returns the tool path."""
     with (
         patch.object(
-            subprocess, "run",
+            subprocess,
+            "run",
             return_value=MagicMock(returncode=0, spec=subprocess.CompletedProcess),
         ),
         patch("shutil.which", return_value="/usr/bin/clang-format"),
@@ -325,9 +346,12 @@ def test_install_tool_success():
 def test_install_tool_failure():
     """Failed pip install returns None."""
     with patch.object(
-        subprocess, "run",
+        subprocess,
+        "run",
         return_value=MagicMock(
-            returncode=1, stdout="error", stderr="pip error",
+            returncode=1,
+            stdout="error",
+            stderr="pip error",
             spec=subprocess.CompletedProcess,
         ),
     ):
@@ -348,7 +372,8 @@ def test_resolve_wheel_install_success():
         patch.object(urllib.request, "urlopen", return_value=resp),
         patch("shutil.which", return_value="/usr/bin/clang-format"),
         patch.object(
-            subprocess, "run",
+            subprocess,
+            "run",
             return_value=MagicMock(
                 stdout="clang-format version 18.1.8\n",
                 spec=subprocess.CompletedProcess,
@@ -369,7 +394,8 @@ def test_resolve_wheel_install_latest():
         patch.object(urllib.request, "urlopen", return_value=resp),
         patch("shutil.which", side_effect=[None, "/usr/bin/clang-format"]),
         patch.object(
-            subprocess, "run",
+            subprocess,
+            "run",
             return_value=MagicMock(returncode=0, spec=subprocess.CompletedProcess),
         ),
     ):

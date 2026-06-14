@@ -45,7 +45,9 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
         platform_str = "macos-arm64" if install_arch == "arm64" else "macos-amd64"
     else:  # pragma: no cover
         platform_str = (  # pragma: no cover
-            f"{install_os}-arm64" if install_arch == "arm64" else f"{install_os}-amd64"  # pragma: no cover
+            f"{install_os}-arm64"
+            if install_arch == "arm64"
+            else f"{install_os}-amd64"  # pragma: no cover
         )  # pragma: no cover
     expected = Path(f"clang-format-21_{platform_str}.sha512sum").read_text(
         encoding="utf-8"

@@ -377,4 +377,5 @@ def test_install_dir_name_default_force_non_linux(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr("clang_tools.install.install_os", "darwin")
     result = install_dir_name("")
     import sys
+
     assert result == os.path.dirname(sys.executable)

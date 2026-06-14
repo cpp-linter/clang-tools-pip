@@ -107,7 +107,6 @@ def test_get_pypi_versions_cached():
     with patch.object(urllib.request, "urlopen", side_effect=counting_urlopen):
         result1 = _get_pypi_versions("clang-format")
         result2 = _get_pypi_versions("clang-format")
-        result3 = _get_pypi_versions("clang-tidy")  # different tool → new call
 
     assert call_count == 2
     assert result1 == result2

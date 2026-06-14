@@ -24,8 +24,8 @@ Easily install `clang-format`, `clang-tidy`, `clang-query`, and
 
 ## Features
 
-- Support clang tools binaries and Python wheels.
-- Binaries are statically linked for improved portability.
+- Install and manage clang tools binaries and Python wheels.
+- Binaries are statically linked (from upstream LLVM) for improved portability.
 - Binaries can be specified or installed for increased flexibility.
 - Binaries are checked with SHA512 checksum. This ensures:
   1. Downloads are not corrupted.

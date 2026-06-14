@@ -177,7 +177,6 @@ def resolve_wheel_install(
         return None, error
 
     return (
-        _is_version_installed(tool, user_version)
-        or _install_tool(tool, user_version),
+        _is_version_installed(tool, user_version) or _install_tool(tool, user_version),
         None,
     )

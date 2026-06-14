@@ -545,9 +545,7 @@ def test_wheel_install_multiple_tools_mixed(monkeypatch: pytest.MonkeyPatch, cap
             return None, "TEST_ERROR: failed"  # fails with error
         return f"/fake/{tool}", None  # succeeds
 
-    monkeypatch.setattr(
-        "clang_tools.wheel_install.resolve_wheel_install", mock_resolve
-    )
+    monkeypatch.setattr("clang_tools.wheel_install.resolve_wheel_install", mock_resolve)
     assert _wheel_install(["clang-format", "clang-tidy"], "18") == 1
     result = capsys.readouterr()
     assert "installed at: /fake/clang-format" in result.out

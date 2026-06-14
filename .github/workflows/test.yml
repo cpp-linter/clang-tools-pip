@@ -3,15 +3,23 @@ name: Test
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
     paths:
-      - "clang_tools/*"
-      - "tests/*"
+      - "clang_tools/**"
+      - "tests/**"
       - "**requirements*.txt"
       - pyproject.toml
       - .pre-commit-config.yaml
-      - ".github/workflows/python-test.yml"
+      - ".github/workflows/test.yml"
+      - "!docs/**"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "clang_tools/**"
+      - "tests/**"
+      - "**requirements*.txt"
+      - pyproject.toml
+      - .pre-commit-config.yaml
+      - ".github/workflows/test.yml"
       - "!docs/**"
   workflow_dispatch:
 

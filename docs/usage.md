@@ -4,7 +4,7 @@ by setting the following environment variables:
 - `CLANG_TOOLS_REPO` – The URL of the binary repository
   (default: `https://github.com/cpp-linter/clang-tools-static-binaries`)
 - `CLANG_TOOLS_TAG` – The release tag to download binaries from
-  (default: `2026.06.05-5a535621`)
+  (default: `2026.06.14-9099d4a9`)
 
 **Example:**
 
@@ -14,5 +14,5 @@ configure your environment like this:
 
 ```bash
 export CLANG_TOOLS_REPO=https://github.com/muttleyxd/clang-tools-static-binaries
-export CLANG_TOOLS_TAG=2026.06.05-5a535621  # Replace with the tag you need
+export CLANG_TOOLS_TAG=2026.06.14-9099d4a9  # Replace with the tag you need
 ```

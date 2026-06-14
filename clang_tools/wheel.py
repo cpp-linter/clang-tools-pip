@@ -2,6 +2,10 @@
 
 Wheel installation is now handled by the unified CLI in
 :mod:`clang_tools.main`. This module may be removed in a future release.
+
+.. note::
+    cpp-linter-hooks no longer maintains a hardcoded ``versions.py``.
+    Tool versions are resolved dynamically from the PyPI JSON API.
 """
 
 

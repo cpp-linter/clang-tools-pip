@@ -31,7 +31,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "cpp-linter-hooks>=1.1.7",
+    "cpp-linter-hooks>=1.2.0",
 ]
 
 dynamic = ["version"]

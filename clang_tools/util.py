@@ -133,6 +133,10 @@ class Version:
             # append minor and patch version numbers if not specified
             version_tuple += ["0"] * (3 - len(version_tuple))
         try:
-            self.info = tuple([int(x) for x in version_tuple])  # type: ignore[assignment]
-        except ValueError:
+            self.info = (
+                int(version_tuple[0]),
+                int(version_tuple[1]),
+                int(version_tuple[2]),
+            )
+        except (ValueError, IndexError):
             self.info = (0, 0, 0)

@@ -210,6 +210,70 @@ def test_main_install_wheel_unsupported_tool(monkeypatch: pytest.MonkeyPatch, ca
     assert exit_code == 1
 
 
+def test_main_install_wheel_include_cleaner(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``--wheel`` with clang-include-cleaner succeeds via mocked _wheel_install."""
+    monkeypatch.setattr(
+        "clang_tools.main._wheel_install",
+        lambda tools, ver: 0,
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["clang-tools", "install", "clang-include-cleaner", "--wheel"],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert exit_code == 0
+    assert result.err == ""
+
+
+def test_main_install_wheel_apply_replacements(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``--wheel`` with clang-apply-replacements succeeds via mocked _wheel_install."""
+    monkeypatch.setattr(
+        "clang_tools.main._wheel_install",
+        lambda tools, ver: 0,
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["clang-tools", "install", "clang-apply-replacements", "--wheel"],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert exit_code == 0
+    assert result.err == ""
+
+
+def test_main_install_auto_detect_new_wheel_tools(
+    monkeypatch: pytest.MonkeyPatch, capsys
+):
+    """Auto-detect treats clang-include-cleaner / clang-apply-replacements as wheel."""
+    tracked = []
+
+    def mock_wheel(tools, version):
+        tracked.append((tools, version))
+        return 0
+
+    monkeypatch.setattr("clang_tools.main._wheel_install", mock_wheel)
+
+    # Test clang-include-cleaner
+    monkeypatch.setattr(
+        sys, "argv", ["clang-tools", "install", "clang-include-cleaner"]
+    )
+    assert main() == 0
+
+    # Test clang-apply-replacements
+    monkeypatch.setattr(
+        sys, "argv", ["clang-tools", "install", "clang-apply-replacements"]
+    )
+    assert main() == 0
+
+    assert tracked == [
+        (["clang-include-cleaner"], None),
+        (["clang-apply-replacements"], None),
+    ]
+
+
 def test_main_install_wheel_failure(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--wheel`` with a failing _wheel_install returns 1."""
     monkeypatch.setattr("clang_tools.main._wheel_install", lambda tools, ver: 1)
@@ -375,24 +439,41 @@ def test_main_install_auto_detect_invalid_version(
 # ---- ``uninstall`` subcommand -----------------------------------------
 
 
-def test_wheel_install_success(monkeypatch: pytest.MonkeyPatch, capsys):
-    """Test _wheel_install directly with a mocked resolve_install (success)."""
+def test_wheel_install_none_none_fallback(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Test _wheel_install when resolve_wheel_install returns (None, None) —
+    a defensive fallback branch."""
     from clang_tools.main import _wheel_install
 
     monkeypatch.setattr(
-        "cpp_linter_hooks.util.resolve_install", lambda t, v: f"/fake/{t}"
+        "clang_tools.wheel_install.resolve_wheel_install",
+        lambda t, v: (None, None),
+    )
+    assert _wheel_install(["clang-format"], "18") == 1
+    assert "Failed to install clang-format" in capsys.readouterr().err
+
+
+def test_wheel_install_success(monkeypatch: pytest.MonkeyPatch, capsys):
+    """Test _wheel_install directly with a mocked resolve_wheel_install (success)."""
+    from clang_tools.main import _wheel_install
+
+    monkeypatch.setattr(
+        "clang_tools.wheel_install.resolve_wheel_install",
+        lambda t, v: (f"/fake/{t}", None),
     )
     assert _wheel_install(["clang-format"], "18") == 0
     assert "installed at:" in capsys.readouterr().out
 
 
 def test_wheel_install_failure(monkeypatch: pytest.MonkeyPatch, capsys):
-    """Test _wheel_install directly with a failing resolve_install."""
+    """Test _wheel_install directly with a failing resolve_wheel_install."""
     from clang_tools.main import _wheel_install
 
-    monkeypatch.setattr("cpp_linter_hooks.util.resolve_install", lambda t, v: None)
+    monkeypatch.setattr(
+        "clang_tools.wheel_install.resolve_wheel_install",
+        lambda t, v: (None, "ERROR: resolve failed"),
+    )
     assert _wheel_install(["clang-tidy"], "21") == 1
-    assert "Failed to install" in capsys.readouterr().err
+    assert "ERROR: resolve failed" in capsys.readouterr().err
 
 
 def test_main_install_binary_bad_semver(monkeypatch: pytest.MonkeyPatch, capsys):
@@ -446,7 +527,8 @@ def test_wheel_install_latest_success(monkeypatch: pytest.MonkeyPatch, capsys):
     from clang_tools.main import _wheel_install
 
     monkeypatch.setattr(
-        "cpp_linter_hooks.util.resolve_install", lambda t, v: f"/fake/{t}"
+        "clang_tools.wheel_install.resolve_wheel_install",
+        lambda t, v: (f"/fake/{t}", None),
     )
     assert _wheel_install(["clang-format"], None) == 0
     result = capsys.readouterr()
@@ -455,14 +537,16 @@ def test_wheel_install_latest_success(monkeypatch: pytest.MonkeyPatch, capsys):
 
 
 def test_wheel_install_latest_failure(monkeypatch: pytest.MonkeyPatch, capsys):
-    """Test _wheel_install with version=None ("latest version" path, failure)."""
+    """Test _wheel_install with version=None (version-resolution error, failure)."""
     from clang_tools.main import _wheel_install
 
-    monkeypatch.setattr("cpp_linter_hooks.util.resolve_install", lambda t, v: None)
+    monkeypatch.setattr(
+        "clang_tools.wheel_install.resolve_wheel_install",
+        lambda t, v: (None, "TEST_ERROR: version not found"),
+    )
     assert _wheel_install(["clang-tidy"], None) == 1
     result = capsys.readouterr()
-    assert "latest version" in result.err
-    assert "Failed to install" in result.err
+    assert "TEST_ERROR: version not found" in result.err
 
 
 def test_wheel_install_multiple_tools_mixed(monkeypatch: pytest.MonkeyPatch, capsys):
@@ -471,14 +555,14 @@ def test_wheel_install_multiple_tools_mixed(monkeypatch: pytest.MonkeyPatch, cap
 
     def mock_resolve(tool, version):
         if tool == "clang-tidy":
-            return None  # fails
-        return f"/fake/{tool}"  # succeeds
+            return None, "TEST_ERROR: failed"  # fails with error
+        return f"/fake/{tool}", None  # succeeds
 
-    monkeypatch.setattr("cpp_linter_hooks.util.resolve_install", mock_resolve)
+    monkeypatch.setattr("clang_tools.wheel_install.resolve_wheel_install", mock_resolve)
     assert _wheel_install(["clang-format", "clang-tidy"], "18") == 1
     result = capsys.readouterr()
     assert "installed at: /fake/clang-format" in result.out
-    assert "Failed to install clang-tidy" in result.err
+    assert "TEST_ERROR: failed" in result.err
 
 
 # ---------------------------------------------------------------------------

@@ -27,28 +27,38 @@ def _is_version_like(target: str) -> bool:
         return False
 
 
-#: Known tool names supported by wheel installs
-WHEEL_TOOLS = {"clang-format", "clang-tidy"}
+#: Known tool names commonly installed as Python wheels.
+#: With dynamic PyPI version resolution, any clang tool available on PyPI
+#: can be installed, but these are the canonical ones.
+WHEEL_TOOLS = {
+    "clang-format",
+    "clang-tidy",
+    "clang-include-cleaner",
+    "clang-apply-replacements",
+}
 
 
 def _wheel_install(tools: list[str], version: Optional[str]) -> int:
-    """Install tool(s) as Python wheels using ``cpp_linter_hooks``.
+    """Install tool(s) as Python wheels.
 
-    Delegates to :func:`cpp_linter_hooks.util.resolve_install` for version
-    resolution and pip-based installation.
+    Tool versions are resolved dynamically from the PyPI JSON API —
+    no hardcoded list is maintained in-tree.
 
     :returns: exit code (0 on success, 1 on failure).
     """
-    from cpp_linter_hooks.util import resolve_install  # lazy import
+    from .wheel_install import resolve_wheel_install
 
     ok = True
     for tool in tools:
-        path = resolve_install(tool, version)
-        version_str = f" version {version}" if version else " latest version"
-        if path:
+        path, error = resolve_wheel_install(tool, version)
+        if error is not None:
+            print(f"{YELLOW}{error}{RESET_COLOR}", file=sys.stderr)
+            ok = False
+        elif path:
+            version_str = f" version {version}" if version else " latest version"
             print(f"{tool}{version_str} installed at: {path}")
         else:
-            print(f"Failed to install {tool}{version_str}", file=sys.stderr)
+            print(f"Failed to install {tool}", file=sys.stderr)
             ok = False
     return 0 if ok else 1
 
@@ -184,7 +194,7 @@ def get_parser() -> argparse.ArgumentParser:
     install_p.add_argument(
         "--wheel",
         action="store_true",
-        help="Force wheel installation via cpp-linter-hooks",
+        help="Force wheel installation (resolves versions from PyPI)",
     )
     install_p.add_argument(
         "--version",

@@ -1,43 +1,16 @@
-from argparse import ArgumentParser
-from cpp_linter_hooks.util import resolve_install
+"""Legacy wheel module kept for backward compatibility.
+
+Wheel installation is now handled by the unified CLI in
+:mod:`clang_tools.main`. This module may be removed in a future release.
+"""
 
 
-def get_parser() -> ArgumentParser:
-    """Get a parser to interpret CLI args."""
-    parser = ArgumentParser(description="Install specified clang tool wheel")
-    parser.add_argument(
-        "--tool",
-        required=True,
-        choices=["clang-format", "clang-tidy"],
-        help="Tool to install (clang-format or clang-tidy)",
-    )
-    parser.add_argument(
-        "--version",
-        default=None,
-        help="Version to install (e.g., 21 or 21.1.2). Defaults to latest compatible version.",
-    )
-    return parser
+def _resolve_install(tool: str, version: str | None) -> str | None:  # pragma: no cover
+    """Lazy import wrapper for :func:`cpp_linter_hooks.util.resolve_install`.
 
-
-def main() -> int:
-    """Entry point for the wheel-based tool installer.
-
-    Parses CLI args and delegates to
-    :func:`cpp_linter_hooks.util.resolve_install`.
-
-    :returns: exit code (0 on success, 1 on failure).
+    Avoids a top-level import that would fail when ``cpp-linter-hooks``
+    is not installed.
     """
-    parser = get_parser()
-    args = parser.parse_args()
-    path = resolve_install(args.tool, args.version)
-    version_str = f" version {args.version}" if args.version else " latest version"
-    if path:
-        print(f"{args.tool}{version_str} installed at: {path}")
-        return 0
-    else:
-        print(f"Failed to install {args.tool}{version_str}")
-        return 1
+    from cpp_linter_hooks.util import resolve_install
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return resolve_install(tool, version)

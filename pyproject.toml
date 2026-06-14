@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clang_tools"
-description = "Install clang-tools (clang-format, clang-tidy, clang-query, clang-apply-replacements) with pip"
+description = "Install clang-tools (clang-format, clang-tidy, clang-query, clang-apply-replacements, clang-include-cleaner) with pip"
 readme = "README.md"
-keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format", "clang-query", "clang-apply-replacements"]
+keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format", "clang-query", "clang-apply-replacements", "clang-include-cleaner"]
 license = "MIT"
 authors = [
     { name = "Xianpeng Shen", email = "xianpeng.shen@gmail.com" },

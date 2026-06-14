@@ -88,6 +88,12 @@ testpaths = ["tests"]
 show_error_codes = true
 show_column_numbers = true
 
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+
 [tool.coverage]
 [tool.coverage.run]
 dynamic_context = "test_function"

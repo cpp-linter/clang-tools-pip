@@ -21,10 +21,11 @@ def docs(session: nox.Session) -> None:
     """Build docs"""
     session.install("--upgrade", "pip")
     session.install(".[docs]")
-    session.run("sphinx-build", "-b", "html", "docs/", "docs/_build/html")
+    session.run("mkdocs", "build", external=True)
 
 
-@nox.session(name="docs-live")
-def docs_live(session: nox.Session) -> None:
+@nox.session(name="docs-serve")
+def docs_serve(session: nox.Session) -> None:
+    """Serve docs with live reload"""
     session.install(".[docs]")
-    session.run("sphinx-autobuild", "docs/", "docs/_build/html", external=True)
+    session.run("mkdocs", "serve", external=True)

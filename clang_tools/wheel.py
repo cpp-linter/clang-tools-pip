@@ -4,8 +4,6 @@ Wheel installation is now handled by the unified CLI in
 :mod:`clang_tools.main`. This module may be removed in a future release.
 """
 
-__all__ = []
-
 
 def _resolve_install(tool: str, version: str | None) -> str | None:  # pragma: no cover
     """Lazy import wrapper for :func:`cpp_linter_hooks.util.resolve_install`.

@@ -7,8 +7,6 @@ Supports both binary (static build) and wheel-based installation
 via a single ``clang-tools`` command.
 """
 
-__all__ = ["main", "get_parser"]
-
 import argparse
 import sys
 from typing import Optional

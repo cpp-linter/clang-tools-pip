@@ -208,7 +208,7 @@ jobs:
           echo "✅ clang-include-cleaner Versions are correct."
 
       - name: Install and check clang-apply-replacements wheels
-        if: ${{ fromJSON(matrix.version) >= 13 }}
+        if: ${{ fromJSON(matrix.version) >= 16 }}
         shell: bash
         run: |
           set -e

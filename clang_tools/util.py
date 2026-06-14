@@ -39,7 +39,7 @@ def check_install_os() -> str:
     if this_os == "darwin":
         this_os = "macosx"
     if this_os not in ["linux", "macosx", "windows"]:
-        raise SystemExit(f"{this_os} is not currently supported")
+        raise OSError(f"{this_os} is not currently supported")
     return this_os
 
 

@@ -153,9 +153,9 @@ def test_download_file_with_progress_bar(
 
 
 def test_check_install_os_unsupported(monkeypatch: pytest.MonkeyPatch):
-    """Tests that check_install_os raises SystemExit for unsupported OS."""
+    """Tests that check_install_os raises OSError for unsupported OS."""
     monkeypatch.setattr("platform.system", lambda: "SunOS")
-    with pytest.raises(SystemExit, match="sunos is not currently supported"):
+    with pytest.raises(OSError, match="sunos is not currently supported"):
         check_install_os()
 
 

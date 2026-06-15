@@ -6,8 +6,7 @@
 [![Downloads](https://img.shields.io/pypi/dw/clang-tools)](https://pypistats.org/packages/clang-tools)
 [![cpp-linter hub](https://img.shields.io/badge/%F0%9F%8F%A0_cpp--linter_hub-%E2%86%90_home-22863a)](https://cpp-linter.github.io/)
 
-Easily install `clang-format`, `clang-tidy`, `clang-query`,
-`clang-apply-replacements`, and `clang-include-cleaner` static binaries or
+Easily install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, and `clang-include-cleaner` static binaries or
 Python wheels using the `clang-tools` CLI.
 
 > [!IMPORTANT]
@@ -110,14 +109,13 @@ clang-tools install clang-format --wheel --version 21
 
 ### clang tools binaries
 
-| Platform | 22 | 21 | 20 | 19 | 18 | 17 | 16 | 15 | 14 | 13 | 12 | 11 |
-|----------|----|----|----|----|----|----|----|----|----|----|----|----|
-| Linux | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| Windows | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| macOS | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+- clang-format
+- clang-tidy
+- clang-query
+- clang-apply-replacements
+- clang-include-cleaner
 
-For more details, visit
-[clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries).
+For more details, visit [clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries).
 
 ### clang tools Python wheels
 

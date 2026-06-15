@@ -23,23 +23,22 @@ Python wheels using the `clang-tools` CLI.
 
 ## Features
 
-- **Unified CLI** — A single `clang-tools install` command that supports installing clang tools via **static binaries** or **Python wheels**, with automatic fallback.
-- **Auto-detection & fallback** — Tries static binary installation first; if the binary is unavailable (e.g., unsupported version, network issue), gracefully falls back to wheel installation.
-- **Static binaries** — Binaries are statically linked from upstream LLVM for improved portability across Linux, macOS, and Windows.
-- **SHA512 checksum verification** — Every download is verified against its published checksum, ensuring:
-  1. Downloads are not corrupted.
-  2. Outdated binaries are detected and re-downloaded.
-- **Dynamic PyPI version resolution** — Wheel versions are resolved live from PyPI's JSON API — no hardcoded version list to maintain.
-- **Symlink management** — Versioned binaries (e.g., `clang-tidy-18`) are symbolically linked to unversioned names (e.g., `clang-tidy`) for convenient invocation.
+- Install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, and `clang-include-cleaner` via a single `clang-tools` CLI.
+- Supports both **static binaries** (standalone executables) and **Python wheels** (installed via pip).
+- Automatically uses static binaries when available; falls back to wheels if not.
+- Works on Linux, macOS, and Windows (x86_64 and ARM64).
+- Choose a specific LLVM version (11–22) or install the latest.
+- Install only the tools you need with `--tool`.
+- Uses SHA512 checksums to verify downloaded binaries.
+- Creates unversioned symlinks (e.g., `clang-format`) alongside versioned binaries (`clang-format-18`) for convenience.
 
   > [!NOTE]
   > To create symbolic links on Windows, you must enable developer mode
   > from the Windows settings under "Privacy & security" > "For developers"
   > category.
 
-- **Selective installation** — Install only the tools you need with `--tool`, or target a specific version.
-- **Customizable install path** — Use `--directory` to install binaries to any directory.
-- **Uninstall support** — Remove installed tools cleanly with `clang-tools uninstall`.
+- Install to any directory with `--directory`.
+- Uninstall with `clang-tools uninstall`.
 
 ## Install clang-tools CLI
 

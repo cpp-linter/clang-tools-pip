@@ -105,7 +105,7 @@ clang-tools install clang-format --wheel --version 21
 > cpp-linter projects. For general use, install wheels directly
 > using `pip`, `pipx`, or `uv`.
 
-## Supported Versions
+## Supported Clang Tools
 
 ### clang tools binaries
 

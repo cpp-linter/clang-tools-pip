@@ -1,5 +1,5 @@
 [![PyPI version](https://img.shields.io/pypi/v/clang-tools?color=blue)](https://pypi.org/project/clang-tools/)
-[![Platform](https://img.shields.io/badge/platform-linux--64%20%7C%20linux--arm64%20%7C%20win--64%20%7C%20osx--64%20%7C%20osx--arm64%20-blue)](https://pypi.org/project/clang-tools/)
+[![Platform](https://img.shields.io/badge/platform-linux--64%20%7C%20linux--arm64%20%7C%20win--64%20%7C%20win--arm64%20%7C%20osx--64%20%7C%20osx--arm64-blue)](https://pypi.org/project/clang-tools/)
 [![Test](https://github.com/cpp-linter/clang-tools-pip/actions/workflows/test.yml/badge.svg)](https://github.com/cpp-linter/clang-tools-pip/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/cpp-linter/clang-tools-pip)
 [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=cpp-linter_clang-tools-pip)
@@ -23,22 +23,23 @@ Python wheels using the `clang-tools` CLI.
 
 ## Features
 
-- Install and manage clang tools binaries and Python wheels.
-- Binaries are statically linked (from upstream LLVM) for improved portability.
-- Binaries can be specified or installed for increased flexibility.
-- Binaries are checked with SHA512 checksum. This ensures:
+- **Unified CLI** — A single `clang-tools install` command that supports installing clang tools via **static binaries** or **Python wheels**, with automatic fallback.
+- **Auto-detection & fallback** — Tries static binary installation first; if the binary is unavailable (e.g., unsupported version, network issue), gracefully falls back to wheel installation.
+- **Static binaries** — Binaries are statically linked from upstream LLVM for improved portability across Linux, macOS, and Windows.
+- **SHA512 checksum verification** — Every download is verified against its published checksum, ensuring:
   1. Downloads are not corrupted.
-  2. Old binary builds can be updated.
-- Installed binaries are symbolically linked for better cross-platform usage.
-  For example (on Windows), the `clang-tidy-13.exe` binary executable can
-  also be invoked with the symbolic link titled `clang-tidy.exe`
+  2. Outdated binaries are detected and re-downloaded.
+- **Dynamic PyPI version resolution** — Wheel versions are resolved live from PyPI's JSON API — no hardcoded version list to maintain.
+- **Symlink management** — Versioned binaries (e.g., `clang-tidy-18`) are symbolically linked to unversioned names (e.g., `clang-tidy`) for convenient invocation.
 
   > [!NOTE]
   > To create symbolic links on Windows, you must enable developer mode
   > from the Windows settings under "Privacy & security" > "For developers"
   > category.
 
-- Customizable install path.
+- **Selective installation** — Install only the tools you need with `--tool`, or target a specific version.
+- **Customizable install path** — Use `--directory` to install binaries to any directory.
+- **Uninstall support** — Remove installed tools cleanly with `clang-tools uninstall`.
 
 ## Install clang-tools CLI
 

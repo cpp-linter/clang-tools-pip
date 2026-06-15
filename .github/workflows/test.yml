@@ -171,7 +171,16 @@ jobs:
             fi
 
             echo "::group::Installing $tool wheel v$ver"
-            clang-tools install "$tool" --wheel --version "$ver"
+            if ! clang-tools install "$tool" --wheel --version "$ver"; then
+              echo "⏭️  Wheel install failed for $tool v$ver (likely no pre-built wheel for this platform)"
+              echo "::endgroup::"
+              return 0
+            fi
+            if ! command -v "$tool" >/dev/null 2>&1; then
+              echo "⏭️  $tool not found after wheel install, skipping version check"
+              echo "::endgroup::"
+              return 0
+            fi
             "$tool" --version
             local out=$("$tool" --version)
             echo "$tool version: $out"

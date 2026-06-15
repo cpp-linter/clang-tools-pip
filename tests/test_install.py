@@ -23,7 +23,13 @@ from clang_tools.util import Version
 @pytest.mark.parametrize("version", [str(v) for v in range(7, 17)])
 @pytest.mark.parametrize(
     "tool_name",
-    ["clang-format", "clang-tidy", "clang-query", "clang-apply-replacements"],
+    [
+        "clang-format",
+        "clang-tidy",
+        "clang-query",
+        "clang-apply-replacements",
+        "clang-include-cleaner",
+    ],
 )
 def test_clang_tools_binary_url(tool_name: str, version: str):
     """Test `clang_tools_binary_url()` parses a valid URL on the current OS."""
@@ -75,6 +81,21 @@ def test_install_tools(
 ):
     """Test install tools to a temp directory."""
     monkeypatch.chdir(tmp_path)
+    assert install_tool(tool_name, version, str(tmp_path), False)
+    # invoking again should return False
+    assert not install_tool(tool_name, version, str(tmp_path), False)
+    # uninstall the tool deliberately
+    uninstall_clang_tools(tool_name, version, str(tmp_path))
+    assert f"{tool_name}-{version}{suffix}" in [fd.name for fd in tmp_path.iterdir()]
+
+
+@pytest.mark.parametrize("version", ["18"])
+def test_install_clang_include_cleaner(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, version: str
+):
+    """Test install clang-include-cleaner binary (LLVM 18+)."""
+    monkeypatch.chdir(tmp_path)
+    tool_name = "clang-include-cleaner"
     assert install_tool(tool_name, version, str(tmp_path), False)
     # invoking again should return False
     assert not install_tool(tool_name, version, str(tmp_path), False)

@@ -6,9 +6,9 @@
 [![Downloads](https://img.shields.io/pypi/dw/clang-tools)](https://pypistats.org/packages/clang-tools)
 [![cpp-linter hub](https://img.shields.io/badge/%F0%9F%8F%A0_cpp--linter_hub-%E2%86%90_home-22863a)](https://cpp-linter.github.io/)
 
-Easily install `clang-format`, `clang-tidy`, `clang-query`, and
-`clang-apply-replacements` static binaries or Python wheels using the
-`clang-tools` CLI.
+Easily install `clang-format`, `clang-tidy`, `clang-query`,
+`clang-apply-replacements`, and `clang-include-cleaner` static
+binaries or Python wheels using the `clang-tools` CLI.
 
 > [!IMPORTANT]
 > This package only manages binary executables
@@ -109,6 +109,10 @@ clang-tools install clang-format --wheel --version 21
 ## Supported Versions
 
 ### clang tools binaries
+
+The following table shows the supported versions of clang-format,
+clang-tidy, clang-query, clang-apply-replacements, and
+clang-include-cleaner (LLVM 18+) binaries for each platform:
 
 | Platform | 22 | 21 | 20 | 19 | 18 | 17 | 16 | 15 | 14 | 13 | 12 | 11 |
 |----------|----|----|----|----|----|----|----|----|----|----|----|----|

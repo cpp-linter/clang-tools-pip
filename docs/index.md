@@ -2,7 +2,7 @@
 [![Test](https://github.com/cpp-linter/clang-tools-pip/actions/workflows/test.yml/badge.svg)](https://github.com/cpp-linter/clang-tools-pip/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/cpp-linter/clang-tools-pip/branch/main/graph/badge.svg?token=40G5ZOIRRR)](https://codecov.io/gh/cpp-linter/clang-tools-pip)
 [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=cpp-linter_clang-tools-pip&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=cpp-linter_clang-tools-pip)
-[![Platform](https://img.shields.io/badge/platform-linux--64%20%7C%20linux--arm64%20%7C%20win--64%20%7C%20osx--64%20%7C%20osx--arm64%20-blue)](https://pypi.org/project/clang-tools/)
+[![Platform](https://img.shields.io/badge/platform-linux--64%20%7C%20linux--arm64%20%7C%20win--64%20%7C%20win--arm64%20%7C%20osx--64%20%7C%20osx--arm64-blue)](https://pypi.org/project/clang-tools/)
 [![Downloads](https://img.shields.io/pypi/dw/clang-tools)](https://pypistats.org/packages/clang-tools)
 
 Easily install `clang-format`, `clang-tidy`, `clang-query`,
@@ -20,21 +20,22 @@ Python wheels using the `clang-tools` CLI.
 
 ## Features
 
-- Install and manage clang tools binaries and Python wheels.
-- Binaries are statically linked (from upstream LLVM) for improved portability.
-- Binaries can be specified or installed for increased flexibility.
-- Binaries are checked with SHA512 checksum. This ensures:
-    1. Downloads are not corrupted.
-    2. Old binary builds can be updated.
-- Installed binaries are symbolically linked for better cross-platform usage.
-  For example (on Windows), the `clang-tidy-13.exe` binary executable can
-  also be invoked with the symbolic link titled `clang-tidy.exe`
+- Install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, and `clang-include-cleaner` via a single `clang-tools` CLI.
+- Supports both **static binaries** (standalone executables) and **Python wheels** (installed via pip).
+- Automatically uses static binaries when available; falls back to wheels if not.
+- Works on Linux, macOS, and Windows (x86_64 and ARM64).
+- Choose a specific LLVM version (11–22) or install the latest.
+- Install only the tools you need with `--tool`.
+- Uses SHA512 checksums to verify downloaded binaries.
+- Creates unversioned symlinks (e.g., `clang-format`) alongside versioned binaries (`clang-format-18`) for convenience.
 
     !!! note
         To create symbolic links on Windows, you must enable developer mode
         from the Windows settings under "Privacy & security" > "For developers"
         category.
-- Customizable install path.
+
+- Install to any directory with `--directory`.
+- Uninstall with `clang-tools uninstall`.
 
 ## Install clang-tools CLI
 

@@ -167,6 +167,60 @@ def test_main_install_binary_invalid_version(monkeypatch: pytest.MonkeyPatch, ca
     assert exit_code == 1
 
 
+def test_main_install_binary_tool_as_positional_with_version(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+):
+    """
+    ``--binary`` accepts tool name as positional with ``--version``
+    (consistent with ``--wheel``).
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "clang-tools",
+            "install",
+            "clang-format",
+            "--version",
+            "12",
+            "--binary",
+            "--directory",
+            str(tmp_path),
+            "--no-progress-bar",
+        ],
+    )
+    exit_code = main()
+    assert exit_code == 0
+    bin_path = tmp_path / f"clang-format-12{suffix}"
+    assert bin_path.exists()
+
+
+def test_main_install_binary_tool_as_positional_bad_semver(
+    monkeypatch: pytest.MonkeyPatch, capsys
+):
+    """
+    ``--binary`` with tool name as positional and a zeroed-out ``--version``
+    (e.g. 0.0.0) shows the semantic-version error.
+    """
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "clang-tools",
+            "install",
+            "clang-tidy",
+            "--version",
+            "0.0.0",
+            "--binary",
+        ],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert "not a semantic" in result.err
+    assert exit_code == 1
+
+
 def test_main_install_binary_and_wheel_mutex(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--binary`` and ``--wheel`` together is an error."""
     monkeypatch.setattr(

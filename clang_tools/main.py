@@ -87,16 +87,30 @@ def _handle_wheel(args: argparse.Namespace) -> int:
 
 
 def _handle_binary(args: argparse.Namespace) -> int:
-    """Handle ``install --binary`` subcommand."""
+    """Handle ``install --binary`` subcommand.
+
+    Supports two argument styles (consistent with ``--wheel``):
+
+    * ``clang-tools install <version> --tool <tool> --binary``
+    * ``clang-tools install <tool> --version <VER> --binary``
+    """
     target: str = args.target
-    if not _is_version_like(target):
-        print(
-            f"{YELLOW}Error: --binary requires a version number"
-            f" (got '{target}'){RESET_COLOR}",
-            file=sys.stderr,
-        )
-        return 1
-    version = Version(target)
+    if _is_version_like(target):
+        version = Version(target)
+        tools = args.tool
+    else:
+        # target is a tool name — use --version for the version number
+        if args.explicit_version is None:
+            print(
+                f"{YELLOW}Error: --binary requires a version number"
+                f" (got '{target}'). "
+                f"Use e.g. 'clang-tools install {target}"
+                f" --version <VER> --binary'{RESET_COLOR}",
+                file=sys.stderr,
+            )
+            return 1
+        version = Version(args.explicit_version)
+        tools = [target]
     if version.info == (0, 0, 0):
         print(
             f"{YELLOW}The version specified is not a semantic"
@@ -106,7 +120,7 @@ def _handle_binary(args: argparse.Namespace) -> int:
         return 1
     install_clang_tools(
         version,
-        args.tool,
+        tools,
         args.directory,
         args.overwrite,
         args.no_progress_bar,
@@ -201,7 +215,7 @@ def get_parser() -> argparse.ArgumentParser:
         dest="explicit_version",
         default=None,
         metavar="VER",
-        help="Explicit version for wheel install (when target is a tool name)",
+        help="Explicit version (when target is a tool name, for both --wheel and --binary)",
     )
     install_p.add_argument(
         "-t",

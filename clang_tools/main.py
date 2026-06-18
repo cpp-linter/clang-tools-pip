@@ -129,9 +129,37 @@ def _handle_binary(args: argparse.Namespace) -> int:
 
 
 def _handle_auto_detect(args: argparse.Namespace) -> int:
-    """Handle ``install`` without --binary/--wheel (auto-detect mode)."""
+    """Handle ``install`` without --binary/--wheel (auto-detect mode).
+
+    When *target* is a version number → try binary first, fall back to wheel.
+    When *target* is a tool name and ``--version`` is given → try binary first,
+    fall back to wheel.  When *target* is a tool name without ``--version`` →
+    wheel install only.
+    """
     target: str = args.target
     if not _is_version_like(target):
+        # target is a tool name
+        if args.explicit_version is not None:
+            # explicit version — try binary first, fall back to wheel
+            version = Version(args.explicit_version)
+            if version.info != (0, 0, 0):
+                try:
+                    install_clang_tools(
+                        version,
+                        [target],
+                        args.directory,
+                        args.overwrite,
+                        args.no_progress_bar,
+                    )
+                    return 0
+                except (OSError, ValueError) as exc:
+                    print(
+                        f"{YELLOW}Binary install failed"
+                        f" ({exc}), falling back to"
+                        f" wheel...{RESET_COLOR}",
+                        file=sys.stderr,
+                    )
+        # fall through to wheel (requires a known wheel tool)
         if target not in WHEEL_TOOLS:
             print(
                 f"{YELLOW}Unknown target '{target}'. Expected a"

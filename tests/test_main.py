@@ -328,6 +328,112 @@ def test_main_install_auto_detect_new_wheel_tools(
     ]
 
 
+def test_main_install_auto_detect_tool_name_with_version(
+    monkeypatch: pytest.MonkeyPatch, capsys, tmp_path
+):
+    """Auto-detect: tool name + --version tries binary first (succeeds)."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "clang-tools",
+            "install",
+            "clang-format",
+            "--version",
+            "12",
+            "--directory",
+            str(tmp_path),
+            "--no-progress-bar",
+        ],
+    )
+    exit_code = main()
+    assert exit_code == 0
+    bin_path = tmp_path / f"clang-format-12{suffix}"
+    assert bin_path.exists()
+
+
+def test_main_install_auto_detect_tool_name_with_version_fallback(
+    monkeypatch: pytest.MonkeyPatch, capsys, tmp_path
+):
+    """Auto-detect: tool name + --version falls back to wheel when binary fails."""
+    monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    monkeypatch.setattr(
+        "clang_tools.main._wheel_install",
+        lambda tools, ver: 0,
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "clang-tools",
+            "install",
+            "clang-tidy",
+            "--version",
+            "12",
+            "--no-progress-bar",
+        ],
+    )
+    exit_code = main()
+    result = capsys.readouterr()
+    assert exit_code == 0
+    assert "falling back to wheel" in result.err
+
+
+def test_main_install_auto_detect_tool_name_with_version_out_of_range(
+    monkeypatch: pytest.MonkeyPatch, capsys
+):
+    """Auto-detect: tool name + --version with out-of-range version falls back to wheel."""
+    tracked: list = []
+
+    def mock_wheel(tools, version):
+        tracked.append((tools, version))
+        return 0
+
+    monkeypatch.setattr("clang_tools.main._wheel_install", mock_wheel)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "clang-tools",
+            "install",
+            "clang-format",
+            "--version",
+            "99",
+        ],
+    )
+    exit_code = main()
+    assert exit_code == 0
+    assert tracked == [(["clang-format"], "99")]
+
+
+def test_main_install_auto_detect_tool_name_with_version_bad_semver(
+    monkeypatch: pytest.MonkeyPatch, capsys
+):
+    """Auto-detect: tool name + --version with 0.0.0 falls back to wheel."""
+    tracked: list = []
+
+    def mock_wheel(tools, version):
+        tracked.append((tools, version))
+        return 0
+
+    monkeypatch.setattr("clang_tools.main._wheel_install", mock_wheel)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "clang-tools",
+            "install",
+            "clang-tidy",
+            "--version",
+            "0.0.0",
+        ],
+    )
+    exit_code = main()
+    assert exit_code == 0
+    assert tracked == [(["clang-tidy"], "0.0.0")]
+
+
 def test_main_install_wheel_failure(monkeypatch: pytest.MonkeyPatch, capsys):
     """``--wheel`` with a failing _wheel_install returns 1."""
     monkeypatch.setattr("clang_tools.main._wheel_install", lambda tools, ver: 1)

@@ -97,7 +97,7 @@ jobs:
         run: pip install --no-cache-dir dist/*.whl
 
       - name: Install clang-tools binaries
-        run: clang-tools install ${{ matrix.version }} --tool clang-format clang-tidy clang-query clang-apply-replacements
+        run: clang-tools install clang-format clang-tidy clang-query clang-apply-replacements --version ${{ matrix.version }}
 
       - name: Show path of clang-tools binaries
         shell: bash
@@ -159,7 +159,7 @@ jobs:
             fi
 
             echo "::group::Installing $tool wheel v$ver"
-            clang-tools install "$tool" --wheel --version "$ver"
+            clang-tools install "$tool" --version "$ver" --backend wheel
             "$tool" --version
             local out=$("$tool" --version)
             echo "$tool version: $out"

@@ -73,18 +73,20 @@ For a list of supported Command Line Interface options, see:
 
 ### Install binaries examples
 
-Use `clang-tools` command to install version 13 binaries:
+Use `clang-tools` to install tools. Positional arguments are always
+tool names; version is specified via `--version`:
 
-    clang-tools install 13
+    # Install latest clang-format (auto-detect: tries binary with --version, else wheel)
+    clang-tools install clang-format
 
-Or install to a specified directory:
+    # Install specific version (auto-detect: binary first, fall back to wheel)
+    clang-tools install clang-format --version 13
 
-    clang-tools install 13 --directory .
+    # Install to a specified directory
+    clang-tools install clang-format --version 13 --directory .
 
-Or install a specified tool, such as `clang-format` and
-`clang-query` version 14:
-
-    clang-tools install 14 --tool clang-format clang-query
+    # Install multiple tools
+    clang-tools install clang-format clang-tidy --version 14
 
 If the installed directory is in your path, you can run the installed tools:
 
@@ -111,14 +113,14 @@ Python wheels using the unified `clang-tools` command.
 
     ```bash
     # Install latest clang-format wheel
-    clang-tools install clang-format --wheel
+    clang-tools install clang-format --backend wheel
     # Install specific version clang-format wheel
-    clang-tools install clang-format --wheel --version 21
+    clang-tools install clang-format --version 21 --backend wheel
 
     # Install latest clang-tidy wheel
-    clang-tools install clang-tidy --wheel
+    clang-tools install clang-tidy --backend wheel
     # Install specific version clang-tidy wheel
-    clang-tools install clang-tidy --wheel --version 21
+    clang-tools install clang-tidy --version 21 --backend wheel
     ```
 
 ## Supported Versions

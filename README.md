@@ -91,10 +91,10 @@ clang-format-13 --version
 # clang-format version 13.0.0
 ```
 
-> [!IMPORTANT]
-> Wheel installation is primarily intended for
-> cpp-linter projects. For general use, install wheels directly
-> using `pip`, `pipx`, or `uv`.
+> [!NOTE]
+> Wheel installation resolves the latest matching version from PyPI
+> (e.g. `--version 18` finds `18.1.8`). If you know the exact version,
+> `pip install <tool>==<version>` is equivalent and more direct.
 
 ### Install wheels
 

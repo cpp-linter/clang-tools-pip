@@ -106,10 +106,9 @@ After installing the `clang-tools` CLI, you can install the
 Python wheels using the unified `clang-tools` command.
 
 !!! important
-    Wheel installation is primarily intended for
-    cpp-linter projects to simplify installing clang tools Python wheels.
-    For general use, it is recommended to install the wheels directly
-    using `pip`, `pipx`, `uv`, or similar tools.
+    Wheel installation resolves the latest matching version from PyPI
+    (e.g. `--version 18` finds `18.1.8`). If you know the exact version,
+    `pip install <tool>==<version>` is equivalent and more direct.
 
     ```bash
     # Install latest clang-format wheel

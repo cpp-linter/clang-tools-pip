@@ -70,17 +70,18 @@ For a full list of CLI options, see the [documentation](https://cpp-linter.githu
 ### Install binaries
 
 ```bash
-# Install version 13 binaries (auto-detects binary vs wheel)
-clang-tools install 13
+# Install latest clang-format (auto-detects: tries binary with --version, else wheel)
+clang-tools install clang-format
 
-# Force binary installation
-clang-tools install 13 --binary
+# Install specific version (auto-detect: binary first, fall back to wheel)
+clang-tools install clang-format --version 13
+
+# Install multiple tools with a version
+clang-tools install clang-format clang-tidy --version 13
 
 # Install to a specified directory
-clang-tools install 13 --directory .
+clang-tools install clang-format --version 13 --directory .
 
-# Install specific tools
-clang-tools install 14 --tool clang-format clang-query
 ```
 
 If the installed directory is in your path:
@@ -90,20 +91,22 @@ clang-format-13 --version
 # clang-format version 13.0.0
 ```
 
+> [!NOTE]
+> Wheel installation resolves the latest matching version from PyPI
+> (e.g. `--version 18` finds `18.1.8`). If you know the exact version,
+> `pip install <tool>==<version>` is equivalent and more direct.
+
 ### Install wheels
+
+To install specific tools as Python wheels:
 
 ```bash
 # Install latest clang-format wheel
-clang-tools install clang-format --wheel
+clang-tools install clang-format --version 21
 
-# Install specific version
-clang-tools install clang-format --wheel --version 21
+# Install latest clang-tidy wheel
+clang-tools install clang-tidy --version 21
 ```
-
-> [!IMPORTANT]
-> Wheel installation is primarily intended for
-> cpp-linter projects. For general use, install wheels directly
-> using `pip`, `pipx`, or `uv`.
 
 ## Supported Clang Tools
 

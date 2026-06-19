@@ -10,12 +10,11 @@ import mkdocs_gen_files
 from clang_tools.main import get_parser
 
 REQUIRED_VERSIONS = {
-    "0.1.0": ["command", "target", "version"],
+    "0.1.0": ["command", "version"],
     "0.2.0": ["directory"],
     "0.3.0": ["overwrite"],
     "0.5.0": ["no_progress_bar"],
-    "0.11.0": ["tool"],
-    "1.0.0": ["binary", "wheel", "explicit_version"],
+    "2.0.0": ["tools", "explicit_version"],
 }
 
 

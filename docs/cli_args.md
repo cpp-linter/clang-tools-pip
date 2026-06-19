@@ -15,35 +15,16 @@ title: clang-tools CLI
 ## `clang-tools install`
 
 ```text
-    clang-tools install [-h] [--binary] [--wheel] [--version VER]
-                           [-t TOOL [TOOL ...]] [-d DIR] [-f] [-b]
-                           target
+    clang-tools install [-h] [--version VER] [-d DIR] [-f] [-b]
+                           TOOL [TOOL ...]
 
 ```
 
-### `--binary`
-
-:material-tag-outline: **v1.0.0** &nbsp; Default: `False` &nbsp; Accepts no value
-
-Force binary (static build) installation
-
-### `--wheel`
-
-:material-tag-outline: **v1.0.0** &nbsp; Default: `False` &nbsp; Accepts no value
-
-Force wheel installation (resolves versions from PyPI)
-
 ### `--version`
 
-:material-tag-outline: **v1.0.0**
+:material-tag-outline: **v2.0.0**
 
-Explicit version for wheel install (when target is a tool name)
-
-### `-t, --tool`
-
-:material-tag-outline: **v0.11.0** &nbsp; Default: `clang-format clang-tidy`
-
-Specify which tool(s) to install.
+Version to install (e.g. 18). When specified, binary install is tried first, falling back to wheel.
 
 ### `-d, --directory`
 
@@ -68,15 +49,15 @@ Do not display a progress bar for downloads.
 ## `clang-tools uninstall`
 
 ```text
-    clang-tools uninstall [-h] [-t TOOL [TOOL ...]] [-d DIR] version
+    clang-tools uninstall [-h] --version VER [-d DIR] TOOL [TOOL ...]
 
 ```
 
-### `-t, --tool`
+### `--version`
 
-:material-tag-outline: **v0.11.0** &nbsp; Default: `clang-format clang-tidy`
+:material-tag-outline: **v0.1.0**
 
-Specify which tool(s) to uninstall.
+Version to uninstall (e.g. 18)
 
 ### `-d, --directory`
 

@@ -73,18 +73,20 @@ For a list of supported Command Line Interface options, see:
 
 ### Install binaries examples
 
-Use `clang-tools` command to install version 13 binaries:
+Use `clang-tools` to install tools. Positional arguments are always
+tool names; version is specified via `--version`:
 
-    clang-tools install 13
+    # Install latest clang-format (auto-detect: tries binary with --version, else wheel)
+    clang-tools install clang-format
 
-Or install to a specified directory:
+    # Install specific version (auto-detect: binary first, fall back to wheel)
+    clang-tools install clang-format --version 13
 
-    clang-tools install 13 --directory .
+    # Install to a specified directory
+    clang-tools install clang-format --version 13 --directory .
 
-Or install a specified tool, such as `clang-format` and
-`clang-query` version 14:
-
-    clang-tools install 14 --tool clang-format clang-query
+    # Install multiple tools
+    clang-tools install clang-format clang-tidy --version 14
 
 If the installed directory is in your path, you can run the installed tools:
 
@@ -104,21 +106,16 @@ After installing the `clang-tools` CLI, you can install the
 Python wheels using the unified `clang-tools` command.
 
 !!! important
-    Wheel installation is primarily intended for
-    cpp-linter projects to simplify installing clang tools Python wheels.
-    For general use, it is recommended to install the wheels directly
-    using `pip`, `pipx`, `uv`, or similar tools.
+    Wheel installation resolves the latest matching version from PyPI
+    (e.g. `--version 18` finds `18.1.8`). If you know the exact version,
+    `pip install <tool>==<version>` is equivalent and more direct.
 
     ```bash
     # Install latest clang-format wheel
-    clang-tools install clang-format --wheel
-    # Install specific version clang-format wheel
-    clang-tools install clang-format --wheel --version 21
+    clang-tools install clang-format --version 21
 
     # Install latest clang-tidy wheel
-    clang-tools install clang-tidy --wheel
-    # Install specific version clang-tidy wheel
-    clang-tools install clang-tidy --wheel --version 21
+    clang-tools install clang-tidy --version 21
     ```
 
 ## Supported Versions

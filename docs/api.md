@@ -37,4 +37,4 @@ Python wheel installation module (integrated into unified CLI).
 [:octicons-code-16: View source](https://github.com/cpp-linter/clang-tools-pip/blob/main/clang_tools/wheel.py)
 
 Provides wheel-based installation via `cpp-linter-hooks`. Now
-accessible through the unified `clang-tools install --wheel` command.
+accessible through the unified `clang-tools install` command.

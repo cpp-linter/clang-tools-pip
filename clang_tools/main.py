@@ -2,9 +2,25 @@
 ``clang_tools.main``
 --------------------
 
-The module containing the unified main entrypoint function.
-Supports both binary (static build) and wheel-based installation
-via a single ``clang-tools`` command.
+The unified CLI entry point for installing and managing clang-tools.
+
+Supports two installation backends — binary (static builds) and wheel (PyPI)
+— via the ``--backend`` flag or auto-detection.
+
+Usage::
+
+    # Install one or more tools with auto-detected backend
+    clang-tools install clang-format clang-tidy --version 18
+
+    # Install latest version (wheel only, no version needed)
+    clang-tools install clang-format
+
+    # Explicitly choose backend
+    clang-tools install clang-format --version 18 --backend binary
+    clang-tools install clang-format --backend wheel
+
+    # Uninstall
+    clang-tools uninstall clang-format --version 12
 """
 
 import argparse
@@ -14,17 +30,6 @@ from typing import Optional
 from .install import install_clang_tools, uninstall_clang_tools
 from . import RESET_COLOR, YELLOW
 from .util import Version
-
-
-def _is_version_like(target: str) -> bool:
-    """Check if *target* looks like a version number (e.g. ``"18"``, ``"18.1"``)."""
-    try:
-        parts = target.split(".")
-        for p in parts:
-            int(p)
-        return True
-    except ValueError:
-        return False
 
 
 #: Known tool names commonly installed as Python wheels.
@@ -63,156 +68,120 @@ def _wheel_install(tools: list[str], version: Optional[str]) -> int:
     return 0 if ok else 1
 
 
-def _validate_wheel_tool(target: str) -> bool:
-    """Print an error and return `False` if *target* is not a wheel tool."""
-    if target not in WHEEL_TOOLS:
+# ---------------------------------------------------------------------------
+#  Backend handlers
+# ---------------------------------------------------------------------------
+
+
+def _install_binary(
+    tools: list[str],
+    version: Optional[str],
+    directory: str,
+    overwrite: bool,
+    no_progress_bar: bool,
+) -> int:
+    """Install tool(s) using the binary (static build) backend.
+
+    ``--version`` is required for this backend.
+    """
+    if version is None:
         print(
-            f"{YELLOW}Error: '{target}' is not available as a"
-            f" wheel. Supported: "
-            f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
+            f"{YELLOW}Error: --backend binary requires --version{RESET_COLOR}",
             file=sys.stderr,
         )
-        return False
-    return True
-
-
-def _handle_wheel(args: argparse.Namespace) -> int:
-    """Handle ``install --wheel`` subcommand."""
-    target: str = args.target
-    if _is_version_like(target):
-        return _wheel_install(args.tool, target)
-    if not _validate_wheel_tool(target):
         return 1
-    return _wheel_install([target], args.explicit_version)
-
-
-def _handle_binary(args: argparse.Namespace) -> int:
-    """Handle ``install --binary`` subcommand.
-
-    Supports two argument styles (consistent with ``--wheel``):
-
-    * ``clang-tools install <version> --tool <tool> --binary``
-    * ``clang-tools install <tool> --version <VER> --binary``
-    """
-    target: str = args.target
-    if _is_version_like(target):
-        version = Version(target)
-        tools = args.tool
-    else:
-        # target is a tool name — use --version for the version number
-        if args.explicit_version is None:
-            print(
-                f"{YELLOW}Error: --binary requires a version number"
-                f" (got '{target}'). "
-                f"Use e.g. 'clang-tools install {target}"
-                f" --version <VER> --binary'{RESET_COLOR}",
-                file=sys.stderr,
-            )
-            return 1
-        version = Version(args.explicit_version)
-        tools = [target]
-    if version.info == (0, 0, 0):
+    v = Version(version)
+    if v.info == (0, 0, 0):
         print(
             f"{YELLOW}The version specified is not a semantic"
             f" specification{RESET_COLOR}",
             file=sys.stderr,
         )
         return 1
-    install_clang_tools(
-        version,
-        tools,
-        args.directory,
-        args.overwrite,
-        args.no_progress_bar,
-    )
-    return 0
+    try:
+        install_clang_tools(v, tools, directory, overwrite, no_progress_bar)
+        return 0
+    except (OSError, ValueError) as exc:
+        print(
+            f"{YELLOW}Binary install failed: {exc}{RESET_COLOR}",
+            file=sys.stderr,
+        )
+        return 1
 
 
-def _handle_auto_detect(args: argparse.Namespace) -> int:
-    """Handle ``install`` without --binary/--wheel (auto-detect mode).
+def _install_wheel(tools: list[str], version: Optional[str]) -> int:
+    """Install tool(s) using the wheel (PyPI) backend.
 
-    When *target* is a version number → try binary first, fall back to wheel.
-    When *target* is a tool name and ``--version`` is given → try binary first,
-    fall back to wheel.  When *target* is a tool name without ``--version`` →
-    wheel install only.
+    Each tool must be in :data:`WHEEL_TOOLS`.
     """
-    target: str = args.target
-    if not _is_version_like(target):
-        # target is a tool name
-        if args.explicit_version is not None:
-            # explicit version — try binary first, fall back to wheel
-            version = Version(args.explicit_version)
-            if version.info != (0, 0, 0):
-                try:
-                    install_clang_tools(
-                        version,
-                        [target],
-                        args.directory,
-                        args.overwrite,
-                        args.no_progress_bar,
-                    )
-                    return 0
-                except (OSError, ValueError) as exc:
-                    print(
-                        f"{YELLOW}Binary install failed"
-                        f" ({exc}), falling back to"
-                        f" wheel...{RESET_COLOR}",
-                        file=sys.stderr,
-                    )
-        # fall through to wheel (requires a known wheel tool)
-        if target not in WHEEL_TOOLS:
+    for tool in tools:
+        if tool not in WHEEL_TOOLS:
             print(
-                f"{YELLOW}Unknown target '{target}'. Expected a"
-                f" version number or one of: "
+                f"{YELLOW}Error: '{tool}' is not available as a"
+                f" wheel. Supported: "
                 f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
                 file=sys.stderr,
             )
             return 1
-        return _wheel_install([target], args.explicit_version)
+    return _wheel_install(tools, version)
 
-    version = Version(target)
-    if version.info == (0, 0, 0):
-        print(
-            f"{YELLOW}The version specified is not a semantic"
-            f" specification{RESET_COLOR}",
-            file=sys.stderr,
-        )
-        return 1
 
-    # try binary first, fall back to wheel
-    try:
-        install_clang_tools(
-            version,
-            args.tool,
-            args.directory,
-            args.overwrite,
-            args.no_progress_bar,
-        )
-        return 0
-    except (OSError, ValueError) as exc:
-        print(
-            f"{YELLOW}Binary install failed"
-            f" ({exc}), falling back to"
-            f" wheel...{RESET_COLOR}",
-            file=sys.stderr,
-        )
-    return _wheel_install(args.tool, target)
+def _install_auto(
+    tools: list[str],
+    version: Optional[str],
+    directory: str,
+    overwrite: bool,
+    no_progress_bar: bool,
+) -> int:
+    """Auto-detect: try binary first (when ``--version`` given), fall back to wheel.
+
+    When no ``--version`` is provided, only wheel installation is possible.
+    """
+    if version is not None:
+        v = Version(version)
+        if v.info != (0, 0, 0):
+            try:
+                install_clang_tools(
+                    v, tools, directory, overwrite, no_progress_bar
+                )
+                return 0
+            except (OSError, ValueError) as exc:
+                print(
+                    f"{YELLOW}Binary install failed"
+                    f" ({exc}), falling back to"
+                    f" wheel...{RESET_COLOR}",
+                    file=sys.stderr,
+                )
+    # fall back to wheel
+    for tool in tools:
+        if tool not in WHEEL_TOOLS:
+            print(
+                f"{YELLOW}Unknown tool '{tool}'. Expected one of: "
+                f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
+                file=sys.stderr,
+            )
+            return 1
+    return _wheel_install(tools, version)
 
 
 def _handle_install(args: argparse.Namespace) -> int:
-    """Dispatch ``install`` subcommand based on flags."""
-    if args.binary and args.wheel:
-        print(
-            f"{YELLOW}Error: --binary and --wheel are mutually exclusive{RESET_COLOR}",
-            file=sys.stderr,
-        )
-        return 1
+    """Dispatch ``install`` subcommand based on ``--backend``."""
+    tools = args.tools
+    version = args.explicit_version
+    directory = args.directory
+    overwrite = args.overwrite
+    no_progress_bar = args.no_progress_bar
 
-    if args.wheel:
-        return _handle_wheel(args)
-    if args.binary:
-        return _handle_binary(args)
-    return _handle_auto_detect(args)
+    if args.backend == "binary":
+        return _install_binary(tools, version, directory, overwrite, no_progress_bar)
+    if args.backend == "wheel":
+        return _install_wheel(tools, version)
+    return _install_auto(tools, version, directory, overwrite, no_progress_bar)
+
+
+# ---------------------------------------------------------------------------
+#  Parser
+# ---------------------------------------------------------------------------
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -222,36 +191,26 @@ def get_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # --- ``clang-tools install <target>`` ---------------------------------
+    # --- ``clang-tools install <tool> [<tool> ...]`` --------------------
     install_p = subparsers.add_parser("install", help="Install clang-tools")
     install_p.add_argument(
-        "target",
-        help="Version number (e.g. 18) or tool name (e.g. clang-format)",
-    )
-    install_p.add_argument(
-        "--binary",
-        action="store_true",
-        help="Force binary (static build) installation",
-    )
-    install_p.add_argument(
-        "--wheel",
-        action="store_true",
-        help="Force wheel installation (resolves versions from PyPI)",
+        "tools",
+        nargs="+",
+        metavar="TOOL",
+        help="Tool name(s) to install (e.g. clang-format clang-tidy)",
     )
     install_p.add_argument(
         "--version",
         dest="explicit_version",
         default=None,
         metavar="VER",
-        help="Explicit version (when target is a tool name, for both --wheel and --binary)",
+        help="Version to install (e.g. 18). Required for --backend binary.",
     )
     install_p.add_argument(
-        "-t",
-        "--tool",
-        nargs="+",
-        default=["clang-format", "clang-tidy"],
-        metavar="TOOL",
-        help="Specify which tool(s) to install.",
+        "--backend",
+        choices=("auto", "binary", "wheel"),
+        default="auto",
+        help="Installation backend: auto (default, binary\u2192wheel), binary, or wheel",
     )
     install_p.add_argument(
         "-d",
@@ -273,16 +232,19 @@ def get_parser() -> argparse.ArgumentParser:
         help="Do not display a progress bar for downloads.",
     )
 
-    # --- ``clang-tools uninstall <version>`` ------------------------------
+    # --- ``clang-tools uninstall <tool> [<tool> ...] --version VER`` ----
     uninstall_p = subparsers.add_parser("uninstall", help="Uninstall clang-tools")
-    uninstall_p.add_argument("version", help="Version to uninstall")
     uninstall_p.add_argument(
-        "-t",
-        "--tool",
+        "tools",
         nargs="+",
-        default=["clang-format", "clang-tidy"],
         metavar="TOOL",
-        help="Specify which tool(s) to uninstall.",
+        help="Tool name(s) to uninstall (e.g. clang-format clang-tidy)",
+    )
+    uninstall_p.add_argument(
+        "--version",
+        required=True,
+        metavar="VER",
+        help="Version to uninstall (e.g. 18)",
     )
     uninstall_p.add_argument(
         "-d",
@@ -293,6 +255,11 @@ def get_parser() -> argparse.ArgumentParser:
     )
 
     return parser
+
+
+# ---------------------------------------------------------------------------
+#  Entry point
+# ---------------------------------------------------------------------------
 
 
 def main() -> int:
@@ -312,12 +279,12 @@ def main() -> int:
         parser.print_help()
         return 0
 
-    if args.command == "uninstall":
-        uninstall_clang_tools(args.tool, args.version, args.directory)
-        return 0
-
     if args.command == "install":
         return _handle_install(args)
+
+    if args.command == "uninstall":
+        uninstall_clang_tools(args.tools, args.version, args.directory)
+        return 0
 
     return 0  # unreachable
 

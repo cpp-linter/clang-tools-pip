@@ -7,7 +7,7 @@ title: clang-tools CLI
 ## Usage
 
 ```text
-    clang-tools [-h] {install,uninstall} ...
+    clang-tools [-h] {install,uninstall,version} ...
 ```
 
 ---
@@ -64,3 +64,12 @@ Version to uninstall (e.g. 18)
 :material-tag-outline: **v0.2.0** &nbsp; Default: ``
 
 The directory from which to uninstall the tools.
+
+---
+
+## `clang-tools version`
+
+```text
+    clang-tools version [-h]
+
+```

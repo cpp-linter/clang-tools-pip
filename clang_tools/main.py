@@ -169,6 +169,12 @@ def get_parser() -> argparse.ArgumentParser:
         help="The directory from which to uninstall the tools.",
     )
 
+    # --- ``clang-tools version`` ------------------------------------------
+    subparsers.add_parser(
+        "version",
+        help="Show the clang-tools package version",
+    )
+
     return parser
 
 
@@ -177,11 +183,24 @@ def get_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 
 
+def _print_version() -> None:
+    """Print the installed version of clang-tools-pip and exit."""
+    from importlib.metadata import version
+
+    print(f"clang-tools {version('clang-tools')}")
+
+
 def main() -> int:
     """Unified entry point for the CLI program.
 
     :returns: exit code (0 on success, 1 on failure).
     """
+    # Handle ``--version`` at the root level before argparse to avoid
+    # conflicting with ``install --version``.
+    if len(sys.argv) == 2 and sys.argv[1] in ("--version", "-V"):
+        _print_version()
+        return 0
+
     parser = get_parser()
     args = parser.parse_args()
 
@@ -199,6 +218,10 @@ def main() -> int:
 
     if args.command == "uninstall":
         uninstall_clang_tools(args.tools, args.version, args.directory)
+        return 0
+
+    if args.command == "version":
+        _print_version()
         return 0
 
     return 0  # unreachable

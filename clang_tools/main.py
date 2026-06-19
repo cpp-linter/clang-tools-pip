@@ -185,13 +185,9 @@ def get_parser() -> argparse.ArgumentParser:
 
 def _print_version() -> None:
     """Print the installed version of clang-tools-pip and exit."""
-    try:
-        from importlib.metadata import version
+    from importlib.metadata import version
 
-        ver = version("clang-tools")
-    except ImportError:
-        ver = "unknown"
-    print(f"clang-tools {ver}")
+    print(f"clang-tools {version('clang-tools')}")
 
 
 def main() -> int:

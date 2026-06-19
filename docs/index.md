@@ -113,14 +113,10 @@ Python wheels using the unified `clang-tools` command.
 
     ```bash
     # Install latest clang-format wheel
-    clang-tools install clang-format --backend wheel
-    # Install specific version clang-format wheel
-    clang-tools install clang-format --version 21 --backend wheel
+    clang-tools install clang-format --version 21
 
     # Install latest clang-tidy wheel
-    clang-tools install clang-tidy --backend wheel
-    # Install specific version clang-tidy wheel
-    clang-tools install clang-tidy --version 21 --backend wheel
+    clang-tools install clang-tidy --version 21
     ```
 
 ## Supported Versions

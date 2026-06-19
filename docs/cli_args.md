@@ -15,8 +15,7 @@ title: clang-tools CLI
 ## `clang-tools install`
 
 ```text
-    clang-tools install [-h] [--version VER]
-                           [--backend {auto,binary,wheel}] [-d DIR] [-f] [-b]
+    clang-tools install [-h] [--version VER] [-d DIR] [-f] [-b]
                            TOOL [TOOL ...]
 
 ```
@@ -25,13 +24,7 @@ title: clang-tools CLI
 
 :material-tag-outline: **v2.0.0**
 
-Version to install (e.g. 18). Required for --backend binary.
-
-### `--backend`
-
-:material-tag-outline: **v2.0.0** &nbsp; Default: `auto`
-
-Installation backend: auto (default, binary→wheel), binary, or wheel
+Version to install (e.g. 18). When specified, binary install is tried first, falling back to wheel.
 
 ### `-d, --directory`
 

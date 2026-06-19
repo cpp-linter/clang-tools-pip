@@ -82,14 +82,6 @@ clang-tools install clang-format clang-tidy --version 13
 # Install to a specified directory
 clang-tools install clang-format --version 13 --directory .
 
-# Force binary installation
-clang-tools install clang-format --version 13 --backend binary
-
-# Force wheel installation
-clang-tools install clang-format --backend wheel
-
-# Install a specific wheel version
-clang-tools install clang-format --version 21 --backend wheel
 ```
 
 If the installed directory is in your path:
@@ -103,6 +95,18 @@ clang-format-13 --version
 > Wheel installation is primarily intended for
 > cpp-linter projects. For general use, install wheels directly
 > using `pip`, `pipx`, or `uv`.
+
+### Install wheels
+
+To install specific tools as Python wheels:
+
+```bash
+# Install latest clang-format wheel
+clang-tools install clang-format --version 21
+
+# Install latest clang-tidy wheel
+clang-tools install clang-tidy --version 21
+```
 
 ## Supported Clang Tools
 

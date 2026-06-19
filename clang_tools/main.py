@@ -4,20 +4,13 @@
 
 The unified CLI entry point for installing and managing clang-tools.
 
-Supports two installation backends — binary (static builds) and wheel (PyPI)
-— via the ``--backend`` flag or auto-detection.
-
 Usage::
 
-    # Install one or more tools with auto-detected backend
+    # Install one or more tools (auto-detect: binary→wheel)
     clang-tools install clang-format clang-tidy --version 18
 
     # Install latest version (wheel only, no version needed)
     clang-tools install clang-format
-
-    # Explicitly choose backend
-    clang-tools install clang-format --version 18 --backend binary
-    clang-tools install clang-format --backend wheel
 
     # Uninstall
     clang-tools uninstall clang-format --version 12
@@ -68,75 +61,19 @@ def _wheel_install(tools: list[str], version: Optional[str]) -> int:
     return 0 if ok else 1
 
 
-# ---------------------------------------------------------------------------
-#  Backend handlers
-# ---------------------------------------------------------------------------
+def _handle_install(args: argparse.Namespace) -> int:
+    """Handle ``install`` subcommand — auto-detect backend.
 
-
-def _install_binary(
-    tools: list[str],
-    version: Optional[str],
-    directory: str,
-    overwrite: bool,
-    no_progress_bar: bool,
-) -> int:
-    """Install tool(s) using the binary (static build) backend.
-
-    ``--version`` is required for this backend.
+    When ``--version`` is given, binary (static build) is tried first;
+    on failure it falls back to wheel (PyPI pip install).
+    Without ``--version``, only wheel is possible.
     """
-    if version is None:
-        print(
-            f"{YELLOW}Error: --backend binary requires --version{RESET_COLOR}",
-            file=sys.stderr,
-        )
-        return 1
-    v = Version(version)
-    if v.info == (0, 0, 0):
-        print(
-            f"{YELLOW}The version specified is not a semantic"
-            f" specification{RESET_COLOR}",
-            file=sys.stderr,
-        )
-        return 1
-    try:
-        install_clang_tools(v, tools, directory, overwrite, no_progress_bar)
-        return 0
-    except (OSError, ValueError) as exc:
-        print(
-            f"{YELLOW}Binary install failed: {exc}{RESET_COLOR}",
-            file=sys.stderr,
-        )
-        return 1
+    tools = args.tools
+    version = args.explicit_version
+    directory = args.directory
+    overwrite = args.overwrite
+    no_progress_bar = args.no_progress_bar
 
-
-def _install_wheel(tools: list[str], version: Optional[str]) -> int:
-    """Install tool(s) using the wheel (PyPI) backend.
-
-    Each tool must be in :data:`WHEEL_TOOLS`.
-    """
-    for tool in tools:
-        if tool not in WHEEL_TOOLS:
-            print(
-                f"{YELLOW}Error: '{tool}' is not available as a"
-                f" wheel. Supported: "
-                f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
-                file=sys.stderr,
-            )
-            return 1
-    return _wheel_install(tools, version)
-
-
-def _install_auto(
-    tools: list[str],
-    version: Optional[str],
-    directory: str,
-    overwrite: bool,
-    no_progress_bar: bool,
-) -> int:
-    """Auto-detect: try binary first (when ``--version`` given), fall back to wheel.
-
-    When no ``--version`` is provided, only wheel installation is possible.
-    """
     if version is not None:
         v = Version(version)
         if v.info != (0, 0, 0):
@@ -160,21 +97,6 @@ def _install_auto(
             )
             return 1
     return _wheel_install(tools, version)
-
-
-def _handle_install(args: argparse.Namespace) -> int:
-    """Dispatch ``install`` subcommand based on ``--backend``."""
-    tools = args.tools
-    version = args.explicit_version
-    directory = args.directory
-    overwrite = args.overwrite
-    no_progress_bar = args.no_progress_bar
-
-    if args.backend == "binary":
-        return _install_binary(tools, version, directory, overwrite, no_progress_bar)
-    if args.backend == "wheel":
-        return _install_wheel(tools, version)
-    return _install_auto(tools, version, directory, overwrite, no_progress_bar)
 
 
 # ---------------------------------------------------------------------------
@@ -202,13 +124,8 @@ def get_parser() -> argparse.ArgumentParser:
         dest="explicit_version",
         default=None,
         metavar="VER",
-        help="Version to install (e.g. 18). Required for --backend binary.",
-    )
-    install_p.add_argument(
-        "--backend",
-        choices=("auto", "binary", "wheel"),
-        default="auto",
-        help="Installation backend: auto (default, binary\u2192wheel), binary, or wheel",
+        help="Version to install (e.g. 18). When specified, binary install"
+        " is tried first, falling back to wheel.",
     )
     install_p.add_argument(
         "-d",

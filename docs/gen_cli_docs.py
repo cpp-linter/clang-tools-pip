@@ -14,7 +14,7 @@ REQUIRED_VERSIONS = {
     "0.2.0": ["directory"],
     "0.3.0": ["overwrite"],
     "0.5.0": ["no_progress_bar"],
-    "2.0.0": ["tools", "explicit_version", "backend"],
+    "2.0.0": ["tools", "explicit_version"],
 }
 
 

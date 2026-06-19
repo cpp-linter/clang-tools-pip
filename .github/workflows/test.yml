@@ -159,7 +159,7 @@ jobs:
             fi
 
             echo "::group::Installing $tool wheel v$ver"
-            clang-tools install "$tool" --version "$ver" --backend wheel
+            clang-tools install "$tool" --version "$ver"
             "$tool" --version
             local out=$("$tool" --version)
             echo "$tool version: $out"

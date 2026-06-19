@@ -107,6 +107,15 @@ def test_main_version_short(monkeypatch: pytest.MonkeyPatch, capsys):
     assert exit_code == 0
 
 
+def test_main_version_subcommand(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``clang-tools version`` prints package version."""
+    monkeypatch.setattr(sys, "argv", ["clang-tools", "version"])
+    exit_code = main()
+    result = capsys.readouterr()
+    assert "clang-tools" in result.out
+    assert exit_code == 0
+
+
 def test_main_version_does_not_conflict_with_install(
     monkeypatch: pytest.MonkeyPatch, capsys, tmp_path
 ):

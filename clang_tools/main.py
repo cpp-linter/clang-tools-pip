@@ -169,6 +169,12 @@ def get_parser() -> argparse.ArgumentParser:
         help="The directory from which to uninstall the tools.",
     )
 
+    # --- ``clang-tools version`` ------------------------------------------
+    subparsers.add_parser(
+        "version",
+        help="Show the clang-tools package version",
+    )
+
     return parser
 
 
@@ -216,6 +222,10 @@ def main() -> int:
 
     if args.command == "uninstall":
         uninstall_clang_tools(args.tools, args.version, args.directory)
+        return 0
+
+    if args.command == "version":
+        _print_version()
         return 0
 
     return 0  # unreachable

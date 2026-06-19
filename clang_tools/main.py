@@ -177,11 +177,28 @@ def get_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 
 
+def _print_version() -> None:
+    """Print the installed version of clang-tools-pip and exit."""
+    try:
+        from importlib.metadata import version
+
+        ver = version("clang-tools")
+    except ImportError:
+        ver = "unknown"
+    print(f"clang-tools {ver}")
+
+
 def main() -> int:
     """Unified entry point for the CLI program.
 
     :returns: exit code (0 on success, 1 on failure).
     """
+    # Handle ``--version`` at the root level before argparse to avoid
+    # conflicting with ``install --version``.
+    if len(sys.argv) == 2 and sys.argv[1] in ("--version", "-V"):
+        _print_version()
+        return 0
+
     parser = get_parser()
     args = parser.parse_args()
 

@@ -89,6 +89,49 @@ def test_main_no_args(monkeypatch: pytest.MonkeyPatch, capsys):
     assert exit_code == 0
 
 
+def test_main_version(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``clang-tools --version`` prints package version."""
+    monkeypatch.setattr(sys, "argv", ["clang-tools", "--version"])
+    exit_code = main()
+    result = capsys.readouterr()
+    assert "clang-tools" in result.out
+    assert exit_code == 0
+
+
+def test_main_version_short(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``clang-tools -V`` prints package version."""
+    monkeypatch.setattr(sys, "argv", ["clang-tools", "-V"])
+    exit_code = main()
+    result = capsys.readouterr()
+    assert "clang-tools" in result.out
+    assert exit_code == 0
+
+
+def test_main_version_does_not_conflict_with_install(
+    monkeypatch: pytest.MonkeyPatch, capsys, tmp_path
+):
+    """``clang-tools install --version 12`` still works (not confused with root --version)."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "clang-tools",
+            "install",
+            "clang-format",
+            "--version",
+            "12",
+            "--directory",
+            str(tmp_path),
+            "--no-progress-bar",
+        ],
+    )
+    exit_code = main()
+    assert exit_code == 0
+    bin_path = tmp_path / f"clang-format-12{suffix}"
+    assert bin_path.exists()
+
+
 def test_main_install_no_version(monkeypatch: pytest.MonkeyPatch, capsys):
     """Auto-detect without --version goes to wheel install."""
     tracked_install: list = []

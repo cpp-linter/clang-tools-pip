@@ -73,4 +73,3 @@ The directory from which to uninstall the tools.
     clang-tools version [-h]
 
 ```
-

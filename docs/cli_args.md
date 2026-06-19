@@ -71,4 +71,3 @@ Version to uninstall (e.g. 18)
 :material-tag-outline: **v0.2.0** &nbsp; Default: ``
 
 The directory from which to uninstall the tools.
-

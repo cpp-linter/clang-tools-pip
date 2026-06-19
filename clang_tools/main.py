@@ -141,9 +141,7 @@ def _install_auto(
         v = Version(version)
         if v.info != (0, 0, 0):
             try:
-                install_clang_tools(
-                    v, tools, directory, overwrite, no_progress_bar
-                )
+                install_clang_tools(v, tools, directory, overwrite, no_progress_bar)
                 return 0
             except (OSError, ValueError) as exc:
                 print(

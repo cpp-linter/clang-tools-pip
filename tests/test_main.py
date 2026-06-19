@@ -66,16 +66,21 @@ def test_install_subcommand_directory(parser: ArgumentParser):
 
 def test_install_subcommand_flags(parser: ArgumentParser):
     args = parser.parse_args(
-        ["install", "clang-format", "--version", "18", "--overwrite", "--no-progress-bar"]
+        [
+            "install",
+            "clang-format",
+            "--version",
+            "18",
+            "--overwrite",
+            "--no-progress-bar",
+        ]
     )
     assert args.overwrite is True
     assert args.no_progress_bar is True
 
 
 def test_uninstall_subcommand(parser: ArgumentParser):
-    args = parser.parse_args(
-        ["uninstall", "clang-format", "--version", "12"]
-    )
+    args = parser.parse_args(["uninstall", "clang-format", "--version", "12"])
     assert args.command == "uninstall"
     assert args.tools == ["clang-format"]
     assert args.version == "12"

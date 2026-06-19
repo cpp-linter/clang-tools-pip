@@ -34,9 +34,7 @@ def test_install_subcommand_multiple_tools(parser: ArgumentParser):
 
 
 def test_install_subcommand_with_version(parser: ArgumentParser):
-    args = parser.parse_args(
-        ["install", "clang-format", "--version", "18"]
-    )
+    args = parser.parse_args(["install", "clang-format", "--version", "18"])
     assert args.explicit_version == "18"
 
 
@@ -189,9 +187,7 @@ def test_main_install_with_version_out_of_range(
     assert tracked == [(["clang-format"], "99")]
 
 
-def test_main_install_with_version_bad_semver(
-    monkeypatch: pytest.MonkeyPatch, capsys
-):
+def test_main_install_with_version_bad_semver(monkeypatch: pytest.MonkeyPatch, capsys):
     """Auto-detect with 0.0.0 falls back to wheel."""
     tracked: list = []
 
@@ -255,9 +251,7 @@ def test_main_install_unsupported_tool(monkeypatch: pytest.MonkeyPatch, capsys):
     assert exit_code == 1
 
 
-def test_main_install_multiple_tools(
-    monkeypatch: pytest.MonkeyPatch, capsys, tmp_path
-):
+def test_main_install_multiple_tools(monkeypatch: pytest.MonkeyPatch, capsys, tmp_path):
     """Auto-detect: multiple tool names with --version."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(

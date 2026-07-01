@@ -111,9 +111,7 @@ def get_sha_checksum(binary_url: str) -> str:
         if line.endswith("  " + bin_filename):
             return line.split("  ", 1)[0]
 
-    raise ValueError(
-        f"Could not find SHA512 checksum for {bin_filename} in SHA512SUMS"
-    )
+    raise ValueError(f"Could not find SHA512 checksum for {bin_filename} in SHA512SUMS")
 
 
 def verify_sha512(checksum: str, exe: bytes) -> bool:

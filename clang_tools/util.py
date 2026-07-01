@@ -86,13 +86,34 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[s
 def get_sha_checksum(binary_url: str) -> str:
     """Fetch the SHA512 checksum corresponding to the released binary.
 
+    Checksums are stored in a single ``SHA512SUMS`` file at the release root.
+    This function fetches that file and parses it to find the hash for the
+    specific binary identified by *binary_url*.
+
     :param binary_url: The URL used to download the binary.
 
-    :returns: A `str` containing the contents of the SHA512sum file given
-        ``binary_url``.
+    :returns: A `str` containing the SHA512 checksum (hash only) for the
+        given binary.
     """
-    with urllib.request.urlopen(binary_url + ".sha512sum") as response:
-        return response.read(response.length).decode(encoding="utf-8")
+    # Extract the binary filename from the URL (last path segment)
+    bin_filename = binary_url.rsplit("/", 1)[-1]
+
+    # Build the SHA512SUMS URL (same base URL, different file)
+    base_url = binary_url.rsplit("/", 1)[0]
+    sha_url = f"{base_url}/SHA512SUMS"
+
+    with urllib.request.urlopen(sha_url) as response:
+        content = response.read().decode(encoding="utf-8")
+
+    # Parse SHA512SUMS to find the line matching our binary
+    for line in content.splitlines():
+        line = line.strip()
+        if line.endswith("  " + bin_filename):
+            return line.split("  ", 1)[0]
+
+    raise ValueError(
+        f"Could not find SHA512 checksum for {bin_filename} in SHA512SUMS"
+    )
 
 
 def verify_sha512(checksum: str, exe: bytes) -> bool:

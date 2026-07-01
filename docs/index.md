@@ -6,7 +6,8 @@
 [![Downloads](https://img.shields.io/pypi/dw/clang-tools)](https://pypistats.org/packages/clang-tools)
 
 Easily install `clang-format`, `clang-tidy`, `clang-query`,
-`clang-apply-replacements`, and `clang-include-cleaner` static binaries or
+`clang-apply-replacements`, `clang-include-cleaner`, `llvm-cov`,
+`llvm-profdata`, `llvm-symbolizer`, and `clang-scan-deps` static binaries or
 Python wheels using the `clang-tools` CLI.
 
 !!! important
@@ -20,11 +21,11 @@ Python wheels using the `clang-tools` CLI.
 
 ## Features
 
-- Install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, and `clang-include-cleaner` via a single `clang-tools` CLI.
+- Install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, `clang-include-cleaner`, `llvm-cov`, `llvm-profdata`, `llvm-symbolizer`, and `clang-scan-deps` via a single `clang-tools` CLI.
 - Supports both **static binaries** (standalone executables) and **Python wheels** (installed via pip).
 - Automatically uses static binaries when available; falls back to wheels if not.
 - Works on Linux, macOS, and Windows (x86_64 and ARM64).
-- Choose a specific LLVM version (11–22) or install the latest.
+- Choose a specific LLVM version (12–22) or install the latest.
 - Install only the tools you need with `--tool`.
 - Uses SHA512 checksums to verify downloaded binaries.
 - Creates unversioned symlinks (e.g., `clang-format`) alongside versioned binaries (`clang-format-18`) for convenience.
@@ -123,14 +124,15 @@ Python wheels using the unified `clang-tools` command.
 ### clang tools binaries
 
 The following table shows the supported versions of clang-format,
-clang-tidy, clang-query, and clang-apply-replacements binaries
+clang-tidy, clang-query, clang-apply-replacements, llvm-cov,
+llvm-profdata, llvm-symbolizer, and clang-scan-deps binaries
 for each platform:
 
-| Platform | 22 | 21 | 20 | 19 | 18 | 17 | 16 | 15 | 14 | 13 | 12 | 11 |
-|----------|----|----|----|----|----|----|----|----|----|----|----|----|
-| Linux | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| Windows | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| macOS | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| Platform | 22 | 21 | 20 | 19 | 18 | 17 | 16 | 15 | 14 | 13 | 12 |
+|----------|----|----|----|----|----|----|----|----|----|----|----|
+| Linux | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| Windows | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| macOS | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 
 For more details, visit the
 [clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries)

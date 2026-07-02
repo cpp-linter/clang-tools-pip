@@ -7,6 +7,7 @@ A module containing utility functions.
 
 import platform
 import hashlib
+from functools import lru_cache
 from pathlib import Path
 import urllib.request
 from typing import Optional, Tuple
@@ -83,16 +84,49 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[s
     return file.as_posix()
 
 
+@lru_cache(maxsize=None)
+def _fetch_sha512sums(sha_url: str) -> str:
+    """Fetch and cache the SHA512SUMS file content.
+
+    :param sha_url: The URL of the SHA512SUMS file.
+
+    :returns: The content of the SHA512SUMS file as a string.
+    """
+    with urllib.request.urlopen(sha_url, timeout=30) as response:
+        return response.read().decode(encoding="utf-8")
+
+
 def get_sha_checksum(binary_url: str) -> str:
     """Fetch the SHA512 checksum corresponding to the released binary.
 
+    Checksums are stored in a single ``SHA512SUMS`` file at the release root.
+    This function fetches that file and parses it to find the hash for the
+    specific binary identified by *binary_url*.
+
     :param binary_url: The URL used to download the binary.
 
-    :returns: A `str` containing the contents of the SHA512sum file given
-        ``binary_url``.
+    :returns: A `str` containing the SHA512 checksum (hash only) for the
+        given binary.
     """
-    with urllib.request.urlopen(binary_url + ".sha512sum") as response:
-        return response.read(response.length).decode(encoding="utf-8")
+    # Extract the binary filename from the URL (last path segment)
+    bin_filename = binary_url.rsplit("/", 1)[-1]
+
+    # Build the SHA512SUMS URL (same base URL, different file)
+    base_url = binary_url.rsplit("/", 1)[0]
+    sha_url = f"{base_url}/SHA512SUMS"
+
+    content = _fetch_sha512sums(sha_url)
+
+    # Parse SHA512SUMS to find the line matching our binary.
+    # Format: "<sha512hash>  <filename>" (hash and filename separated
+    # by two spaces).
+    for line in content.splitlines():
+        line = line.strip()
+        parts = line.rsplit("  ", 1)
+        if len(parts) == 2 and parts[1] == bin_filename:
+            return parts[0]
+
+    raise ValueError(f"Could not find SHA512 checksum for {bin_filename} in SHA512SUMS")
 
 
 def verify_sha512(checksum: str, exe: bytes) -> bool:

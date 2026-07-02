@@ -5,7 +5,7 @@ from pathlib import Path, PurePath
 from urllib.error import HTTPError
 from unittest.mock import Mock
 import pytest
-from clang_tools import install_arch, install_os
+from clang_tools import install_arch, install_os, suffix
 from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import (
     check_install_arch,
@@ -39,7 +39,7 @@ def test_download_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 
 def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     """Test the get_sha() function used to fetch the
-    releases' corresponding SHA512 checksum."""
+    releases' corresponding SHA512 checksum from the single SHA512SUMS file."""
     monkeypatch.chdir(PurePath(__file__).parent.as_posix())
     if install_os == "macosx":
         platform_str = "macos-arm64" if install_arch == "arm64" else "macos-amd64"
@@ -49,15 +49,34 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
             if install_arch == "arm64"
             else f"{install_os}-amd64"  # pragma: no cover
         )  # pragma: no cover
-    expected = Path(f"clang-format-21_{platform_str}.sha512sum").read_text(
-        encoding="utf-8"
-    )
+    binary_name = f"clang-format-21_{platform_str}{suffix}"
+    sha_content = Path("SHA512SUMS").read_text(encoding="utf-8")
+    expected_hash = None
+    for line in sha_content.splitlines():
+        line = line.strip()
+        parts = line.rsplit("  ", 1)
+        if len(parts) == 2 and parts[1] == binary_name:
+            expected_hash = parts[0]
+            break
+    assert expected_hash is not None, f"Could not find {binary_name} in SHA512SUMS"
     url = clang_tools_binary_url("clang-format", "21")
     actual = get_sha_checksum(url)
     # Compare only the hash portion, ignoring trailing filename and line endings
-    expected_hash = expected.strip().split(" ", 1)[0]
     actual_hash = actual.strip().split(" ", 1)[0]
     assert actual_hash == expected_hash
+
+
+def test_get_sha_value_error(monkeypatch: pytest.MonkeyPatch):
+    """Test get_sha_checksum raises ValueError when the binary is not found
+    in the SHA512SUMS file."""
+    monkeypatch.setattr(
+        "clang_tools.util._fetch_sha512sums",
+        Mock(return_value="somehash  some-other-file"),
+    )
+    with pytest.raises(
+        ValueError, match="Could not find SHA512 checksum for my-binary"
+    ):
+        get_sha_checksum("https://example.com/release/my-binary")
 
 
 def test_version_path():

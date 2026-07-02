@@ -6,7 +6,7 @@
 [![Downloads](https://img.shields.io/pypi/dw/clang-tools)](https://pypistats.org/packages/clang-tools)
 [![cpp-linter hub](https://img.shields.io/badge/%F0%9F%8F%A0_cpp--linter_hub-%E2%86%90_home-22863a)](https://cpp-linter.github.io/)
 
-Easily install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, and `clang-include-cleaner` static binaries or
+Easily install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, `clang-include-cleaner`, `llvm-cov`, `llvm-profdata`, `llvm-symbolizer`, and `clang-scan-deps` static binaries or
 Python wheels using the `clang-tools` CLI.
 
 > [!IMPORTANT]
@@ -23,11 +23,11 @@ Python wheels using the `clang-tools` CLI.
 
 ## Features
 
-- Install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, and `clang-include-cleaner` via a single `clang-tools` CLI.
+- Install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, `clang-include-cleaner`, `llvm-cov`, `llvm-profdata`, `llvm-symbolizer`, and `clang-scan-deps` via a single `clang-tools` CLI.
 - Supports both **static binaries** (standalone executables) and **Python wheels** (installed via pip).
 - Automatically uses static binaries when available; falls back to wheels if not.
 - Works on Linux, macOS, and Windows (x86_64 and ARM64).
-- Choose a specific LLVM version (11–22) or install the latest.
+- Choose a specific LLVM version (12–22) or install the latest.
 - Install only the tools you need with `--tool`.
 - Uses SHA512 checksums to verify downloaded binaries.
 - Creates unversioned symlinks (e.g., `clang-format`) alongside versioned binaries (`clang-format-18`) for convenience.
@@ -117,6 +117,10 @@ clang-tools install clang-tidy --version 21
 - clang-query
 - clang-apply-replacements
 - clang-include-cleaner
+- llvm-cov
+- llvm-profdata
+- llvm-symbolizer
+- clang-scan-deps
 
 For more details, visit [clang-tools-static-binaries](https://github.com/cpp-linter/clang-tools-static-binaries).
 

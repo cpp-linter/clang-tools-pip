@@ -29,6 +29,10 @@ from clang_tools.util import Version
         "clang-query",
         "clang-apply-replacements",
         "clang-include-cleaner",
+        "llvm-cov",
+        "llvm-profdata",
+        "llvm-symbolizer",
+        "clang-scan-deps",
     ],
 )
 def test_clang_tools_binary_url(tool_name: str, version: str):

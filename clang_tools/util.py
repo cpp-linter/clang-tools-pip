@@ -7,6 +7,7 @@ A module containing utility functions.
 
 import platform
 import hashlib
+from functools import lru_cache
 from pathlib import Path
 import urllib.request
 from typing import Optional, Tuple
@@ -83,6 +84,18 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[s
     return file.as_posix()
 
 
+@lru_cache(maxsize=None)
+def _fetch_sha512sums(sha_url: str) -> str:
+    """Fetch and cache the SHA512SUMS file content.
+
+    :param sha_url: The URL of the SHA512SUMS file.
+
+    :returns: The content of the SHA512SUMS file as a string.
+    """
+    with urllib.request.urlopen(sha_url, timeout=30) as response:
+        return response.read().decode(encoding="utf-8")
+
+
 def get_sha_checksum(binary_url: str) -> str:
     """Fetch the SHA512 checksum corresponding to the released binary.
 
@@ -102,14 +115,16 @@ def get_sha_checksum(binary_url: str) -> str:
     base_url = binary_url.rsplit("/", 1)[0]
     sha_url = f"{base_url}/SHA512SUMS"
 
-    with urllib.request.urlopen(sha_url) as response:
-        content = response.read().decode(encoding="utf-8")
+    content = _fetch_sha512sums(sha_url)
 
-    # Parse SHA512SUMS to find the line matching our binary
+    # Parse SHA512SUMS to find the line matching our binary.
+    # Format: "<sha512hash>  <filename>" (hash and filename separated
+    # by two spaces).
     for line in content.splitlines():
         line = line.strip()
-        if line.endswith("  " + bin_filename):
-            return line.split("  ", 1)[0]
+        parts = line.rsplit("  ", 1)
+        if len(parts) == 2 and parts[1] == bin_filename:
+            return parts[0]
 
     raise ValueError(f"Could not find SHA512 checksum for {bin_filename} in SHA512SUMS")
 

@@ -54,8 +54,9 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     expected_hash = None
     for line in sha_content.splitlines():
         line = line.strip()
-        if line.endswith("  " + binary_name):
-            expected_hash = line.split("  ", 1)[0]
+        parts = line.rsplit("  ", 1)
+        if len(parts) == 2 and parts[1] == binary_name:
+            expected_hash = parts[0]
             break
     assert expected_hash is not None, f"Could not find {binary_name} in SHA512SUMS"
     url = clang_tools_binary_url("clang-format", "21")
@@ -63,6 +64,19 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch):
     # Compare only the hash portion, ignoring trailing filename and line endings
     actual_hash = actual.strip().split(" ", 1)[0]
     assert actual_hash == expected_hash
+
+
+def test_get_sha_value_error(monkeypatch: pytest.MonkeyPatch):
+    """Test get_sha_checksum raises ValueError when the binary is not found
+    in the SHA512SUMS file."""
+    monkeypatch.setattr(
+        "clang_tools.util._fetch_sha512sums",
+        Mock(return_value="somehash  some-other-file"),
+    )
+    with pytest.raises(
+        ValueError, match="Could not find SHA512 checksum for my-binary"
+    ):
+        get_sha_checksum("https://example.com/release/my-binary")
 
 
 def test_version_path():

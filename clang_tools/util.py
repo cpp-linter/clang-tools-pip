@@ -8,10 +8,9 @@ A module containing utility functions.
 import hashlib
 import platform
 import urllib.request
-from functools import lru_cache
+from functools import cache
 from http.client import HTTPResponse
 from pathlib import Path
-from typing import Optional, Tuple
 from urllib.error import HTTPError
 
 
@@ -44,7 +43,7 @@ def check_install_os() -> str:
     return this_os
 
 
-def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[str]:
+def download_file(url: str, file_name: str, no_progress_bar: bool) -> str | None:
     """Download the given file_name from the given url.
 
     :param url: The URL to download from.
@@ -74,7 +73,7 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[s
             reset_pos = "" if not buffer else "\033[F"
             print(reset_pos + display)
         remaining = length - len(buffer)
-        buffer += response.read(block_size if remaining > block_size else remaining)
+        buffer += response.read(min(remaining, block_size))
     response.close()
     if not no_progress_bar:
         display = f"    |{(progress_bar * 20)}| 100% (of {length} bytes)"
@@ -84,7 +83,7 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> Optional[s
     return file.as_posix()
 
 
-@lru_cache(maxsize=None)
+@cache
 def _fetch_sha512sums(sha_url: str) -> str:
     """Fetch and cache the SHA512SUMS file content.
 
@@ -158,7 +157,7 @@ class Version:
         #: The version input in string form
         self.string = user_input
         version_tuple = user_input.split(".")
-        self.info: Tuple[int, int, int]
+        self.info: tuple[int, int, int]
         """
         A tuple of integers that describes the major, minor, and patch versions.
         If the version `string` is a path, then this tuple is just 3 zeros.

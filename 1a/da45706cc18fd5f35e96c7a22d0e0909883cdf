@@ -1,0 +1,35 @@
+clang_tools/__init__.py
+  s_6fe80215ed91be::t_1541dc64495639 5
+tests/test_wheel_install.py
+  s_6fe80215ed91be::t_1541dc64495639 13,15-16
+clang_tools/main.py
+  s_6fe80215ed91be::t_1541dc64495639 24
+tests/test_main.py
+  s_6fe80215ed91be::t_1541dc64495639 5,7
+clang_tools/install.py
+  s_6fe80215ed91be::t_1541dc64495639 13,17-20,27
+clang_tools/util.py
+  s_6fe80215ed91be::t_1541dc64495639 9-10,12
+tests/test_util.py
+  s_6fe80215ed91be::t_1541dc64495639 6-7,9,13
+docs/gen_cli_docs.py
+  s_6fe80215ed91be::t_1541dc64495639 8-9,11
+tests/test_install.py
+  s_6fe80215ed91be::t_1541dc64495639 5,7,9,15-16,20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "1ada45706cc18fd5f35e96c7a22d0e0909883cdf",
+  "prompts": {},
+  "sessions": {
+    "s_6fe80215ed91be": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa49e-e6fe-75f6-b4be-b978c59012d6",
+        "model": "deepseek-v4-flash"
+      },
+      "human_author": "shenxianpeng <xianpeng.shen@gmail.com>"
+    }
+  }
+}

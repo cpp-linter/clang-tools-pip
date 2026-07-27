@@ -1,0 +1,27 @@
+clang_tools/wheel_install.py
+  s_6fe80215ed91be::t_c8a85b8fdbe938 72-76,85-86,110-113,133-138,142,147-149
+  s_6fe80215ed91be::t_63c56bc4a63414 17,26,36,161
+  s_6fe80215ed91be::t_c38cbb02295cee 60,155,172-173
+clang_tools/install.py
+  s_6fe80215ed91be::t_481e8995b820d0 14,33,49,173,257
+clang_tools/main.py
+  s_6fe80215ed91be::t_72a64c2d041f51 37
+clang_tools/util.py
+  s_6fe80215ed91be::t_1467b39719a48b 11,46,76,86,160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "c35072adb75b7e86ef12b9fab8f7c5dd7254694e",
+  "prompts": {},
+  "sessions": {
+    "s_6fe80215ed91be": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa49e-e6fe-75f6-b4be-b978c59012d6",
+        "model": "deepseek-v4-flash"
+      },
+      "human_author": "shenxianpeng <xianpeng.shen@gmail.com>"
+    }
+  }
+}

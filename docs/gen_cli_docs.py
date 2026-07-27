@@ -4,9 +4,11 @@ This script is used as a `gen-files` plugin to auto-generate
 the `cli_args.md` page from argparse.
 """
 
-from io import StringIO
 import argparse
+from io import StringIO
+
 import mkdocs_gen_files
+
 from clang_tools.main import get_parser
 
 REQUIRED_VERSIONS = {

@@ -6,32 +6,31 @@ The module that performs the installation of clang-tools.
 """
 
 import os
-from pathlib import Path, PurePath
 import re
 import shutil
 import subprocess
 import sys
-from typing import Optional, cast
+from pathlib import Path, PurePath
+from typing import cast
 
 from . import (
+    MAX_VERSION,
+    MIN_VERSION,
+    RESET_COLOR,
+    YELLOW,
     binary_repo,
     binary_tag,
     install_arch,
     install_os,
-    MIN_VERSION,
-    MAX_VERSION,
-    RESET_COLOR,
     suffix,
-    YELLOW,
 )
-from .util import download_file, verify_sha512, get_sha_checksum, Version
-
+from .util import Version, download_file, get_sha_checksum, verify_sha512
 
 #: This pattern is designed to match only the major version number.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
 
 
-def is_installed(tool_name: str, version: Version) -> Optional[Path]:
+def is_installed(tool_name: str, version: Version) -> Path | None:
     """Detect if the specified tool is installed.
 
     :param tool_name: The name of the specified tool.
@@ -47,8 +46,7 @@ def is_installed(tool_name: str, version: Version) -> Optional[Path]:
     try:
         result = subprocess.run(
             [exe_name, "--version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             check=True,
         )
     except (FileNotFoundError, subprocess.CalledProcessError):
@@ -172,7 +170,7 @@ def create_sym_link(
     version: str,
     install_dir: str,
     overwrite: bool = False,
-    target: Optional[Path] = None,
+    target: Path | None = None,
 ) -> bool:
     """Create a symlink to the installed binary that
     doesn't have the version number appended.
@@ -256,7 +254,7 @@ def uninstall_clang_tools(tools: list[str], version: str, directory: str):
         installed clang-tools.
     """
     install_dir = install_dir_name(directory)
-    print(f"Uninstalling version {version} from {str(install_dir)}")
+    print(f"Uninstalling version {version} from {install_dir!s}")
     for tool in tools:
         uninstall_tool(tool, version, install_dir)
 

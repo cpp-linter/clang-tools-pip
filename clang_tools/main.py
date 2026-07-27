@@ -18,12 +18,10 @@ Usage::
 
 import argparse
 import sys
-from typing import Optional
 
-from .install import install_clang_tools, uninstall_clang_tools
 from . import RESET_COLOR, YELLOW
+from .install import install_clang_tools, uninstall_clang_tools
 from .util import Version
-
 
 #: Known tool names commonly installed as Python wheels.
 #: With dynamic PyPI version resolution, any clang tool available on PyPI
@@ -36,7 +34,7 @@ WHEEL_TOOLS = {
 }
 
 
-def _wheel_install(tools: list[str], version: Optional[str]) -> int:
+def _wheel_install(tools: list[str], version: str | None) -> int:
     """Install tool(s) as Python wheels.
 
     Tool versions are resolved dynamically from the PyPI JSON API —

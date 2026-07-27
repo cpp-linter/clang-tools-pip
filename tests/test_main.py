@@ -2,10 +2,11 @@
 
 import sys
 from argparse import ArgumentParser
+
 import pytest
+
 from clang_tools import suffix
 from clang_tools.main import get_parser, main
-
 
 # ---------------------------------------------------------------------------
 #  Parser – install subcommand

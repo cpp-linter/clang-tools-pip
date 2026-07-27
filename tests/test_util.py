@@ -2,18 +2,20 @@
 
 import hashlib
 from pathlib import Path, PurePath
-from urllib.error import HTTPError
 from unittest.mock import Mock
+from urllib.error import HTTPError
+
 import pytest
+
 from clang_tools import install_arch, install_os, suffix
 from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import (
+    Version,
     check_install_arch,
     check_install_os,
     download_file,
     get_sha_checksum,
     verify_sha512,
-    Version,
 )
 
 

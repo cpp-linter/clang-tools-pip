@@ -14,16 +14,16 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional, Tuple
 
 LOG = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=4)
-def _get_pypi_versions(tool: str) -> Tuple[Optional[str], list]:
+def _get_pypi_versions(tool: str) -> tuple[str | None, list]:
     """Fetch (latest_version, [stable_versions_descending]) from PyPI JSON API.
 
     Results are cached per tool name so repeated calls within the same
@@ -33,7 +33,7 @@ def _get_pypi_versions(tool: str) -> Tuple[Optional[str], list]:
         url = f"https://pypi.org/pypi/{tool}/json"
         with urllib.request.urlopen(url, timeout=10) as response:
             data = json.loads(response.read())
-    except Exception as exc:
+    except (urllib.error.URLError, json.JSONDecodeError) as exc:
         LOG.warning("Failed to fetch versions for %s from PyPI: %s", tool, exc)
         return None, []
 
@@ -57,7 +57,7 @@ def _get_pypi_versions(tool: str) -> Tuple[Optional[str], list]:
     return latest, list(reversed(stable))
 
 
-def _detect_installed_version(tool: str) -> Optional[str]:
+def _detect_installed_version(tool: str) -> str | None:
     """Return the version of *tool* already on PATH, or None.
 
     Used as a fallback when PyPI is unreachable and no explicit version
@@ -69,7 +69,11 @@ def _detect_installed_version(tool: str) -> Optional[str]:
         return None
     try:
         result = subprocess.run(
-            [existing, "--version"], capture_output=True, text=True, timeout=10
+            [existing, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -78,8 +82,8 @@ def _detect_installed_version(tool: str) -> Optional[str]:
 
 
 def _resolve_version(
-    tool: str, user_input: Optional[str]
-) -> Tuple[Optional[str], Optional[str]]:
+    tool: str, user_input: str | None
+) -> tuple[str | None, str | None]:
     """Resolve a version dynamically from PyPI.
 
     Returns (resolved_version, error_message). The error_message is
@@ -103,8 +107,10 @@ def _resolve_version(
                 return installed, None
         return (
             None,
-            f"Could not find any stable versions of {tool} on PyPI. "
-            "Check your network connection.",
+            (
+                f"Could not find any stable versions of {tool} on PyPI. "
+                "Check your network connection."
+            ),
         )
 
     if user_input is None:
@@ -124,30 +130,35 @@ def _resolve_version(
     sample = ", ".join(versions[:15])
     return (
         None,
-        f"Unsupported {tool} version '{user_input}'.\n"
-        f"Latest stable version: {latest}\n"
-        f"Available versions (sample): {sample}\n"
-        f"Run `pip index versions {tool}` to see all available versions.",
+        (
+            f"Unsupported {tool} version '{user_input}'.\n"
+            f"Latest stable version: {latest}\n"
+            f"Available versions (sample): {sample}\n"
+            f"Run `pip index versions {tool}` to see all available versions."
+        ),
     )
 
 
-def _is_version_installed(tool: str, version: str) -> Optional[Path]:
+def _is_version_installed(tool: str, version: str) -> Path | None:
     """Return the tool path if the installed version matches, otherwise None."""
     existing = shutil.which(tool)
     if not existing:
         return None
-    result = subprocess.run([existing, "--version"], capture_output=True, text=True)
+    result = subprocess.run(
+        [existing, "--version"], capture_output=True, text=True, check=False
+    )
     if version in result.stdout:
         return Path(existing)
     return None
 
 
-def _install_tool(tool: str, version: str) -> Optional[Path]:
+def _install_tool(tool: str, version: str) -> Path | None:
     """Install a tool using pip, logging output on failure."""
     result = subprocess.run(
         [sys.executable, "-m", "pip", "install", f"{tool}=={version}"],
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode == 0:
         return shutil.which(tool)
@@ -158,8 +169,8 @@ def _install_tool(tool: str, version: str) -> Optional[Path]:
 
 
 def resolve_wheel_install(
-    tool: str, version: Optional[str]
-) -> Tuple[Optional[Path], Optional[str]]:
+    tool: str, version: str | None
+) -> tuple[Path | None, str | None]:
     """Resolve and install a clang tool as a Python wheel from PyPI.
 
     Tool versions are resolved dynamically from the PyPI JSON API —

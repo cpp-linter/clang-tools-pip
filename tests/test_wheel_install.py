@@ -9,11 +9,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from clang_tools.wheel_install import (
-    _get_pypi_versions,
     _detect_installed_version,
-    _resolve_version,
-    _is_version_installed,
+    _get_pypi_versions,
     _install_tool,
+    _is_version_installed,
+    _resolve_version,
     resolve_wheel_install,
 )
 

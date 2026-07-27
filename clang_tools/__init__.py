@@ -1,8 +1,8 @@
 """The clang-tools package's base module."""
 
 import os
-from .util import check_install_arch, check_install_os
 
+from .util import check_install_arch, check_install_os
 
 RESET_COLOR = "\033[0m"
 YELLOW = "\033[93m"

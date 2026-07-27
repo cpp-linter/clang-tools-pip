@@ -6,26 +6,25 @@ The module that performs the installation of clang-tools.
 """
 
 import os
-from pathlib import Path, PurePath
 import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path, PurePath
 from typing import Optional, cast
 
 from . import (
+    MAX_VERSION,
+    MIN_VERSION,
+    RESET_COLOR,
+    YELLOW,
     binary_repo,
     binary_tag,
     install_arch,
     install_os,
-    MIN_VERSION,
-    MAX_VERSION,
-    RESET_COLOR,
     suffix,
-    YELLOW,
 )
-from .util import download_file, verify_sha512, get_sha_checksum, Version
-
+from .util import Version, download_file, get_sha_checksum, verify_sha512
 
 #: This pattern is designed to match only the major version number.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)

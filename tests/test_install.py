@@ -1,21 +1,23 @@
 """Tests related to installing a clang tool."""
 
-from pathlib import PurePath, Path
 import os
 import subprocess
+from pathlib import Path, PurePath
 from unittest.mock import Mock
+
 import pytest
+
 from clang_tools import install_arch, install_os, suffix
 from clang_tools.install import (
     clang_tools_binary_url,
-    install_dir_name,
     create_sym_link,
-    install_tool,
     install_clang_tools,
+    install_dir_name,
+    install_tool,
     is_installed,
     move_and_chmod_bin,
-    uninstall_tool,
     uninstall_clang_tools,
+    uninstall_tool,
 )
 from clang_tools.util import Version
 

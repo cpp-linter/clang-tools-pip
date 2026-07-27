@@ -5,14 +5,14 @@
 A module containing utility functions.
 """
 
-import platform
 import hashlib
-from functools import lru_cache
-from pathlib import Path
+import platform
 import urllib.request
+from functools import lru_cache
+from http.client import HTTPResponse
+from pathlib import Path
 from typing import Optional, Tuple
 from urllib.error import HTTPError
-from http.client import HTTPResponse
 
 
 def check_install_arch() -> str:

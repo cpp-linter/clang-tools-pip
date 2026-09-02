@@ -18,4 +18,4 @@ binary_tag = os.getenv("CLANG_TOOLS_TAG", "2026.07.02-e6fa8f6a")
 #: The minimum major version supported by the static binary builds.
 MIN_VERSION = 12
 #: The maximum major version supported by the static binary builds.
-MAX_VERSION = 22
+MAX_VERSION = 23

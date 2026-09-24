@@ -18,8 +18,6 @@ theme:
   name: material
   features:
     - navigation.top
-    - navigation.tabs
-    - navigation.tabs.sticky
     - navigation.footer
     - content.code.annotate
     - content.code.copy
@@ -65,7 +63,7 @@ extra:
       link: https://github.com/cpp-linter
 
 extra_css:
-  - stylesheets/extra.css
+  - https://cpp-linter.github.io/stylesheets/shared.css
 
 plugins:
   - search

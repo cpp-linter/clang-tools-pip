@@ -23,10 +23,10 @@ Python wheels using the `clang-tools` CLI.
 
 - Install `clang-format`, `clang-tidy`, `clang-query`, `clang-apply-replacements`, `clang-include-cleaner`, `llvm-cov`, `llvm-profdata`, `llvm-symbolizer`, and `clang-scan-deps` via a single `clang-tools` CLI.
 - Supports both **static binaries** (standalone executables) and **Python wheels** (installed via pip).
-- Automatically uses static binaries when available; falls back to wheels if not.
+- With `--version`, installs the static binary and falls back to the wheel if that fails; without `--version`, installs the latest wheel.
 - Works on Linux, macOS, and Windows (x86_64 and ARM64).
 - Choose a specific LLVM version (12–23) or install the latest.
-- Install only the tools you need with `--tool`.
+- Install several tools in one command: `clang-tools install clang-format clang-tidy`.
 - Uses SHA512 checksums to verify downloaded binaries.
 - Creates unversioned symlinks (e.g., `clang-format`) alongside versioned binaries (`clang-format-18`) for convenience.
 
@@ -77,10 +77,7 @@ For a list of supported Command Line Interface options, see:
 Use `clang-tools` to install tools. Positional arguments are always
 tool names; version is specified via `--version`:
 
-    # Install latest clang-format (auto-detect: tries binary with --version, else wheel)
-    clang-tools install clang-format
-
-    # Install specific version (auto-detect: binary first, fall back to wheel)
+    # Install a specific version (binary first, falls back to the wheel)
     clang-tools install clang-format --version 13
 
     # Install to a specified directory
@@ -104,7 +101,8 @@ If the installed directory is in your path, you can run the installed tools:
 ### Install wheels examples
 
 After installing the `clang-tools` CLI, you can install the
-Python wheels using the unified `clang-tools` command.
+Python wheels using the unified `clang-tools` command. Without `--version`,
+the latest wheel is installed from PyPI.
 
 !!! important
     Wheel installation resolves the latest matching version from PyPI
@@ -112,11 +110,11 @@ Python wheels using the unified `clang-tools` command.
     `pip install <tool>==<version>` is equivalent and more direct.
 
     ```bash
-    # Install latest clang-format wheel
-    clang-tools install clang-format --version 21
+    # Install the latest clang-format wheel
+    clang-tools install clang-format
 
-    # Install latest clang-tidy wheel
-    clang-tools install clang-tidy --version 21
+    # Install the latest clang-tidy wheel
+    clang-tools install clang-tidy
     ```
 
 ## Supported Versions

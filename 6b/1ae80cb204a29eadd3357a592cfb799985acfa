@@ -1,0 +1,21 @@
+README.md
+  s_09263517f50e31::t_82a2123d8c1676 28,31,73,98,101-102,104-105
+docs/index.md
+  s_09263517f50e31::t_2d9533a8fde349 26,29,80,104-105,113-114,116-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6b1ae80cb204a29eadd3357a592cfb799985acfa",
+  "prompts": {},
+  "sessions": {
+    "s_09263517f50e31": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f7df82d8-ca11-461d-89dd-b523c84d7f5d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}

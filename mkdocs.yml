@@ -1,5 +1,5 @@
 site_name: clang-tools CLI
-site_description: "Install clang-format, clang-tidy, clang-query, and clang-apply-replacements with pip."
+site_description: "Install clang-format, clang-tidy and other LLVM tools without building LLVM, as static binaries or Python wheels."
 site_url: "https://cpp-linter.github.io/clang-tools-pip/"
 repo_url: "https://github.com/cpp-linter/clang-tools-pip"
 repo_name: "cpp-linter/clang-tools-pip"
@@ -69,6 +69,7 @@ extra_css:
 
 plugins:
   - search
+  - include-markdown
   - gen-files:
       scripts:
         - docs/gen_cli_docs.py
@@ -90,3 +91,4 @@ markdown_extensions:
       check_paths: true
   - toc:
       permalink: true
+  - markdown_gfm_admonition

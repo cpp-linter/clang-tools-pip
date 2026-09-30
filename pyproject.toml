@@ -50,9 +50,11 @@ dev = [
     "pytest",
 ]
 docs = [
+    "markdown-gfm-admonition>=0.1.1",
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
     "mkdocs-gen-files>=0.5",
+    "mkdocs-include-markdown-plugin>=7.3.0",
     "pygments>=2.20.0",
 ]
 
@@ -60,9 +62,11 @@ docs = [
 
 [dependency-groups]
 docs = [
+    "markdown-gfm-admonition>=0.1.1",
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
     "mkdocs-gen-files>=0.5",
+    "mkdocs-include-markdown-plugin>=7.3.0",
     "pygments>=2.20.0",
 ]
 

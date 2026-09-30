@@ -4,7 +4,7 @@ by setting the following environment variables:
 - `CLANG_TOOLS_REPO` – The URL of the binary repository
   (default: `https://github.com/cpp-linter/clang-tools-static-binaries`)
 - `CLANG_TOOLS_TAG` – The release tag to download binaries from
-  (default: `2026.07.02-e6fa8f6a`)
+  (default: the release pinned in `clang_tools/__init__.py` of the installed version)
 
 **Example:**
 

@@ -8,13 +8,13 @@ Tool versions are resolved dynamically from the PyPI JSON API —
 no hardcoded version list is maintained in-tree.
 """
 
+import http.client
 import json
 import logging
 import re
 import shutil
 import subprocess
 import sys
-import urllib.error
 import urllib.request
 from functools import lru_cache
 from pathlib import Path
@@ -33,7 +33,8 @@ def _get_pypi_versions(tool: str) -> tuple[str | None, list]:
         url = f"https://pypi.org/pypi/{tool}/json"
         with urllib.request.urlopen(url, timeout=10) as response:
             data = json.loads(response.read())
-    except (urllib.error.URLError, json.JSONDecodeError) as exc:
+    # URLError, timeouts and dropped connections are all OSErrors
+    except (OSError, http.client.HTTPException, json.JSONDecodeError) as exc:
         LOG.warning("Failed to fetch versions for %s from PyPI: %s", tool, exc)
         return None, []
 

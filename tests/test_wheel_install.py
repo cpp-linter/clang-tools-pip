@@ -1,5 +1,6 @@
 """Tests for clang_tools.wheel_install — PyPI version resolution and pip installation."""
 
+import http.client
 import json
 import logging
 import subprocess
@@ -84,6 +85,24 @@ def test_get_pypi_versions_network_error():
         latest, versions = _get_pypi_versions("clang-format")
     assert latest is None
     assert versions == []
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        TimeoutError("The read operation timed out"),
+        ConnectionResetError("Connection reset by peer"),
+        http.client.IncompleteRead(b'{"releases": '),
+    ],
+)
+def test_get_pypi_versions_read_error(error: Exception):
+    """A failure while reading PyPI's answer counts as PyPI being unreachable."""
+    resp = MagicMock()
+    resp.read.side_effect = error
+    resp.__enter__.return_value = resp
+
+    with patch.object(urllib.request, "urlopen", return_value=resp):
+        assert _get_pypi_versions("clang-format") == (None, [])
 
 
 def test_get_pypi_versions_no_stable():

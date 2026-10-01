@@ -11,7 +11,7 @@ on:
       - "**requirements*.txt"
       - pyproject.toml
       - .pre-commit-config.yaml
-      - ".github/workflows/python-test.yml"
+      - ".github/workflows/test.yml"
       - "!docs/**"
   workflow_dispatch:
 
@@ -115,7 +115,7 @@ jobs:
       - name: Show path of clang-tools binaries
         shell: bash
         run: |
-          if [ "${{ matrix.version }}" = "15" -o "${{ matrix.version }}" = "16" ] && [ "${{ runner.os }}" = "Windows" ]; then
+          if { [ "${{ matrix.version }}" = "15" ] || [ "${{ matrix.version }}" = "16" ]; } && [ "${{ runner.os }}" = "Windows" ]; then
               which clang-format
               which clang-tidy
               which clang-query
@@ -174,7 +174,8 @@ jobs:
             echo "::group::Installing $tool wheel v$ver"
             clang-tools install "$tool" --version "$ver"
             "$tool" --version
-            local out=$("$tool" --version)
+            local out
+            out=$("$tool" --version)
             echo "$tool version: $out"
             if ! echo "$out" | grep -q "version $ver"; then
               echo "❌ Unexpected $tool version!"

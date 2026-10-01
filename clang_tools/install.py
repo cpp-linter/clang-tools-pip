@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path, PurePath
 from typing import cast
 
@@ -116,11 +117,14 @@ def install_tool(
         uninstall_tool(tool_name, version, directory)
     print("Downloading", tool_name, f"(version {version})")
     bin_name = str(PurePath(bin_url).stem)
-    if download_file(bin_url, bin_name, no_progress_bar) is None:
-        raise OSError(f"Failed to download {bin_name} from {bin_url}")
-    move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
-    if not verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
-        raise ValueError(f"File was corrupted during download from {bin_url}")
+    # Download to a private directory and verify the file before installing it.
+    with tempfile.TemporaryDirectory() as download_dir:
+        downloaded = Path(download_dir, bin_name)
+        if download_file(bin_url, str(downloaded), no_progress_bar) is None:
+            raise OSError(f"Failed to download {bin_name} from {bin_url}")
+        if not verify_sha512(get_sha_checksum(bin_url), downloaded.read_bytes()):
+            raise ValueError(f"File was corrupted during download from {bin_url}")
+        move_and_chmod_bin(str(downloaded), f"{tool_name}-{version}{suffix}", directory)
     return True
 
 

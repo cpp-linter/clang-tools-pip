@@ -5,6 +5,7 @@ import subprocess
 import sys
 from pathlib import Path, PurePath
 from unittest.mock import Mock
+from urllib.error import HTTPError
 
 import pytest
 
@@ -524,6 +525,39 @@ def test_install_tool_rejects_corrupted_download(
     fake_release.serve(asset, b"not the published binary")
     with pytest.raises(ValueError, match="corrupted during download"):
         install_tool("clang-format", "12", str(tmp_path / "bin"), True)
+    # nothing is left behind, in the install directory or in the CWD
+    assert [p for p in tmp_path.rglob("*") if not p.is_dir()] == []
+
+
+def test_install_tool_without_checksums(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
+):
+    """Test that nothing is installed when the checksums cannot be fetched."""
+    monkeypatch.chdir(tmp_path)
+    fake_release.serve("SHA512SUMS", b"Not Found", status=404)
+    with pytest.raises(HTTPError):
+        install_tool("clang-format", "12", str(tmp_path / "bin"), True)
+    assert [p for p in tmp_path.rglob("*") if not p.is_dir()] == []
+
+
+def test_install_tool_ignores_files_in_cwd(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
+):
+    """Test that the download does not write through a link in the CWD."""
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    victim = tmp_path / "victim.txt"
+    victim.write_text("keep me", encoding="utf-8")
+    url = clang_tools_binary_url("clang-format", "12")
+    (cwd / PurePath(url).stem).symlink_to(victim)
+
+    install_dir = tmp_path / "bin"
+    assert install_tool("clang-format", "12", str(install_dir), True)
+    assert victim.read_text(encoding="utf-8") == "keep me"
+    installed = install_dir / f"clang-format-12{suffix}"
+    assert not installed.is_symlink()
+    assert installed.read_bytes() == fake_release.published(url.rsplit("/", 1)[-1])
 
 
 def test_install_tool_unknown_binary(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):

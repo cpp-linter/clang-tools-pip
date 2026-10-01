@@ -1,7 +1,9 @@
 """Tests for clang_tools.wheel_install — PyPI version resolution and pip installation."""
 
 import json
+import logging
 import subprocess
+import sys
 import urllib.request
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -415,3 +417,99 @@ def test_resolve_wheel_install_version_error():
     assert path is None
     assert error is not None
     assert "Unsupported" in error
+
+
+# ---------------------------------------------------------------------------
+#  Requests and commands
+# ---------------------------------------------------------------------------
+
+
+def test_get_pypi_versions_request():
+    """The PyPI JSON API is queried for the tool, with a timeout."""
+    with patch.object(
+        urllib.request, "urlopen", return_value=_pypi_response({"1.0.0": []})
+    ) as urlopen:
+        _get_pypi_versions("clang-tidy")
+    urlopen.assert_called_once()
+    assert urlopen.call_args.args == ("https://pypi.org/pypi/clang-tidy/json",)
+    assert urlopen.call_args.kwargs["timeout"] > 0
+
+
+def test_get_pypi_versions_invalid_json():
+    """An unexpected (non-JSON) answer is treated like an unreachable PyPI."""
+    resp = MagicMock()
+    resp.read.return_value = b"<html>maintenance</html>"
+    resp.__enter__.return_value = resp
+    with patch.object(urllib.request, "urlopen", return_value=resp):
+        assert _get_pypi_versions("clang-format") == (None, [])
+
+
+def test_detect_installed_version_timeout():
+    """Return None when ``<tool> --version`` does not finish in time."""
+    with (
+        patch("shutil.which", return_value="/usr/bin/clang-format"),
+        patch.object(
+            subprocess,
+            "run",
+            side_effect=subprocess.TimeoutExpired(["clang-format"], 10),
+        ),
+    ):
+        assert _detect_installed_version("clang-format") is None
+
+
+def test_install_tool_command():
+    """pip installs the exact version into the running interpreter, no shell."""
+    with (
+        patch.object(
+            subprocess,
+            "run",
+            return_value=MagicMock(returncode=0, spec=subprocess.CompletedProcess),
+        ) as run,
+        patch("shutil.which", return_value="/usr/bin/clang-format"),
+    ):
+        _install_tool("clang-format", "18.1.8")
+    run.assert_called_once()
+    assert run.call_args.args == (
+        [sys.executable, "-m", "pip", "install", "clang-format==18.1.8"],
+    )
+    assert not run.call_args.kwargs.get("shell", False)
+
+
+def test_install_tool_failure_logs(caplog: pytest.LogCaptureFixture):
+    """pip's output is logged when the installation fails."""
+    with (
+        patch.object(
+            subprocess,
+            "run",
+            return_value=MagicMock(
+                returncode=1,
+                stdout="pip stdout",
+                stderr="No matching distribution found",
+                spec=subprocess.CompletedProcess,
+            ),
+        ),
+        caplog.at_level(logging.ERROR, logger="clang_tools.wheel_install"),
+    ):
+        assert _install_tool("clang-format", "18.1.8") is None
+    assert "pip failed to install clang-format 18.1.8" in caplog.text
+    assert "No matching distribution found" in caplog.text
+
+
+def test_resolve_wheel_install_already_installed():
+    """An installed tool of the resolved version is not installed again."""
+    resp = _pypi_response({"20.1.8": []})
+    with (
+        patch.object(urllib.request, "urlopen", return_value=resp),
+        patch("shutil.which", return_value="/usr/bin/clang-format"),
+        patch.object(
+            subprocess,
+            "run",
+            return_value=MagicMock(
+                stdout="clang-format version 20.1.8\n",
+                spec=subprocess.CompletedProcess,
+            ),
+        ) as run,
+    ):
+        path, error = resolve_wheel_install("clang-format", "20")
+    assert (path, error) == (Path("/usr/bin/clang-format"), None)
+    run.assert_called_once()  # only ``clang-format --version``, no pip

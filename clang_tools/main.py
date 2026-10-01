@@ -222,7 +222,7 @@ def main() -> int:
         _print_version()
         return 0
 
-    return 0  # unreachable
+    return 0  # pragma: no cover (argparse only accepts the commands above)
 
 
 if __name__ == "__main__":

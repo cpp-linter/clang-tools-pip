@@ -1,6 +1,7 @@
 """Tests related to the utility functions."""
 
 import hashlib
+import urllib.request
 from pathlib import Path, PurePath
 from unittest.mock import Mock
 from urllib.error import HTTPError
@@ -39,10 +40,12 @@ def test_download_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     assert file_name is not None
 
 
-def test_get_sha(monkeypatch: pytest.MonkeyPatch):
+def test_get_sha(monkeypatch: pytest.MonkeyPatch, fake_release):
     """Test the get_sha() function used to fetch the
     releases' corresponding SHA512 checksum from the single SHA512SUMS file."""
     monkeypatch.chdir(PurePath(__file__).parent.as_posix())
+    # the (fake) release serves a copy of a real SHA512SUMS file
+    fake_release.sha512sums = Path("SHA512SUMS").read_text(encoding="utf-8")
     if install_os == "macosx":
         platform_str = "macos-arm64" if install_arch == "arm64" else "macos-amd64"
     else:  # pragma: no cover
@@ -186,3 +189,111 @@ def test_check_install_arch_amd64(monkeypatch: pytest.MonkeyPatch):
     """Tests check_install_arch returns 'amd64' for x86_64 machines."""
     monkeypatch.setattr("platform.machine", lambda: "x86_64")
     assert check_install_arch() == "amd64"
+
+
+@pytest.mark.parametrize(
+    "system,expected",
+    [("Linux", "linux"), ("Darwin", "macosx"), ("Windows", "windows")],
+)
+def test_check_install_os_names(
+    monkeypatch: pytest.MonkeyPatch, system: str, expected: str
+):
+    """Tests that the OS name is normalized for the release asset names."""
+    monkeypatch.setattr("platform.system", lambda: system)
+    assert check_install_os() == expected
+
+
+@pytest.mark.parametrize(
+    "machine,expected",
+    [
+        ("arm64", "arm64"),
+        ("aarch64", "arm64"),
+        ("ARM64", "arm64"),
+        ("AMD64", "amd64"),
+        ("x86_64", "amd64"),
+    ],
+)
+def test_check_install_arch_names(
+    monkeypatch: pytest.MonkeyPatch, machine: str, expected: str
+):
+    """Tests that the CPU name is normalized for the release asset names."""
+    monkeypatch.setattr("platform.machine", lambda: machine)
+    assert check_install_arch() == expected
+
+
+def test_download_file_saves_content(tmp_path: Path, fake_release, capsys):
+    """Tests that download_file saves the served bytes and returns the path."""
+    url = clang_tools_binary_url("clang-format", "21")
+    destination = tmp_path / "downloaded"
+    assert download_file(url, str(destination), True) == destination.as_posix()
+    asset = url.rsplit("/", 1)[-1]
+    assert destination.read_bytes() == fake_release.published(asset)
+    assert capsys.readouterr().out == ""  # no progress bar
+
+
+@pytest.mark.parametrize("os_name,bar", [("linux", "█"), ("windows", "=")])
+def test_download_file_progress_bar(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_release,
+    capsys,
+    os_name: str,
+    bar: str,
+):
+    """Tests the progress bar from 0% to 100% (ASCII on Windows)."""
+    monkeypatch.setattr("clang_tools.util.check_install_os", lambda: os_name)
+    url = clang_tools_binary_url("clang-format", "21")
+    download_file(url, str(tmp_path / "downloaded"), False)
+    size = len(fake_release.published(url.rsplit("/", 1)[-1]))
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0] == f"    |{' ' * 20}| 0% (of {size} bytes)"
+    assert lines[-1] == f"\033[F    |{bar * 20}| 100% (of {size} bytes)"
+
+
+def test_get_sha_checksum_exact_name(fake_release):
+    """Tests that only the line for this exact binary name is used."""
+    base = "https://example.com/releases/download/tag"
+    expected = "a" * 128
+    fake_release.sha512sums = "\r\n".join(
+        [
+            f"{'b' * 128}  clang-format-21_linux-amd64.exe",
+            f"{'c' * 128}  xclang-format-21_linux-amd64",
+            "a line that is not a checksum",
+            "",
+            f"{expected}  clang-format-21_linux-amd64",
+            f"{'d' * 128}  clang-format-21_linux-amd64.sig",
+        ]
+    )
+    assert get_sha_checksum(f"{base}/clang-format-21_linux-amd64") == expected
+    assert fake_release.downloads() == ["SHA512SUMS"]
+    assert fake_release.requests[0][0] == f"{base}/SHA512SUMS"
+
+
+def test_get_sha_checksum_fetches_sums_once(fake_release):
+    """Tests that SHA512SUMS is fetched once, with a timeout, for all binaries."""
+    base = "https://example.com/releases/download/tag"
+    format_sum = get_sha_checksum(f"{base}/clang-format-12_linux-amd64")
+    tidy_sum = get_sha_checksum(f"{base}/clang-tidy-12_linux-amd64")
+    assert format_sum != tidy_sum
+    assert len(fake_release.requests) == 1
+    url, timeout = fake_release.requests[0]
+    assert url == f"{base}/SHA512SUMS"
+    assert timeout is not None and timeout > 0
+
+
+def test_get_sha_checksum_missing_sums_file(fake_release):
+    """Tests that a release without a SHA512SUMS file is an error."""
+    fake_release.serve("SHA512SUMS", b"Not Found", status=404)
+    with pytest.raises(HTTPError):
+        get_sha_checksum("https://example.com/releases/download/tag/clang-format-12")
+
+
+def test_verify_sha512_empty_checksum():
+    """Tests that an empty checksum never verifies."""
+    assert not verify_sha512("", b"test binary data")
+
+
+def test_network_is_disabled():
+    """Tests that requests other than release downloads never leave the machine."""
+    with pytest.raises(AssertionError, match="unexpected network access"):
+        urllib.request.urlopen("https://pypi.org/pypi/clang-format/json", timeout=1)

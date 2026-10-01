@@ -116,5 +116,4 @@ exclude_lines = [
     "pragma: no cover",
     # ignore any branch that makes the module executable
     'if __name__ == "__main__"',
-    "def main",
 ]

@@ -1,0 +1,23 @@
+.github/workflows/test.yml
+  s_66212c309e21f0::t_b262da54322504 24,60,63,83,86
+pyproject.toml
+  s_66212c309e21f0::t_789f3a7c4e52f5 9,47
+uv.lock
+  s_66212c309e21f0::t_c85438f389e70d 3,207,233,471,570,634,735,763
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a07ef793b506082e9090dd64f4151a0c4ff77a96",
+  "prompts": {},
+  "sessions": {
+    "s_66212c309e21f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8763d161-5362-48a1-ae9b-11f7bcd83469",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}

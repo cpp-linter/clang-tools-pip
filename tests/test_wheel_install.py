@@ -217,6 +217,23 @@ def test_resolve_version_prefix_match():
     assert error is None
 
 
+@pytest.mark.parametrize(
+    "user_input,expected",
+    [("9", "9.0.0"), ("22", "22.10.0"), ("22.1", "22.1.8"), ("1", None), ("2", None)],
+)
+def test_resolve_version_whole_components(user_input: str, expected: str | None):
+    """A prefix only matches whole version components ("2" is not "22.1.8")."""
+    resp = _pypi_response(
+        {"9.0.0": [], "19.1.7": [], "20.1.8": [], "22.1.8": [], "22.10.0": []}
+    )
+
+    with patch.object(urllib.request, "urlopen", return_value=resp):
+        resolved, error = _resolve_version("clang-format", user_input)
+
+    assert resolved == expected
+    assert (error is None) is (expected is not None)
+
+
 def test_resolve_version_no_match():
     """When no version matches, return an error message."""
     resp = _pypi_response({"18.1.8": [], "19.1.0": []})

@@ -120,9 +120,10 @@ def _resolve_version(
     if user_input in versions:
         return user_input, None
 
-    # Prefix match (e.g. "20" → "20.1.8"). Versions are newest-first,
-    # so the first matching entry is the latest for that prefix.
-    matched = [v for v in versions if v.startswith(user_input)]
+    # Prefix match on whole components (e.g. "20" → "20.1.8", but "2" does not
+    # match "20.1.8"). Versions are newest-first, so the first matching entry is
+    # the latest for that prefix.
+    matched = [v for v in versions if v.startswith(f"{user_input}.")]
     if matched:
         return matched[0], None
 

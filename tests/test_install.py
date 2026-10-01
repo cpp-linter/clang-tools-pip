@@ -606,6 +606,28 @@ def test_create_sym_link_keeps_regular_file(tmp_path: Path, capsys):
     assert "is not a symbolic link" in capsys.readouterr().out
 
 
+def test_create_sym_link_replaces_dangling_link(tmp_path: Path):
+    """Test that overwrite=True replaces a link whose target was removed."""
+    target = tmp_path / f"clang-tool-1{suffix}"
+    target.write_bytes(b"1")
+    link = tmp_path / f"clang-tool{suffix}"
+    link.symlink_to(tmp_path / f"clang-tool-0{suffix}")  # does not exist
+
+    assert create_sym_link("clang-tool", "1", str(tmp_path), overwrite=True)
+    assert link.resolve() == target.resolve()
+
+
+def test_create_sym_link_keeps_dangling_link(tmp_path: Path, capsys):
+    """Test that a dangling link is only replaced with overwrite=True."""
+    (tmp_path / f"clang-tool-1{suffix}").write_bytes(b"1")
+    link = tmp_path / f"clang-tool{suffix}"
+    link.symlink_to(tmp_path / f"clang-tool-0{suffix}")  # does not exist
+
+    assert not create_sym_link("clang-tool", "1", str(tmp_path))
+    assert link.is_symlink() and not link.exists()  # still the dangling link
+    assert "Use '-f' to overwrite" in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("os_name", ["linux", "windows"])
 def test_create_sym_link_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys, os_name: str

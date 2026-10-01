@@ -194,7 +194,7 @@ def create_sym_link(
     link = link_root_path / (tool_name + suffix)
     if target is None:
         target = link_root_path / f"{tool_name}-{version}{suffix}"
-    if link.exists():
+    if os.path.lexists(link):  # also true for a link whose target is gone
         if not link.is_symlink():
             print(
                 "File",

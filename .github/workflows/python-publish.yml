@@ -13,7 +13,14 @@ on:
     types: [published]
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   deploy:
+    permissions:
+      contents: read
+      # for the build provenance attestation
+      id-token: write
+      attestations: write
     uses: cpp-linter/.github/.github/workflows/py-publish.yml@main
     secrets: inherit

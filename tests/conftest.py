@@ -58,6 +58,15 @@ class FakeResponse(io.BytesIO):
         super().__init__(data)
         self.status = status
         self.length = len(data) if length is None else length
+        self.empty_reads = 0
+
+    def read(self, size: int | None = -1) -> bytes:
+        """Read like a socket, but fail instead of looping forever at the end."""
+        data = super().read(size)
+        if not data:
+            self.empty_reads += 1
+            assert self.empty_reads < 100, "read() keeps being called after the end"
+        return data
 
 
 class FakeRelease:

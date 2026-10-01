@@ -13,6 +13,9 @@ from http.client import HTTPResponse
 from pathlib import Path
 from urllib.error import HTTPError
 
+#: Seconds to wait for the server to accept the connection or send more data.
+DOWNLOAD_TIMEOUT = 30
+
 
 def check_install_arch() -> str:
     """Identify the CPU architecture.
@@ -52,7 +55,7 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> str | None
     :returns: The path to downloaded file if  successful, otherwise `None`.
     """
     try:
-        response: HTTPResponse = urllib.request.urlopen(url)
+        response: HTTPResponse = urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT)
     except (ValueError, HTTPError):
         return None
 
@@ -63,7 +66,7 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> str | None
     buffer = b""
     progress_bar = "=" if check_install_os() == "windows" else "█"
     while len(buffer) < length:
-        block_size = int(length / 20)
+        block_size = max(int(length / 20), 1)
         if not no_progress_bar:  # show completed
             percent = len(buffer) / length
             completed = int(percent * 20)
@@ -73,7 +76,11 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> str | None
             reset_pos = "" if not buffer else "\033[F"
             print(reset_pos + display)
         remaining = length - len(buffer)
-        buffer += response.read(min(remaining, block_size))
+        data = response.read(min(remaining, block_size))
+        if not data:  # the connection closed before the whole file arrived
+            response.close()
+            return None
+        buffer += data
     response.close()
     if not no_progress_bar:
         display = f"    |{(progress_bar * 20)}| 100% (of {length} bytes)"
@@ -91,7 +98,7 @@ def _fetch_sha512sums(sha_url: str) -> str:
 
     :returns: The content of the SHA512SUMS file as a string.
     """
-    with urllib.request.urlopen(sha_url, timeout=30) as response:
+    with urllib.request.urlopen(sha_url, timeout=DOWNLOAD_TIMEOUT) as response:
         return response.read().decode(encoding="utf-8")
 
 

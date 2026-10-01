@@ -297,3 +297,31 @@ def test_network_is_disabled():
     """Tests that requests other than release downloads never leave the machine."""
     with pytest.raises(AssertionError, match="unexpected network access"):
         urllib.request.urlopen("https://pypi.org/pypi/clang-format/json", timeout=1)
+
+
+def test_download_file_timeout(tmp_path: Path, fake_release):
+    """Tests that the binary download cannot wait forever on a stalled server."""
+    url = clang_tools_binary_url("clang-format", "21")
+    assert download_file(url, str(tmp_path / "downloaded"), True)
+    assert fake_release.requests[-1][0] == url
+    timeout = fake_release.requests[-1][1]
+    assert timeout is not None and timeout > 0
+
+
+def test_download_file_truncated(tmp_path: Path, fake_release):
+    """Tests that a response cut short is a failed download, not an endless loop."""
+    url = clang_tools_binary_url("clang-format", "21")
+    fake_release.serve(url.rsplit("/", 1)[-1], b"x" * 40, length=100)
+    destination = tmp_path / "downloaded"
+    assert download_file(url, str(destination), True) is None
+    assert not destination.exists()
+
+
+@pytest.mark.parametrize("size", [1, 19])
+def test_download_file_small(tmp_path: Path, fake_release, size: int):
+    """Tests files smaller than the progress bar's 20 steps."""
+    url = clang_tools_binary_url("clang-format", "21")
+    fake_release.serve(url.rsplit("/", 1)[-1], b"x" * size)
+    destination = tmp_path / "downloaded"
+    assert download_file(url, str(destination), False) == destination.as_posix()
+    assert destination.read_bytes() == b"x" * size

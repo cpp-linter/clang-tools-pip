@@ -1,0 +1,21 @@
+clang_tools/wheel_install.py
+  s_66212c309e21f0::t_f2b60b111caacb 123-126
+tests/test_wheel_install.py
+  s_66212c309e21f0::t_783b7ba7d43925 220-236
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f56d65a417a5d58efdd0b5848989e2982abe95ab",
+  "prompts": {},
+  "sessions": {
+    "s_66212c309e21f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8763d161-5362-48a1-ae9b-11f7bcd83469",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}

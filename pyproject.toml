@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "clang_tools"
 description = "Install clang-tools (clang-format, clang-tidy, clang-query, clang-apply-replacements, clang-include-cleaner) with pip"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format", "clang-query", "clang-apply-replacements", "clang-include-cleaner"]
 license = "MIT"
 authors = [

@@ -8,13 +8,13 @@ Tool versions are resolved dynamically from the PyPI JSON API —
 no hardcoded version list is maintained in-tree.
 """
 
+import http.client
 import json
 import logging
 import re
 import shutil
 import subprocess
 import sys
-import urllib.error
 import urllib.request
 from functools import lru_cache
 from pathlib import Path
@@ -33,7 +33,8 @@ def _get_pypi_versions(tool: str) -> tuple[str | None, list]:
         url = f"https://pypi.org/pypi/{tool}/json"
         with urllib.request.urlopen(url, timeout=10) as response:
             data = json.loads(response.read())
-    except (urllib.error.URLError, json.JSONDecodeError) as exc:
+    # URLError, timeouts and dropped connections are all OSErrors
+    except (OSError, http.client.HTTPException, json.JSONDecodeError) as exc:
         LOG.warning("Failed to fetch versions for %s from PyPI: %s", tool, exc)
         return None, []
 
@@ -120,9 +121,10 @@ def _resolve_version(
     if user_input in versions:
         return user_input, None
 
-    # Prefix match (e.g. "20" → "20.1.8"). Versions are newest-first,
-    # so the first matching entry is the latest for that prefix.
-    matched = [v for v in versions if v.startswith(user_input)]
+    # Prefix match on whole components (e.g. "20" → "20.1.8", but "2" does not
+    # match "20.1.8"). Versions are newest-first, so the first matching entry is
+    # the latest for that prefix.
+    matched = [v for v in versions if v.startswith(f"{user_input}.")]
     if matched:
         return matched[0], None
 

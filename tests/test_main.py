@@ -475,3 +475,107 @@ def test_wheel_install_multiple_tools_mixed(monkeypatch: pytest.MonkeyPatch, cap
     result = capsys.readouterr()
     assert "installed at: /fake/clang-format" in result.out
     assert "TEST_ERROR: failed" in result.err
+
+
+# ---------------------------------------------------------------------------
+#  Backend selection
+# ---------------------------------------------------------------------------
+
+
+def test_main_install_binary_options(monkeypatch: pytest.MonkeyPatch):
+    """The binary install gets every CLI option and the wheel is not tried."""
+    calls: list = []
+    monkeypatch.setattr(
+        "clang_tools.main.install_clang_tools", lambda *args: calls.append(args)
+    )
+    monkeypatch.setattr(
+        "clang_tools.main._wheel_install",
+        lambda tools, version: pytest.fail("the wheel should not be installed"),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "clang-tools",
+            "install",
+            "clang-format",
+            "clang-tidy",
+            "--version",
+            "18",
+            "-d",
+            "some/dir",
+            "-f",
+            "-b",
+        ],
+    )
+    assert main() == 0
+    assert len(calls) == 1
+    version, tools, directory, overwrite, no_progress_bar = calls[0]
+    assert version.info == (18, 0, 0)
+    assert tools == ["clang-format", "clang-tidy"]
+    assert directory == "some/dir"
+    assert overwrite is True
+    assert no_progress_bar is True
+
+
+def test_main_install_fallback_failure(monkeypatch: pytest.MonkeyPatch, capsys):
+    """The exit code is 1 when both the binary and the wheel install fail."""
+
+    def fail(*args):
+        raise OSError("network is down")
+
+    monkeypatch.setattr("clang_tools.main.install_clang_tools", fail)
+    monkeypatch.setattr("clang_tools.main._wheel_install", lambda tools, version: 1)
+    monkeypatch.setattr(
+        sys, "argv", ["clang-tools", "install", "clang-format", "--version", "18"]
+    )
+    assert main() == 1
+    assert "Binary install failed (network is down)" in capsys.readouterr().err
+
+
+def test_main_install_fallback_binary_only_tool(
+    monkeypatch: pytest.MonkeyPatch, capsys
+):
+    """A tool without wheels is reported when its binary install fails."""
+
+    def fail(*args):
+        raise ValueError("File was corrupted during download")
+
+    monkeypatch.setattr("clang_tools.main.install_clang_tools", fail)
+    monkeypatch.setattr(
+        sys, "argv", ["clang-tools", "install", "clang-query", "--version", "18"]
+    )
+    assert main() == 1
+    err = capsys.readouterr().err
+    assert "falling back to wheel" in err
+    assert "Unknown tool 'clang-query'" in err
+
+
+def test_main_uninstall_arguments(monkeypatch: pytest.MonkeyPatch):
+    """``uninstall`` passes the tools, version and directory through."""
+    calls: list = []
+    monkeypatch.setattr(
+        "clang_tools.main.uninstall_clang_tools", lambda *args: calls.append(args)
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["clang-tools", "uninstall", "clang-format", "--version", "15", "-d", "x"],
+    )
+    assert main() == 0
+    assert calls == [(["clang-format"], "15", "x")]
+
+
+def test_main_version_output(monkeypatch: pytest.MonkeyPatch, capsys):
+    """``clang-tools version`` prints the version of the clang-tools package."""
+    queried: list = []
+
+    def fake_version(name: str) -> str:
+        queried.append(name)
+        return "1.2.3"
+
+    monkeypatch.setattr("importlib.metadata.version", fake_version)
+    monkeypatch.setattr(sys, "argv", ["clang-tools", "version"])
+    assert main() == 0
+    assert capsys.readouterr().out == "clang-tools 1.2.3\n"
+    assert queried == ["clang-tools"]

@@ -11,13 +11,16 @@ on:
       - "**requirements*.txt"
       - pyproject.toml
       - .pre-commit-config.yaml
-      - ".github/workflows/python-test.yml"
+      - ".github/workflows/test.yml"
       - "!docs/**"
   workflow_dispatch:
 
+permissions: {}
 
 jobs:
   test:
+    permissions:
+      contents: read
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
@@ -26,6 +29,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 #v7.0.0
@@ -41,7 +46,7 @@ jobs:
         run: coverage run -m pytest -vv
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
         with:
           name: coverage-data-${{ runner.os }}-py${{ matrix.python-version }}
           path: .coverage*
@@ -49,13 +54,19 @@ jobs:
 
   coverage-report:
     needs: [test]
+    permissions:
+      contents: read
     uses: cpp-linter/.github/.github/workflows/py-coverage.yml@main
     secrets: inherit
 
   build:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python 3.10
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 #v7.0.0
@@ -73,6 +84,8 @@ jobs:
 
   install:
     needs: [build]
+    permissions:
+      contents: read
     strategy:
       matrix:
         version: [ 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 ]
@@ -102,7 +115,7 @@ jobs:
       - name: Show path of clang-tools binaries
         shell: bash
         run: |
-          if [ "${{ matrix.version }}" = "15" -o "${{ matrix.version }}" = "16" ] && [ "${{ runner.os }}" = "Windows" ]; then
+          if { [ "${{ matrix.version }}" = "15" ] || [ "${{ matrix.version }}" = "16" ]; } && [ "${{ runner.os }}" = "Windows" ]; then
               which clang-format
               which clang-tidy
               which clang-query
@@ -161,7 +174,8 @@ jobs:
             echo "::group::Installing $tool wheel v$ver"
             clang-tools install "$tool" --version "$ver"
             "$tool" --version
-            local out=$("$tool" --version)
+            local out
+            out=$("$tool" --version)
             echo "$tool version: $out"
             if ! echo "$out" | grep -q "version $ver"; then
               echo "❌ Unexpected $tool version!"
@@ -177,4 +191,9 @@ jobs:
           check_wheel clang-apply-replacements  16 17
 
   docs:
+    permissions:
+      contents: read
+      # to deploy the site to GitHub Pages (only on the main branch)
+      pages: write
+      id-token: write
     uses: cpp-linter/.github/.github/workflows/mkdocs.yml@main

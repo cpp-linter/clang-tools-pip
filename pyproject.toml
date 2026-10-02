@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "clang_tools"
 description = "Install clang-tools (clang-format, clang-tidy, clang-query, clang-apply-replacements, clang-include-cleaner) with pip"
 readme = "README.md"
+requires-python = ">=3.10"
 keywords = ["clang", "clang-tools", "clang-extra", "clang-tidy", "clang-format", "clang-query", "clang-apply-replacements", "clang-include-cleaner"]
 license = "MIT"
 authors = [
@@ -44,7 +45,7 @@ tracker = "https://github.com/cpp-linter/clang-tools-pip/issues"
 
 [project.optional-dependencies]
 dev = [
-    "coverage[toml]",
+    "coverage",
     "pre-commit",
     "pygments>=2.20.0",
     "pytest",
@@ -116,5 +117,4 @@ exclude_lines = [
     "pragma: no cover",
     # ignore any branch that makes the module executable
     'if __name__ == "__main__"',
-    "def main",
 ]

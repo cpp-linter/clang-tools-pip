@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path, PurePath
 from typing import cast
 
@@ -116,13 +117,14 @@ def install_tool(
         uninstall_tool(tool_name, version, directory)
     print("Downloading", tool_name, f"(version {version})")
     bin_name = str(PurePath(bin_url).stem)
-    if download_file(bin_url, bin_name, no_progress_bar) is None:
-        raise OSError(f"Failed to download {bin_name} from {bin_url}")
-    move_and_chmod_bin(bin_name, f"{tool_name}-{version}{suffix}", directory)
-    if not verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
-        raise ValueError(
-            f"File was corrupted during download from {bin_url}"
-        )  # pragma: no cover
+    # Download to a private directory and verify the file before installing it.
+    with tempfile.TemporaryDirectory() as download_dir:
+        downloaded = Path(download_dir, bin_name)
+        if download_file(bin_url, str(downloaded), no_progress_bar) is None:
+            raise OSError(f"Failed to download {bin_name} from {bin_url}")
+        if not verify_sha512(get_sha_checksum(bin_url), downloaded.read_bytes()):
+            raise ValueError(f"File was corrupted during download from {bin_url}")
+        move_and_chmod_bin(str(downloaded), f"{tool_name}-{version}{suffix}", directory)
     return True
 
 
@@ -158,7 +160,7 @@ def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -
             os.makedirs(install_dir)
         shutil.move(old_bin_name, f"{install_dir}/{new_bin_name}")
         os.chmod(os.path.join(install_dir, new_bin_name), 0o755)
-    except PermissionError as exc:  # pragma: no cover
+    except PermissionError as exc:
         raise SystemExit(
             f"Don't have permission to install {new_bin_name} to {install_dir}."
             + " Try to run with the appropriate permissions."
@@ -192,7 +194,7 @@ def create_sym_link(
     link = link_root_path / (tool_name + suffix)
     if target is None:
         target = link_root_path / f"{tool_name}-{version}{suffix}"
-    if link.exists():
+    if os.path.lexists(link):  # also true for a link whose target is gone
         if not link.is_symlink():
             print(
                 "File",
@@ -214,7 +216,7 @@ def create_sym_link(
         link.symlink_to(target)
         print("Symbolic link created", str(link))
         return True
-    except OSError as exc:  # pragma: no cover
+    except OSError as exc:
         print(
             "Encountered an error when trying to create the symbolic link:",
             "; ".join([x for x in exc.args if isinstance(x, str)]),
@@ -291,6 +293,4 @@ def install_clang_tools(
         if native_bin is None:  # (not already installed)
             # `install_tool()` guarantees that the binary exists now
             install_tool(tool_name, version.string, install_dir, no_progress_bar)
-        create_sym_link(  # pragma: no cover
-            tool_name, version.string, install_dir, overwrite, native_bin
-        )
+        create_sym_link(tool_name, version.string, install_dir, overwrite, native_bin)

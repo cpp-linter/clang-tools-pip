@@ -20,8 +20,8 @@ Install `clang-tools` from source code
 $ git clone git@github.com:cpp-linter/clang-tools-pip.git
 $ cd clang-tools-pip
 $ pip install -e .
-# Install clang-tools version 13
-$ clang-tools install 13
+# Install clang-format version 13
+$ clang-tools install clang-format --version 13
 ```
 
 ### Test

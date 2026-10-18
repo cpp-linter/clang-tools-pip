@@ -127,7 +127,7 @@ For more details, visit [clang-tools-static-binaries](https://github.com/cpp-lin
 - [clang-format](https://pypi.org/project/clang-format/#history)
 - [clang-tidy](https://pypi.org/project/clang-tidy/#history)
 - [clang-include-cleaner](https://pypi.org/project/clang-include-cleaner/#history) (LLVM 22)
-- [clang-apply-replacements](https://pypi.org/project/clang-apply-replacements/#history) (LLVM 16 and 17)
+- [clang-apply-replacements](https://pypi.org/project/clang-apply-replacements/#history) (LLVM 16 and later)
 
 Only these four tools have wheels, so the other tools need `--version`. Check the respective PyPI
 pages for available versions and platform support.

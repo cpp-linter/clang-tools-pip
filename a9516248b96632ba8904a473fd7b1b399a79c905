@@ -1,0 +1,14 @@
+uv.lock
+  h_20d8fd5fdd9091 3-7,64-79,300-313,431-442,503-514,519-521,532-533,546-556,643-644,708-709,810-811,839-840,854,859,896-904,990-1070,1073,1075,1077,1090,1103-1105,1115-1116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a9516248b96632ba8904a473fd7b1b399a79c905",
+  "prompts": {},
+  "humans": {
+    "h_20d8fd5fdd9091": {
+      "author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}

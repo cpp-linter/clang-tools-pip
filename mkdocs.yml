@@ -5,6 +5,9 @@ repo_url: "https://github.com/cpp-linter/clang-tools-pip"
 repo_name: "cpp-linter/clang-tools-pip"
 edit_uri: "edit/main/docs/"
 copyright: "© 2021-2026, cpp-linter"
+# Theme overrides live in docs/ but are not pages.
+exclude_docs: |
+  overrides/
 
 nav:
   - clang-tools CLI: index.md
@@ -16,6 +19,7 @@ nav:
 
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - navigation.top
     - navigation.footer
@@ -63,6 +67,11 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/cpp-linter
+  # The same Google Analytics property as cpp-linter.github.io and the other
+  # cpp-linter docs, which all share that origin.
+  analytics:
+    provider: google
+    property: G-JKH4SXC7HC
 
 extra_css:
   - https://cpp-linter.github.io/stylesheets/shared.css

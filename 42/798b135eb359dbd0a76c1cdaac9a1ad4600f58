@@ -1,0 +1,25 @@
+mkdocs.yml
+  s_ecbcf0356d5867::t_e3390518468195 8-10,22,70-74
+docs/index.md
+  s_ecbcf0356d5867::t_e3390518468195 1-4
+docs/overrides/main.html
+  s_ecbcf0356d5867::t_e3390518468195 1-28
+docs/overrides/404.html
+  s_ecbcf0356d5867::t_e3390518468195 1-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "42798b135eb359dbd0a76c1cdaac9a1ad4600f58",
+  "prompts": {},
+  "sessions": {
+    "s_ecbcf0356d5867": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54458110-7b12-4460-9e64-673c40eaacb1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}

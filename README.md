@@ -108,7 +108,9 @@ pip install git+https://github.com/cpp-linter/clang-tools-pip.git@main
 
 ### clang tools binaries
 
-LLVM 12 to 23, for Linux, macOS and Windows on x86-64 and ARM64:
+Every LLVM version listed in the
+[index](https://cpp-linter.github.io/clang-tools-static-binaries/index.json) (LLVM 12 to 23 today),
+for Linux, macOS and Windows on x86-64 and ARM64:
 
 - clang-format
 - clang-tidy

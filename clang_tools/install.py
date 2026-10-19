@@ -21,14 +21,23 @@ from . import (
     YELLOW,
     binary_repo,
     binary_tag,
+    index_url,
     install_arch,
     install_os,
     suffix,
 )
-from .util import Version, download_file, get_sha_checksum, verify_sha512
+from .util import (
+    Version,
+    download_file,
+    fetch_index,
+    get_sha_checksum,
+    verify_sha512,
+)
 
 #: This pattern is designed to match only the major version number.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
+#: A binary's file name: no path separators, and not ``.`` or ``..``.
+RE_FILE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*")
 
 
 def is_installed(tool_name: str, version: Version) -> Path | None:
@@ -72,24 +81,73 @@ def is_installed(tool_name: str, version: Version) -> Path | None:
     return path
 
 
-def clang_tools_binary_url(tool: str, version: str) -> str:
-    """Assemble the URL to the binary.
+def platform_name() -> str:
+    """The platform name used in the static binaries' file names."""
+    os_name = "macos" if install_os == "macosx" else install_os
+    return f"{os_name}-{install_arch}"
+
+
+def available_versions() -> list[int]:
+    """The major versions that can be installed as static binaries."""
+    if binary_tag:
+        return list(range(MIN_VERSION, MAX_VERSION + 1))
+    return sorted(int(v) for v in fetch_index(index_url)["versions"])
+
+
+def find_binary(tool: str, version: str) -> tuple[str, str]:
+    """Find where to download a binary and the checksum it must match.
 
     :param tool: The name of the tool to download.
     :param version: The version of the tool to download.
-    :param tag: The release tag used in the base URL.
+
+    :returns: The download URL and the expected SHA512 checksum.
+    """
+    if binary_tag:
+        url = clang_tools_binary_url(tool, version)
+        return url, get_sha_checksum(url)
+    major = version.split(".", 1)[0]
+    entry = fetch_index(index_url)["versions"].get(major)
+    if entry is None:
+        raise ValueError(
+            f"{major} is not available in static binary builds. "
+            f"Available versions: {', '.join(map(str, available_versions()))}."
+        )
+    binary = entry["tools"].get(tool, {}).get(platform_name())
+    if binary is None:
+        raise ValueError(
+            f"{tool} {major} is not available in static binary builds"
+            f" for {platform_name()}."
+        )
+    return binary["url"], binary["sha512"]
+
+
+def clang_tools_binary_url(tool: str, version: str) -> str:
+    """The download URL of a binary.
+
+    :param tool: The name of the tool to download.
+    :param version: The version of the tool to download.
 
     :returns: The URL used to download the specified tool.
     """
-    base_url = f"{binary_repo}/releases/download/" + binary_tag
-    if install_os == "macosx":
-        platform_str = "macos-arm64" if install_arch == "arm64" else "macos-amd64"
-    else:
-        platform_str = (
-            f"{install_os}-arm64" if install_arch == "arm64" else f"{install_os}-amd64"
-        )
-    download_url = f"{base_url}/{tool}-{version}_{platform_str}{suffix}"
+    if not binary_tag:
+        return find_binary(tool, version)[0]
+    base_url = f"{binary_repo}/releases/download/{binary_tag}"
+    download_url = f"{base_url}/{tool}-{version}_{platform_name()}{suffix}"
     return download_url.replace(" ", "")
+
+
+def binary_file_name(tool_name: str, version: str) -> str:
+    """The file name of an installed binary, such as ``clang-format-21``.
+
+    :param tool_name: The name of the tool.
+    :param version: The version of the tool.
+
+    :returns: The file name, which never points outside the install directory.
+    """
+    file_name = f"{tool_name}-{version}{suffix}"
+    if not RE_FILE_NAME.fullmatch(file_name):
+        raise ValueError(f"Invalid tool name or version: {tool_name!r} {version!r}")
+    return file_name
 
 
 def install_tool(
@@ -105,12 +163,13 @@ def install_tool(
     :returns: `True` if the binary had to be downloaded and installed.
         `False` if the binary was not downloaded but is installed in ``directory``.
     """
-    destination = Path(directory, f"{tool_name}-{version}{suffix}")
-    bin_url = clang_tools_binary_url(tool_name, version)
+    file_name = binary_file_name(tool_name, version)
+    destination = Path(directory, file_name)
+    bin_url, checksum = find_binary(tool_name, version)
     if destination.exists():
         print(f"{tool_name}-{version}", "already installed...")
         print("   checking SHA512...", end=" ")
-        if verify_sha512(get_sha_checksum(bin_url), destination.read_bytes()):
+        if verify_sha512(checksum, destination.read_bytes()):
             print("valid")
             return False
         print("invalid")
@@ -122,9 +181,9 @@ def install_tool(
         downloaded = Path(download_dir, bin_name)
         if download_file(bin_url, str(downloaded), no_progress_bar) is None:
             raise OSError(f"Failed to download {bin_name} from {bin_url}")
-        if not verify_sha512(get_sha_checksum(bin_url), downloaded.read_bytes()):
+        if not verify_sha512(checksum, downloaded.read_bytes()):
             raise ValueError(f"File was corrupted during download from {bin_url}")
-        move_and_chmod_bin(str(downloaded), f"{tool_name}-{version}{suffix}", directory)
+        move_and_chmod_bin(str(downloaded), file_name, directory)
     return True
 
 
@@ -235,7 +294,7 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
     :param directory: The directory from which to remove the
         installed clang-tools.
     """
-    tool_path = Path(directory, f"{tool_name}-{version}{suffix}")
+    tool_path = Path(directory, binary_file_name(tool_name, version))
     if tool_path.exists():
         print("Removing", tool_path.name, "from", str(tool_path.parent))
         tool_path.unlink()
@@ -283,14 +342,16 @@ def install_clang_tools(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
-    if version.info[0] not in range(MIN_VERSION, MAX_VERSION + 1):
-        raise ValueError(
-            f"{version.info[0]} is not available in static binary builds. "
-            f"Only versions {MIN_VERSION} to {MAX_VERSION} are available."
-        )
     for tool_name in tools:
         native_bin = is_installed(tool_name, version)
         if native_bin is None:  # (not already installed)
+            # only a download needs the list of available versions
+            versions = available_versions()
+            if version.info[0] not in versions:
+                raise ValueError(
+                    f"{version.info[0]} is not available in static binary builds. "
+                    f"Available versions: {', '.join(map(str, versions))}."
+                )
             # `install_tool()` guarantees that the binary exists now
             install_tool(tool_name, version.string, install_dir, no_progress_bar)
         create_sym_link(tool_name, version.string, install_dir, overwrite, native_bin)

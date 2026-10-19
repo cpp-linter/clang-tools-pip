@@ -2,19 +2,21 @@
 
 The tests never reach the network. The autouse :func:`fake_release` fixture
 replaces ``urllib.request.urlopen`` with an in-memory stand-in for the
-clang-tools-static-binaries release: it serves deterministic "binaries" and a
-``SHA512SUMS`` file listing their hashes, like the real release does.
+clang-tools-static-binaries releases: it serves deterministic "binaries", a
+``SHA512SUMS`` file listing their hashes, and an ``index.json`` pointing at
+them, like the real releases do.
 """
 
 import hashlib
 import io
+import json
 import urllib.request
 from collections.abc import Iterator
 from urllib.error import HTTPError
 
 import pytest
 
-from clang_tools import MAX_VERSION, MIN_VERSION, util
+from clang_tools import MAX_VERSION, MIN_VERSION, index_url, util
 
 #: The tools published by the static binaries release (see the README).
 RELEASED_TOOLS = (
@@ -44,6 +46,10 @@ RELEASE_ASSETS = frozenset(
     for version in range(MIN_VERSION, MAX_VERSION + 1)
     for platform in PLATFORMS
 )
+
+
+#: The base URL of the fake per-version releases.
+RELEASES_URL = "https://github.com/cpp-linter/clang-tools-static-binaries/releases"
 
 
 class FakeResponse(io.BytesIO):
@@ -77,6 +83,8 @@ class FakeRelease:
         self.requests: list[tuple[str, float | None]] = []
         #: Replaces the generated ``SHA512SUMS`` content when not `None`.
         self.sha512sums: str | None = None
+        #: Replaces the generated ``index.json`` content when not `None`.
+        self.index: dict | None = None
         self._served: dict[str, tuple[bytes, int, int | None]] = {}
 
     @staticmethod
@@ -103,6 +111,8 @@ class FakeRelease:
         self.requests.append((url, timeout))
         if not url.startswith(("https://", "http://")):
             raise ValueError(f"unknown url type: {url!r}")
+        if url == index_url:
+            return FakeResponse(json.dumps(self._index()).encode())
         if "/releases/download/" not in url:
             raise AssertionError(f"unexpected network access in a test: {url}")
         name = url.rsplit("/", 1)[-1]
@@ -117,6 +127,22 @@ class FakeRelease:
         if status >= 400:  # like urllib's default error handling
             raise HTTPError(url, status, "Error", {}, None)
         return FakeResponse(data, status, length)
+
+    def _index(self) -> dict:
+        if self.index is None:
+            versions: dict[str, dict] = {}
+            for name in sorted(RELEASE_ASSETS):
+                tool_version, platform = name.removesuffix(".exe").rsplit("_", 1)
+                tool, version = tool_version.rsplit("-", 1)
+                tag = f"llvm-{version}.1.0"
+                entry = versions.setdefault(version, {"tag": tag, "tools": {}})
+                entry["tools"].setdefault(tool, {})[platform] = {
+                    "name": name,
+                    "url": f"{RELEASES_URL}/download/{tag}/{name}",
+                    "sha512": hashlib.sha512(self.published(name)).hexdigest(),
+                }
+            self.index = {"schema_version": 1, "versions": versions}
+        return self.index
 
     def _sha512sums(self) -> str:
         if self.sha512sums is None:
@@ -133,5 +159,7 @@ def fake_release(monkeypatch: pytest.MonkeyPatch) -> Iterator[FakeRelease]:
     release = FakeRelease()
     monkeypatch.setattr(urllib.request, "urlopen", release.urlopen)
     util._fetch_sha512sums.cache_clear()
+    util.fetch_index.cache_clear()
     yield release
     util._fetch_sha512sums.cache_clear()
+    util.fetch_index.cache_clear()

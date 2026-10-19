@@ -6,6 +6,7 @@ A module containing utility functions.
 """
 
 import hashlib
+import json
 import platform
 import urllib.request
 from functools import cache
@@ -88,6 +89,35 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> str | None
     file = Path(file_name)
     file.write_bytes(buffer)
     return file.as_posix()
+
+
+#: The ``schema_version`` of ``index.json`` that this package understands.
+INDEX_SCHEMA_VERSION = 1
+
+
+@cache
+def fetch_index(url: str) -> dict:
+    """Fetch and cache the static binaries' ``index.json``.
+
+    :param url: The URL of the index.
+
+    :returns: The parsed index.
+    """
+    try:
+        with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT) as response:
+            index = json.loads(response.read().decode(encoding="utf-8"))
+    except ValueError as exc:  # an invalid URL or invalid JSON
+        raise OSError(f"Failed to download the index from {url}: {exc}") from exc
+    if not isinstance(index, dict):
+        raise OSError(f"The index at {url} is not a JSON object.")
+    if index.get("schema_version") != INDEX_SCHEMA_VERSION:
+        raise OSError(
+            f"Unsupported index schema version {index.get('schema_version')!r}"
+            f" at {url}. Please upgrade clang-tools."
+        )
+    if not isinstance(index.get("versions"), dict):
+        raise OSError(f"The index at {url} has no versions.")
+    return index
 
 
 @cache

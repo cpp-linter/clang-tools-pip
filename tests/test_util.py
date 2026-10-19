@@ -8,13 +8,14 @@ from urllib.error import HTTPError
 
 import pytest
 
-from clang_tools import install_arch, install_os, suffix
+from clang_tools import index_url, install_arch, install_os, suffix, util
 from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import (
     Version,
     check_install_arch,
     check_install_os,
     download_file,
+    fetch_index,
     get_sha_checksum,
     verify_sha512,
 )
@@ -325,3 +326,42 @@ def test_download_file_small(tmp_path: Path, fake_release, size: int):
     destination = tmp_path / "downloaded"
     assert download_file(url, str(destination), False) == destination.as_posix()
     assert destination.read_bytes() == b"x" * size
+
+
+def test_fetch_index_invalid_url():
+    """Test that an invalid index URL is an OSError (so the CLI falls back)."""
+    with pytest.raises(OSError, match="Failed to download the index"):
+        fetch_index("not-a-valid-url")
+
+
+def test_fetch_index_invalid_json(fake_release):
+    """Test that an index that is not JSON is an OSError."""
+    fake_release.serve("index.json", b"<html>not json</html>")
+    with pytest.raises(OSError, match="Failed to download the index"):
+        fetch_index("https://example.com/releases/download/x/index.json")
+
+
+def test_fetch_index_unsupported_schema(fake_release):
+    """Test that a newer index schema asks the user to upgrade."""
+    fake_release.serve("index.json", b'{"schema_version": 2, "versions": {}}')
+    with pytest.raises(OSError, match="Please upgrade clang-tools"):
+        fetch_index("https://example.com/releases/download/x/index.json")
+
+
+@pytest.mark.parametrize(
+    "body,message",
+    [(b"[]", "is not a JSON object"), (b'{"schema_version": 1}', "has no versions")],
+    ids=["not-an-object", "no-versions"],
+)
+def test_fetch_index_malformed(fake_release, body: bytes, message: str):
+    """Test that a malformed index is an OSError (so the CLI falls back)."""
+    fake_release.serve("index.json", body)
+    with pytest.raises(OSError, match=message):
+        fetch_index("https://example.com/releases/download/x/index.json")
+
+
+def test_fetch_index_once(fake_release):
+    """Test that the index is fetched once, with a timeout."""
+    index = fetch_index(index_url)
+    assert fetch_index(index_url) is index
+    assert fake_release.requests == [(index_url, util.DOWNLOAD_TIMEOUT)]

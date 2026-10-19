@@ -131,7 +131,7 @@ def get_parser() -> argparse.ArgumentParser:
         default="",
         metavar="DIR",
         help="The directory where the clang-tools are installed. It is created if"
-        " it doesn't exist, but the directory that holds it must exist.",
+        " it doesn't exist, but the parent directory must exist.",
     )
     install_p.add_argument(
         "-f",

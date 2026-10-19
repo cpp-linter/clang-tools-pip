@@ -9,10 +9,12 @@ from urllib.error import HTTPError
 
 import pytest
 
-from clang_tools import install_arch, install_os, suffix
+from clang_tools import MAX_VERSION, MIN_VERSION, install_arch, install_os, suffix
 from clang_tools.install import (
+    available_versions,
     clang_tools_binary_url,
     create_sym_link,
+    find_binary,
     install_clang_tools,
     install_dir_name,
     install_tool,
@@ -24,7 +26,9 @@ from clang_tools.install import (
 from clang_tools.util import Version
 
 
-@pytest.mark.parametrize("version", [str(v) for v in range(7, 17)])
+@pytest.mark.parametrize(
+    "version", [str(v) for v in range(MIN_VERSION, MAX_VERSION + 1)]
+)
 @pytest.mark.parametrize(
     "tool_name",
     [
@@ -138,10 +142,13 @@ def test_path_warning(capsys: pytest.CaptureFixture):
 def test_install_tool_download_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Test that a failed download raises an OSError with a helpful message.
 
-    Uses a non-URL string for the repo base to trigger a ValueError in urlopen,
-    which download_file catches and returns None, causing install_tool to raise OSError.
+    Uses a non-URL string for the release download to trigger a ValueError in
+    urlopen, which download_file catches and returns None, causing install_tool to
+    raise OSError.
     """
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
+    monkeypatch.setattr("clang_tools.install.get_sha_checksum", lambda url: "0" * 128)
     with pytest.raises(OSError, match="Failed to download"):
         install_tool("clang-format", "12", str(tmp_path), True)
 
@@ -156,6 +163,8 @@ def test_install_clang_tools_download_error(
     fails.
     """
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
+    monkeypatch.setattr("clang_tools.install.get_sha_checksum", lambda url: "0" * 128)
     with pytest.raises(OSError, match="Failed to download"):
         install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
 
@@ -348,7 +357,7 @@ def test_install_clang_tools_path_not_in_env(
 ):
     """Test install_clang_tools warns when install dir is not in PATH."""
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    monkeypatch.setattr("clang_tools.install.index_url", "not-a-valid-url")
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
     with pytest.raises(OSError):
@@ -534,6 +543,7 @@ def test_install_tool_without_checksums(
 ):
     """Test that nothing is installed when the checksums cannot be fetched."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
     fake_release.serve("SHA512SUMS", b"Not Found", status=404)
     with pytest.raises(HTTPError):
         install_tool("clang-format", "12", str(tmp_path / "bin"), True)
@@ -563,8 +573,72 @@ def test_install_tool_ignores_files_in_cwd(
 def test_install_tool_unknown_binary(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Test that a binary missing from the release is reported as a failure."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
+    monkeypatch.setattr("clang_tools.install.get_sha_checksum", lambda url: "0" * 128)
     with pytest.raises(OSError, match="Failed to download"):
         install_tool("clang-format", "99", str(tmp_path), True)
+
+
+def test_install_tool_version_not_in_index(tmp_path: Path):
+    """Test that a version missing from the index is reported with the choices."""
+    with pytest.raises(ValueError, match="Available versions: 12, 13,"):
+        install_tool("clang-format", "99", str(tmp_path), True)
+
+
+def test_find_binary_from_index(monkeypatch: pytest.MonkeyPatch, fake_release):
+    """Test that the URL and checksum come from the index, for any 18.x.y."""
+    monkeypatch.setattr("clang_tools.install.install_os", "linux")
+    monkeypatch.setattr("clang_tools.install.install_arch", "arm64")
+    url, checksum = find_binary("clang-tidy", "18.1.8")
+    assert url.endswith("/releases/download/llvm-18.1.0/clang-tidy-18_linux-arm64")
+    assert (
+        checksum
+        == fake_release._index()["versions"]["18"]["tools"]["clang-tidy"][
+            "linux-arm64"
+        ]["sha512"]
+    )
+    assert fake_release.downloads() == ["index.json"]
+
+
+def test_find_binary_tool_not_in_version(fake_release):
+    """Test that a tool missing from a version (e.g. too old) is an error."""
+    del fake_release._index()["versions"]["12"]["tools"]["clang-include-cleaner"]
+    with pytest.raises(ValueError, match="clang-include-cleaner 12 is not available"):
+        find_binary("clang-include-cleaner", "12")
+
+
+def test_install_tool_uses_index_checksum(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
+):
+    """Test that only the index and the binary are downloaded (no SHA512SUMS)."""
+    monkeypatch.chdir(tmp_path)
+    assert install_tool("clang-format", "21", str(tmp_path / "bin"), True)
+    asset = clang_tools_binary_url("clang-format", "21").rsplit("/", 1)[-1]
+    assert fake_release.downloads() == ["index.json", asset]
+
+
+def test_available_versions(monkeypatch: pytest.MonkeyPatch, fake_release):
+    """Test that the versions come from the index unless a tag is pinned."""
+    del fake_release._index()["versions"]["12"]
+    assert available_versions() == list(range(13, MAX_VERSION + 1))
+    monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
+    assert available_versions() == list(range(MIN_VERSION, MAX_VERSION + 1))
+
+
+def test_index_url_from_environment():
+    """Test that CLANG_TOOLS_INDEX_URL selects the index."""
+    env = dict(os.environ, CLANG_TOOLS_INDEX_URL="https://example.com/index.json")
+    env.pop("CLANG_TOOLS_TAG", None)
+    code = "from clang_tools import index_url, binary_tag; print(index_url, binary_tag)"
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=True,
+        env=env,
+        cwd=str(PurePath(__file__).parent.parent),
+    )
+    assert result.stdout.split() == ["https://example.com/index.json"]
 
 
 def test_move_and_chmod_bin_permission_error(
@@ -713,7 +787,7 @@ def test_install_clang_tools_links_native_binary(
     monkeypatch.setattr("clang_tools.install.is_installed", lambda tool, ver: native)
     install_dir = tmp_path / "bin"
     install_clang_tools(Version("12"), ["clang-format"], str(install_dir), False, True)
-    assert fake_release.requests == []
+    assert fake_release.downloads() == ["index.json"]  # no binary is downloaded
     assert not (install_dir / f"clang-format-12{suffix}").exists()
     link = install_dir / f"clang-format{suffix}"
     assert link.is_symlink() and link.resolve() == native.resolve()

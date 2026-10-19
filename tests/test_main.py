@@ -190,7 +190,7 @@ def test_main_install_with_version_fallback(
     monkeypatch: pytest.MonkeyPatch, capsys, tmp_path
 ):
     """Auto-detect with --version falls back to wheel when binary fails."""
-    monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
+    monkeypatch.setattr("clang_tools.install.index_url", "not-a-valid-url")
     monkeypatch.setattr(
         "clang_tools.main._wheel_install",
         lambda tools, ver: 0,

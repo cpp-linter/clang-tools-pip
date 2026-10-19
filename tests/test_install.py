@@ -785,14 +785,17 @@ def test_install_clang_tools_dir_in_path(
 def test_install_clang_tools_links_native_binary(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
 ):
-    """Test that a matching binary found in PATH is linked, not downloaded."""
+    """Test that a matching binary found in PATH is linked, not downloaded.
+
+    The index is not fetched either, so this works offline.
+    """
     native = tmp_path / "usr" / f"clang-format-12{suffix}"
     native.parent.mkdir()
     native.write_bytes(b"native binary")
     monkeypatch.setattr("clang_tools.install.is_installed", lambda tool, ver: native)
     install_dir = tmp_path / "bin"
     install_clang_tools(Version("12"), ["clang-format"], str(install_dir), False, True)
-    assert fake_release.downloads() == ["index.json"]  # no binary is downloaded
+    assert fake_release.downloads() == []  # neither the index nor a binary
     assert not (install_dir / f"clang-format-12{suffix}").exists()
     link = install_dir / f"clang-format{suffix}"
     assert link.is_symlink() and link.resolve() == native.resolve()

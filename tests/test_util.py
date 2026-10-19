@@ -348,6 +348,18 @@ def test_fetch_index_unsupported_schema(fake_release):
         fetch_index("https://example.com/releases/download/x/index.json")
 
 
+@pytest.mark.parametrize(
+    "body,message",
+    [(b"[]", "is not a JSON object"), (b'{"schema_version": 1}', "has no versions")],
+    ids=["not-an-object", "no-versions"],
+)
+def test_fetch_index_malformed(fake_release, body: bytes, message: str):
+    """Test that a malformed index is an OSError (so the CLI falls back)."""
+    fake_release.serve("index.json", body)
+    with pytest.raises(OSError, match=message):
+        fetch_index("https://example.com/releases/download/x/index.json")
+
+
 def test_fetch_index_once(fake_release):
     """Test that the index is fetched once, with a timeout."""
     index = fetch_index(index_url)

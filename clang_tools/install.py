@@ -342,15 +342,16 @@ def install_clang_tools(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
-    versions = available_versions()
-    if version.info[0] not in versions:
-        raise ValueError(
-            f"{version.info[0]} is not available in static binary builds. "
-            f"Available versions: {', '.join(map(str, versions))}."
-        )
     for tool_name in tools:
         native_bin = is_installed(tool_name, version)
         if native_bin is None:  # (not already installed)
+            # only a download needs the list of available versions
+            versions = available_versions()
+            if version.info[0] not in versions:
+                raise ValueError(
+                    f"{version.info[0]} is not available in static binary builds. "
+                    f"Available versions: {', '.join(map(str, versions))}."
+                )
             # `install_tool()` guarantees that the binary exists now
             install_tool(tool_name, version.string, install_dir, no_progress_bar)
         create_sym_link(tool_name, version.string, install_dir, overwrite, native_bin)

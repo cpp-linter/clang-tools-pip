@@ -108,11 +108,15 @@ def fetch_index(url: str) -> dict:
             index = json.loads(response.read().decode(encoding="utf-8"))
     except ValueError as exc:  # an invalid URL or invalid JSON
         raise OSError(f"Failed to download the index from {url}: {exc}") from exc
+    if not isinstance(index, dict):
+        raise OSError(f"The index at {url} is not a JSON object.")
     if index.get("schema_version") != INDEX_SCHEMA_VERSION:
         raise OSError(
             f"Unsupported index schema version {index.get('schema_version')!r}"
             f" at {url}. Please upgrade clang-tools."
         )
+    if not isinstance(index.get("versions"), dict):
+        raise OSError(f"The index at {url} has no versions.")
     return index
 
 

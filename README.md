@@ -23,6 +23,7 @@ clang-tools install clang-format clang-tidy --version 21
 This installs the LLVM 21 static binaries `clang-format-21` and `clang-tidy-21`. Without
 `--directory`, they go to `~/.local/bin` on Linux, and on macOS and Windows to the folder that
 holds the Python executable (the `bin` or `Scripts` folder of a virtual environment).
+A `--directory` that doesn't exist yet is created, but the folder that holds it must exist.
 
 > [!TIP]
 > It is recommended to use this package in a virtual environment.

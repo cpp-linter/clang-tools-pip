@@ -187,22 +187,78 @@ def install_tool(
     return True
 
 
+def default_install_dir() -> str:
+    """The install directory used when none is given (in resolved form).
+
+    :returns: ``~/.local/bin`` on Linux, otherwise the directory that holds the
+        Python executable (the ``bin`` or ``Scripts`` directory of a virtual
+        environment).
+    """
+    if install_os == "linux":
+        return os.path.realpath(os.path.expanduser("~/.local/bin"))
+    return os.path.realpath(os.path.dirname(sys.executable))
+
+
 def install_dir_name(directory: str) -> str:
     """Automate directory choosing if not explicitly specified by user.
 
     :param directory: The directory that was manually specified in the CLI. If this was
         not specified, then default values are used depending on the operating system.
+        If this path exists but is not a directory, a warning is shown and the default
+        directory is used instead.
 
-    :returns: The install directory name (in absolute form).
+    :returns: The install directory name, with symbolic links resolved. Use only this
+        resolved path afterwards, so the files are always changed where the messages
+        say.
     """
     if directory:
-        return os.path.abspath(directory)
-    if install_os == "linux":
-        return os.path.expanduser("~/.local/bin/")
-    # if install_os == "windows":
-    #     # C:\Users\{username}\AppData\Local\clang-tools
-    #     return os.path.join(os.getenv("LOCALAPPDATA"), "clang-tools")
-    return os.path.dirname(sys.executable)
+        resolved = os.path.realpath(directory)
+        if os.path.isdir(resolved) or not os.path.exists(resolved):
+            return resolved
+        print(
+            f"{YELLOW}{resolved} is not a directory.",
+            f"Using the default directory instead.{RESET_COLOR}",
+            file=sys.stderr,
+        )
+    return default_install_dir()
+
+
+def create_install_dir(install_dir: str) -> None:
+    """Create the install directory if it does not exist yet.
+
+    Missing parent directories (such as ``~/.local``) are only created for the
+    default directory. Any other directory must be in an existing directory, so a
+    mistyped ``--directory`` value fails instead of creating a tree of directories.
+
+    :param install_dir: The install directory, as returned by `install_dir_name()`.
+    """
+    path = Path(install_dir)
+    try:
+        path.mkdir(parents=install_dir == default_install_dir(), exist_ok=True)
+    except FileNotFoundError as exc:
+        raise SystemExit(
+            f"Can't create the install directory {install_dir}"
+            f" because {path.parent} does not exist."
+        ) from exc
+    except OSError as exc:
+        raise SystemExit(
+            f"Can't create the install directory {install_dir}: {exc.strerror or exc}"
+        ) from exc
+
+
+def is_in_path(directory: str) -> bool:
+    """Check if a directory is listed in the ``PATH`` environment variable.
+
+    :param directory: The directory to look for (in resolved form).
+
+    :returns: `True` if an entry of ``PATH`` resolves to ``directory``.
+    """
+    wanted = os.path.normcase(directory)
+    return any(
+        os.path.normcase(os.path.realpath(entry)) == wanted
+        for entry in os.environ.get("PATH", "").split(os.pathsep)
+        if entry
+    )
 
 
 def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -> None:
@@ -211,12 +267,10 @@ def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -
     :param old_bin_name: The downloaded file's name.
     :param new_bin_name: The desired name of the file after being moved to
         the ``install_dir``.
-    :param install_dir: The target installation directory.
+    :param install_dir: The target installation directory. It must exist.
     """
     print("Installing", new_bin_name, "to", install_dir)
     try:
-        if not os.path.isdir(install_dir):
-            os.makedirs(install_dir)
         shutil.move(old_bin_name, f"{install_dir}/{new_bin_name}")
         os.chmod(os.path.join(install_dir, new_bin_name), 0o755)
     except PermissionError as exc:
@@ -238,7 +292,8 @@ def create_sym_link(
 
     :param tool_name: The name of the clang-tool to symlink.
     :param version: The version of the clang-tool to symlink.
-    :param install_dir: The installation directory to create the symlink in.
+    :param install_dir: The installation directory to create the symlink in. It must
+        exist.
     :param overwrite: A flag to indicate if an existing symlink should be overwritten.
     :param target: The target executable's path and name for which to create a symlink
         to. If this argument is not specified (or is `None`), then the target's path and
@@ -248,8 +303,6 @@ def create_sym_link(
     :returns: A `bool` describing if the symlink was created.
     """
     link_root_path = Path(install_dir)
-    if not link_root_path.exists():
-        link_root_path.mkdir(parents=True)
     link = link_root_path / (tool_name + suffix)
     if target is None:
         target = link_root_path / f"{tool_name}-{version}{suffix}"
@@ -337,7 +390,8 @@ def install_clang_tools(
     :param no_progress_bar: A flag used to disable the downloads' progress bar.
     """
     install_dir = install_dir_name(directory)
-    if install_dir.rstrip(os.sep) not in os.environ.get("PATH", ""):
+    create_install_dir(install_dir)
+    if not is_in_path(install_dir):
         print(
             f"{YELLOW}{install_dir}",
             f"directory is not in your environment variable PATH.{RESET_COLOR}",

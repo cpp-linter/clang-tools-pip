@@ -36,6 +36,8 @@ from .util import (
 
 #: This pattern is designed to match only the major version number.
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
+#: A binary's file name: no path separators, and not ``.`` or ``..``.
+RE_FILE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*")
 
 
 def is_installed(tool_name: str, version: Version) -> Path | None:
@@ -134,6 +136,20 @@ def clang_tools_binary_url(tool: str, version: str) -> str:
     return download_url.replace(" ", "")
 
 
+def binary_file_name(tool_name: str, version: str) -> str:
+    """The file name of an installed binary, such as ``clang-format-21``.
+
+    :param tool_name: The name of the tool.
+    :param version: The version of the tool.
+
+    :returns: The file name, which never points outside the install directory.
+    """
+    file_name = f"{tool_name}-{version}{suffix}"
+    if not RE_FILE_NAME.fullmatch(file_name):
+        raise ValueError(f"Invalid tool name or version: {tool_name!r} {version!r}")
+    return file_name
+
+
 def install_tool(
     tool_name: str, version: str, directory: str, no_progress_bar: bool
 ) -> bool:
@@ -147,7 +163,8 @@ def install_tool(
     :returns: `True` if the binary had to be downloaded and installed.
         `False` if the binary was not downloaded but is installed in ``directory``.
     """
-    destination = Path(directory, f"{tool_name}-{version}{suffix}")
+    file_name = binary_file_name(tool_name, version)
+    destination = Path(directory, file_name)
     bin_url, checksum = find_binary(tool_name, version)
     if destination.exists():
         print(f"{tool_name}-{version}", "already installed...")
@@ -166,7 +183,7 @@ def install_tool(
             raise OSError(f"Failed to download {bin_name} from {bin_url}")
         if not verify_sha512(checksum, downloaded.read_bytes()):
             raise ValueError(f"File was corrupted during download from {bin_url}")
-        move_and_chmod_bin(str(downloaded), f"{tool_name}-{version}{suffix}", directory)
+        move_and_chmod_bin(str(downloaded), file_name, directory)
     return True
 
 
@@ -277,7 +294,7 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
     :param directory: The directory from which to remove the
         installed clang-tools.
     """
-    tool_path = Path(directory, f"{tool_name}-{version}{suffix}")
+    tool_path = Path(directory, binary_file_name(tool_name, version))
     if tool_path.exists():
         print("Removing", tool_path.name, "from", str(tool_path.parent))
         tool_path.unlink()

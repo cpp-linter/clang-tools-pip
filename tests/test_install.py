@@ -12,6 +12,7 @@ import pytest
 from clang_tools import MAX_VERSION, MIN_VERSION, install_arch, install_os, suffix
 from clang_tools.install import (
     available_versions,
+    binary_file_name,
     clang_tools_binary_url,
     create_sym_link,
     find_binary,
@@ -97,8 +98,10 @@ def test_install_tools(
     # invoking again should return False
     assert not install_tool(tool_name, version, str(tmp_path), False)
     # uninstall the tool deliberately
-    uninstall_clang_tools(tool_name, version, str(tmp_path))
-    assert f"{tool_name}-{version}{suffix}" in [fd.name for fd in tmp_path.iterdir()]
+    uninstall_clang_tools([tool_name], version, str(tmp_path))
+    assert f"{tool_name}-{version}{suffix}" not in [
+        fd.name for fd in tmp_path.iterdir()
+    ]
 
 
 @pytest.mark.parametrize("version", ["18"])
@@ -112,8 +115,10 @@ def test_install_clang_include_cleaner(
     # invoking again should return False
     assert not install_tool(tool_name, version, str(tmp_path), False)
     # uninstall the tool deliberately
-    uninstall_clang_tools(tool_name, version, str(tmp_path))
-    assert f"{tool_name}-{version}{suffix}" in [fd.name for fd in tmp_path.iterdir()]
+    uninstall_clang_tools([tool_name], version, str(tmp_path))
+    assert f"{tool_name}-{version}{suffix}" not in [
+        fd.name for fd in tmp_path.iterdir()
+    ]
 
 
 @pytest.mark.parametrize("version", ["0"])
@@ -803,3 +808,22 @@ def test_install_clang_tools_overwrite(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert link.resolve() == (tmp_path / f"clang-format-12{suffix}").resolve()
     install_clang_tools(Version("13"), ["clang-format"], str(tmp_path), True, True)
     assert link.resolve() == (tmp_path / f"clang-format-13{suffix}").resolve()
+
+
+@pytest.mark.parametrize(
+    "tool_name,version",
+    [("../clang-format", "18"), ("clang-format", "18/../../x"), ("..", ""), ("", "18")],
+)
+def test_binary_file_name_rejects_paths(tool_name: str, version: str, tmp_path: Path):
+    """Test that a tool name or version cannot point outside the install directory."""
+    with pytest.raises(ValueError, match="Invalid tool name or version"):
+        binary_file_name(tool_name, version)
+    with pytest.raises(ValueError, match="Invalid tool name or version"):
+        install_tool(tool_name, version, str(tmp_path), True)
+    with pytest.raises(ValueError, match="Invalid tool name or version"):
+        uninstall_tool(tool_name, version, str(tmp_path))
+
+
+def test_binary_file_name():
+    """Test the file name of an installed binary."""
+    assert binary_file_name("clang-format", "18.1.8") == f"clang-format-18.1.8{suffix}"

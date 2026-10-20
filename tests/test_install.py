@@ -14,11 +14,14 @@ from clang_tools.install import (
     available_versions,
     binary_file_name,
     clang_tools_binary_url,
+    create_install_dir,
     create_sym_link,
+    default_install_dir,
     find_binary,
     install_clang_tools,
     install_dir_name,
     install_tool,
+    is_in_path,
     is_installed,
     move_and_chmod_bin,
     uninstall_clang_tools,
@@ -137,7 +140,7 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     try:
         install_clang_tools(Version("0"), ["x"], ".", False, False)
     except ValueError as exc:
-        if install_dir_name(".") not in os.environ.get("PATH", ""):  # pragma: no cover
+        if not is_in_path(install_dir_name(".")):  # pragma: no cover
             # this warning does not happen in an activated venv
             result = capsys.readouterr()
             assert "directory is not in your environment variable PATH" in result.out
@@ -255,29 +258,12 @@ def test_move_and_chmod_bin(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     src_file.write_bytes(b"binary content")
 
     install_dir = tmp_path / "bin"
+    install_dir.mkdir()
     move_and_chmod_bin(old_name, new_name, str(install_dir))
 
     target = install_dir / new_name
     assert target.exists()
     assert not src_file.exists()  # moved, not copied
-    assert os.access(target, os.X_OK)
-
-
-def test_move_and_chmod_bin_create_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    """Test move_and_chmod_bin creates install directory if it doesn't exist."""
-    monkeypatch.chdir(tmp_path)
-    old_name = "downloaded-file"
-    new_name = "clang-format-12"
-    src_file = tmp_path / old_name
-    src_file.write_bytes(b"binary content")
-
-    install_dir = tmp_path / "nested" / "bin"
-    # directory does not exist yet
-    assert not install_dir.exists()
-    move_and_chmod_bin(old_name, new_name, str(install_dir))
-
-    target = install_dir / new_name
-    assert target.exists()
     assert os.access(target, os.X_OK)
 
 
@@ -384,27 +370,7 @@ def test_install_dir_name_linux_default(monkeypatch: pytest.MonkeyPatch):
     """Test install_dir_name returns ~/.local/bin/ on Linux when no dir given."""
     monkeypatch.setattr("clang_tools.install.install_os", "linux")
     result = install_dir_name("")
-    assert result == os.path.expanduser("~/.local/bin/")
-
-
-def test_create_sym_link_nonexistent_dir(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-):
-    """Test create_sym_link creates the install directory if it doesn't exist."""
-    monkeypatch.chdir(str(tmp_path))
-    tool_name, version = "clang-tool", "1"
-    # Create the target binary in tmp_path
-    target = tmp_path / f"{tool_name}-{version}{suffix}"
-    target.write_bytes(b"some binary data")
-
-    # Use a nested subdir that does not exist yet
-    new_dir = tmp_path / "new_install_dir"
-    assert not new_dir.exists()
-
-    assert create_sym_link(tool_name, version, str(new_dir), False, target=target)
-    assert new_dir.exists()
-    link = new_dir / f"{tool_name}{suffix}"
-    assert link.is_symlink()
+    assert result == os.path.realpath(os.path.expanduser("~/.local/bin"))
 
 
 def test_clang_tools_binary_url_force_non_macos(monkeypatch: pytest.MonkeyPatch):
@@ -419,9 +385,7 @@ def test_install_dir_name_default_force_non_linux(monkeypatch: pytest.MonkeyPatc
     """Hit the non-linux branch by monkeypatching install_os to 'darwin'."""
     monkeypatch.setattr("clang_tools.install.install_os", "darwin")
     result = install_dir_name("")
-    import sys
-
-    assert result == os.path.dirname(sys.executable)
+    assert result == os.path.realpath(os.path.dirname(sys.executable))
 
 
 @pytest.mark.parametrize(
@@ -511,6 +475,7 @@ def test_install_tool_installs_published_binary(
     """Test that the installed binary is the published one and is executable."""
     monkeypatch.chdir(tmp_path)
     install_dir = tmp_path / "bin"
+    install_dir.mkdir()
     assert install_tool("clang-tidy", "17", str(install_dir), True)
     installed = install_dir / f"clang-tidy-17{suffix}"
     asset = clang_tools_binary_url("clang-tidy", "17").rsplit("/", 1)[-1]
@@ -568,6 +533,7 @@ def test_install_tool_ignores_files_in_cwd(
     (cwd / PurePath(url).stem).symlink_to(victim)
 
     install_dir = tmp_path / "bin"
+    install_dir.mkdir()
     assert install_tool("clang-format", "12", str(install_dir), True)
     assert victim.read_text(encoding="utf-8") == "keep me"
     installed = install_dir / f"clang-format-12{suffix}"
@@ -617,7 +583,7 @@ def test_install_tool_uses_index_checksum(
 ):
     """Test that only the index and the binary are downloaded (no SHA512SUMS)."""
     monkeypatch.chdir(tmp_path)
-    assert install_tool("clang-format", "21", str(tmp_path / "bin"), True)
+    assert install_tool("clang-format", "21", str(tmp_path), True)
     asset = clang_tools_binary_url("clang-format", "21").rsplit("/", 1)[-1]
     assert fake_release.downloads() == ["index.json", asset]
 
@@ -765,7 +731,7 @@ def test_uninstall_clang_tools_relative_dir(
 def test_install_dir_name_relative(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Test that an explicit directory is made absolute."""
     monkeypatch.chdir(tmp_path)
-    assert install_dir_name("bin") == os.path.join(os.getcwd(), "bin")
+    assert install_dir_name("bin") == os.path.realpath(os.path.join(os.getcwd(), "bin"))
 
 
 def test_install_clang_tools_dir_in_path(
@@ -830,3 +796,86 @@ def test_binary_file_name_rejects_paths(tool_name: str, version: str, tmp_path: 
 def test_binary_file_name():
     """Test the file name of an installed binary."""
     assert binary_file_name("clang-format", "18.1.8") == f"clang-format-18.1.8{suffix}"
+
+
+def test_install_dir_name_resolves_symlink(tmp_path: Path):
+    """Test that a directory reached through a symlink is used in resolved form."""
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link"
+    link.symlink_to(real, target_is_directory=True)
+    assert install_dir_name(str(link)) == os.path.realpath(real)
+
+
+def test_install_dir_name_not_a_directory(tmp_path: Path, capsys):
+    """Test that a path to a file falls back to the default directory."""
+    not_a_dir = tmp_path / "file"
+    not_a_dir.write_bytes(b"not a directory")
+    assert install_dir_name(str(not_a_dir)) == default_install_dir()
+    message = f"{os.path.realpath(not_a_dir)} is not a directory"
+    assert message in capsys.readouterr().err
+    assert not_a_dir.read_bytes() == b"not a directory"
+
+
+def test_create_install_dir(tmp_path: Path):
+    """Test that a missing install directory is created."""
+    install_dir = tmp_path / "bin"
+    create_install_dir(str(install_dir))
+    assert install_dir.is_dir()
+    create_install_dir(str(install_dir))  # already exists
+    assert install_dir.is_dir()
+
+
+def test_create_install_dir_missing_parent(tmp_path: Path):
+    """Test that the parents of a given directory are not created."""
+    install_dir = tmp_path / "typo" / "bin"
+    with pytest.raises(SystemExit, match="because .*typo does not exist"):
+        create_install_dir(str(install_dir))
+    assert not (tmp_path / "typo").exists()
+
+
+def test_create_install_dir_default_parents(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Test that the parents of the default directory (``~/.local``) are created."""
+    default = str(tmp_path / "home" / ".local" / "bin")
+    monkeypatch.setattr("clang_tools.install.default_install_dir", lambda: default)
+    create_install_dir(default)
+    assert Path(default).is_dir()
+
+
+def test_create_install_dir_is_a_file(tmp_path: Path):
+    """Test the message when the install directory can't be created."""
+    not_a_dir = tmp_path / "file"
+    not_a_dir.write_bytes(b"not a directory")
+    with pytest.raises(SystemExit, match="Can't create the install directory"):
+        create_install_dir(str(not_a_dir))
+    assert not_a_dir.read_bytes() == b"not a directory"
+
+
+def test_install_clang_tools_missing_parent(tmp_path: Path, fake_release):
+    """Test that nothing is downloaded when the install directory can't be made."""
+    install_dir = tmp_path / "typo" / "bin"
+    with pytest.raises(SystemExit, match="does not exist"):
+        install_clang_tools(
+            Version("12"), ["clang-format"], str(install_dir), False, True
+        )
+    assert fake_release.downloads() == []
+    assert not (tmp_path / "typo").exists()
+
+
+def test_is_in_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test that PATH entries are compared as resolved directories."""
+    real = tmp_path / "bin"
+    real.mkdir()
+    link = tmp_path / "link"
+    link.symlink_to(real, target_is_directory=True)
+    resolved = os.path.realpath(real)
+
+    monkeypatch.setenv("PATH", os.pathsep.join(["", str(link)]))
+    assert is_in_path(resolved)
+    # an entry that only starts with the same characters is another directory
+    monkeypatch.setenv("PATH", str(tmp_path / "bin2"))
+    assert not is_in_path(resolved)
+    monkeypatch.delenv("PATH")
+    assert not is_in_path(resolved)

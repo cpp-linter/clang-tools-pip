@@ -377,8 +377,12 @@ def test_fetch_index_unsupported_schema(fake_release):
 
 @pytest.mark.parametrize(
     "body,message",
-    [(b"[]", "is not a JSON object"), (b'{"schema_version": 1}', "has no versions")],
-    ids=["not-an-object", "no-versions"],
+    [
+        (b"[]", "is not a JSON object"),
+        (b'{"schema_version": 1}', "has no versions"),
+        (b'{"schema_version": 1, "versions": {"latest": {}}}', "is not a number"),
+    ],
+    ids=["not-an-object", "no-versions", "bad-version"],
 )
 def test_fetch_index_malformed(fake_release, body: bytes, message: str):
     """Test that a malformed index triggers the PyPI fallback."""

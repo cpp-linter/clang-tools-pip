@@ -140,6 +140,8 @@ def fetch_index(url: str) -> dict:
         )
     if not isinstance(index.get("versions"), dict):
         raise PyPIFallback(f"The index at {url} has no versions.")
+    if not all(major.isdecimal() for major in index["versions"]):
+        raise PyPIFallback(f"The index at {url} has a version that is not a number.")
     return index
 
 

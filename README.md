@@ -36,9 +36,10 @@ A `--directory` that doesn't exist is created, but the parent folder(s) must exi
 
 ## Usage
 
-`clang-tools install` with `--version` installs the static binary and falls back to the wheel if
-that fails; without `--version`, it installs the latest wheel. For a full list of CLI options, see
-the [CLI reference](https://cpp-linter.github.io/clang-tools-pip/cli_args/).
+`clang-tools install` with `--version` installs the static binary. It falls back to the wheel when
+there is no static binary for that version, tool or platform, or when the download fails; any other
+error stops the command. Without `--version`, it installs the latest wheel. For a full list of CLI
+options, see the [CLI reference](https://cpp-linter.github.io/clang-tools-pip/cli_args/).
 
 ### Install binaries
 

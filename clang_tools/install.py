@@ -27,6 +27,7 @@ from . import (
     suffix,
 )
 from .util import (
+    PyPIFallback,
     Version,
     download_file,
     fetch_index,
@@ -101,6 +102,7 @@ def find_binary(tool: str, version: str) -> tuple[str, str]:
     :param version: The version of the tool to download.
 
     :returns: The download URL and the expected SHA512 checksum.
+    :raises PyPIFallback: If the binary is not available.
     """
     if binary_tag:
         url = clang_tools_binary_url(tool, version)
@@ -108,13 +110,13 @@ def find_binary(tool: str, version: str) -> tuple[str, str]:
     major = version.split(".", 1)[0]
     entry = fetch_index(index_url)["versions"].get(major)
     if entry is None:
-        raise ValueError(
+        raise PyPIFallback(
             f"{major} is not available in static binary builds. "
             f"Available versions: {', '.join(map(str, available_versions()))}."
         )
     binary = entry["tools"].get(tool, {}).get(platform_name())
     if binary is None:
-        raise ValueError(
+        raise PyPIFallback(
             f"{tool} {major} is not available in static binary builds"
             f" for {platform_name()}."
         )
@@ -162,8 +164,12 @@ def install_tool(
 
     :returns: `True` if the binary had to be downloaded and installed.
         `False` if the binary was not downloaded but is installed in ``directory``.
+    :raises PyPIFallback: If the binary is not available or could not be downloaded.
     """
-    file_name = binary_file_name(tool_name, version)
+    try:
+        file_name = binary_file_name(tool_name, version)
+    except ValueError as exc:  # no static binary has such a name
+        raise PyPIFallback(str(exc)) from exc
     destination = Path(directory, file_name)
     bin_url, checksum = find_binary(tool_name, version)
     if destination.exists():
@@ -179,10 +185,9 @@ def install_tool(
     # Download to a private directory and verify the file before installing it.
     with tempfile.TemporaryDirectory() as download_dir:
         downloaded = Path(download_dir, bin_name)
-        if download_file(bin_url, str(downloaded), no_progress_bar) is None:
-            raise OSError(f"Failed to download {bin_name} from {bin_url}")
+        download_file(bin_url, str(downloaded), no_progress_bar)
         if not verify_sha512(checksum, downloaded.read_bytes()):
-            raise ValueError(f"File was corrupted during download from {bin_url}")
+            raise PyPIFallback(f"File was corrupted during download from {bin_url}")
         move_and_chmod_bin(str(downloaded), file_name, directory)
     return True
 
@@ -388,6 +393,8 @@ def install_clang_tools(
     :param overwrite: A flag to indicate if the creation of a symlink has
         permission to overwrite an existing symlink.
     :param no_progress_bar: A flag used to disable the downloads' progress bar.
+    :raises PyPIFallback: If a tool's static binary is not available or could not be
+        downloaded, so the wheel should be tried instead.
     """
     install_dir = install_dir_name(directory)
     create_install_dir(install_dir)
@@ -402,7 +409,7 @@ def install_clang_tools(
             # only a download needs the list of available versions
             versions = available_versions()
             if version.info[0] not in versions:
-                raise ValueError(
+                raise PyPIFallback(
                     f"{version.info[0]} is not available in static binary builds. "
                     f"Available versions: {', '.join(map(str, versions))}."
                 )

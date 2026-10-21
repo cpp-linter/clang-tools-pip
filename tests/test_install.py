@@ -27,7 +27,7 @@ from clang_tools.install import (
     uninstall_clang_tools,
     uninstall_tool,
 )
-from clang_tools.util import Version
+from clang_tools.util import PyPIFallback, Version
 
 
 @pytest.mark.parametrize(
@@ -139,7 +139,7 @@ def test_path_warning(capsys: pytest.CaptureFixture):
     """
     try:
         install_clang_tools(Version("0"), ["x"], ".", False, False)
-    except ValueError as exc:
+    except PyPIFallback as exc:
         if not is_in_path(install_dir_name(".")):  # pragma: no cover
             # this warning does not happen in an activated venv
             result = capsys.readouterr()
@@ -148,23 +148,23 @@ def test_path_warning(capsys: pytest.CaptureFixture):
 
 
 def test_install_tool_download_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    """Test that a failed download raises an OSError with a helpful message.
+    """Test that a failed download triggers the PyPI fallback with a helpful message.
 
     Uses a non-URL string for the release download to trigger a ValueError in
-    urlopen, which download_file catches and returns None, causing install_tool to
-    raise OSError.
+    urlopen, which download_file raises as `PyPIFallback`.
     """
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
     monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
     monkeypatch.setattr("clang_tools.install.get_sha_checksum", lambda url: "0" * 128)
-    with pytest.raises(OSError, match="Failed to download"):
+    with pytest.raises(PyPIFallback, match="Failed to download") as exc_info:
         install_tool("clang-format", "12", str(tmp_path), True)
+    assert isinstance(exc_info.value.__cause__, ValueError)
 
 
 def test_install_clang_tools_download_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
-    """Test that a download failure inside install_clang_tools raises OSError.
+    """Test that a download failure inside install_clang_tools triggers the fallback.
 
     Covers the loop body (lines that iterate tools and call install_tool) by using a
     valid version with a broken repo URL, so the version check passes but the download
@@ -173,7 +173,7 @@ def test_install_clang_tools_download_error(
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
     monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
     monkeypatch.setattr("clang_tools.install.get_sha_checksum", lambda url: "0" * 128)
-    with pytest.raises(OSError, match="Failed to download"):
+    with pytest.raises(PyPIFallback, match="Failed to download"):
         install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
 
 
@@ -351,7 +351,7 @@ def test_install_clang_tools_path_not_in_env(
     monkeypatch.setattr("clang_tools.install.index_url", "not-a-valid-url")
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
-    with pytest.raises(OSError):
+    with pytest.raises(PyPIFallback):
         install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
 
     result = capsys.readouterr()
@@ -502,7 +502,7 @@ def test_install_tool_rejects_corrupted_download(
     monkeypatch.chdir(tmp_path)
     asset = clang_tools_binary_url("clang-format", "12").rsplit("/", 1)[-1]
     fake_release.serve(asset, b"not the published binary")
-    with pytest.raises(ValueError, match="corrupted during download"):
+    with pytest.raises(PyPIFallback, match="corrupted during download"):
         install_tool("clang-format", "12", str(tmp_path / "bin"), True)
     # nothing is left behind, in the install directory or in the CWD
     assert [p for p in tmp_path.rglob("*") if not p.is_dir()] == []
@@ -515,8 +515,9 @@ def test_install_tool_without_checksums(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
     fake_release.serve("SHA512SUMS", b"Not Found", status=404)
-    with pytest.raises(HTTPError):
+    with pytest.raises(PyPIFallback, match="SHA512SUMS") as exc_info:
         install_tool("clang-format", "12", str(tmp_path / "bin"), True)
+    assert isinstance(exc_info.value.__cause__, HTTPError)
     assert [p for p in tmp_path.rglob("*") if not p.is_dir()] == []
 
 
@@ -546,13 +547,13 @@ def test_install_tool_unknown_binary(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
     monkeypatch.setattr("clang_tools.install.get_sha_checksum", lambda url: "0" * 128)
-    with pytest.raises(OSError, match="Failed to download"):
+    with pytest.raises(PyPIFallback, match="Failed to download"):
         install_tool("clang-format", "99", str(tmp_path), True)
 
 
 def test_install_tool_version_not_in_index(tmp_path: Path):
     """Test that a version missing from the index is reported with the choices."""
-    with pytest.raises(ValueError, match="Available versions: 12, 13,"):
+    with pytest.raises(PyPIFallback, match="Available versions: 12, 13,"):
         install_tool("clang-format", "99", str(tmp_path), True)
 
 
@@ -574,7 +575,7 @@ def test_find_binary_from_index(monkeypatch: pytest.MonkeyPatch, fake_release):
 def test_find_binary_tool_not_in_version(fake_release):
     """Test that a tool missing from a version (e.g. too old) is an error."""
     del fake_release._index()["versions"]["12"]["tools"]["clang-include-cleaner"]
-    with pytest.raises(ValueError, match="clang-include-cleaner 12 is not available"):
+    with pytest.raises(PyPIFallback, match="clang-include-cleaner 12 is not available"):
         find_binary("clang-include-cleaner", "12")
 
 
@@ -787,7 +788,7 @@ def test_binary_file_name_rejects_paths(tool_name: str, version: str, tmp_path: 
     """Test that a tool name or version cannot point outside the install directory."""
     with pytest.raises(ValueError, match="Invalid tool name or version"):
         binary_file_name(tool_name, version)
-    with pytest.raises(ValueError, match="Invalid tool name or version"):
+    with pytest.raises(PyPIFallback, match="Invalid tool name or version"):
         install_tool(tool_name, version, str(tmp_path), True)
     with pytest.raises(ValueError, match="Invalid tool name or version"):
         uninstall_tool(tool_name, version, str(tmp_path))

@@ -7,6 +7,7 @@ import pytest
 
 from clang_tools import suffix
 from clang_tools.main import get_parser, main
+from clang_tools.util import PyPIFallback
 
 # ---------------------------------------------------------------------------
 #  Parser – install subcommand
@@ -522,7 +523,7 @@ def test_main_install_fallback_failure(monkeypatch: pytest.MonkeyPatch, capsys):
     """The exit code is 1 when both the binary and the wheel install fail."""
 
     def fail(*args):
-        raise OSError("network is down")
+        raise PyPIFallback("network is down")
 
     monkeypatch.setattr("clang_tools.main.install_clang_tools", fail)
     monkeypatch.setattr("clang_tools.main._wheel_install", lambda tools, version: 1)
@@ -539,7 +540,7 @@ def test_main_install_fallback_binary_only_tool(
     """A tool without wheels is reported when its binary install fails."""
 
     def fail(*args):
-        raise ValueError("File was corrupted during download")
+        raise PyPIFallback("File was corrupted during download")
 
     monkeypatch.setattr("clang_tools.main.install_clang_tools", fail)
     monkeypatch.setattr(
@@ -549,6 +550,31 @@ def test_main_install_fallback_binary_only_tool(
     err = capsys.readouterr().err
     assert "falling back to wheel" in err
     assert "Unknown tool 'clang-query'" in err
+
+
+@pytest.mark.parametrize(
+    "error",
+    [OSError("disk is full"), ValueError("a bug"), KeyError("url")],
+    ids=["os-error", "value-error", "key-error"],
+)
+def test_main_install_other_error_stops(
+    monkeypatch: pytest.MonkeyPatch, error: Exception
+):
+    """Only `PyPIFallback` triggers the wheel install; other errors stop the command."""
+
+    def fail(*args):
+        raise error
+
+    monkeypatch.setattr("clang_tools.main.install_clang_tools", fail)
+    monkeypatch.setattr(
+        "clang_tools.main._wheel_install",
+        lambda tools, version: pytest.fail("the wheel should not be installed"),
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["clang-tools", "install", "clang-format", "--version", "18"]
+    )
+    with pytest.raises(type(error)):
+        main()
 
 
 def test_main_uninstall_arguments(monkeypatch: pytest.MonkeyPatch):

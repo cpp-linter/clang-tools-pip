@@ -10,12 +10,25 @@ import json
 import platform
 import urllib.request
 from functools import cache
-from http.client import HTTPResponse
+from http.client import HTTPException, HTTPResponse
 from pathlib import Path
-from urllib.error import HTTPError
 
 #: Seconds to wait for the server to accept the connection or send more data.
 DOWNLOAD_TIMEOUT = 30
+#: The errors a failed download can raise. An invalid URL or a response that can't be
+#: decoded is a ValueError. HTTP errors, timeouts and dropped connections are OSErrors.
+#: A malformed HTTP response is an http.client.HTTPException.
+DOWNLOAD_ERRORS = (ValueError, OSError, HTTPException)
+
+
+class PyPIFallback(Exception):
+    """The static binary can't be installed, so the wheel from PyPI is tried instead.
+
+    Raise this only for failures where installing the wheel is a sensible next step,
+    such as a version or tool that has no static binary, or a download that failed.
+    When it is caused by another exception, raise it ``from`` that exception. Any
+    other error stops the ``clang-tools install`` command.
+    """
 
 
 def check_install_arch() -> str:
@@ -47,21 +60,23 @@ def check_install_os() -> str:
     return this_os
 
 
-def download_file(url: str, file_name: str, no_progress_bar: bool) -> str | None:
+def download_file(url: str, file_name: str, no_progress_bar: bool) -> str:
     """Download the given file_name from the given url.
 
     :param url: The URL to download from.
     :param file_name: The file name to download.
 
-    :returns: The path to downloaded file if  successful, otherwise `None`.
+    :returns: The path to downloaded file.
+    :raises PyPIFallback: If the file could not be downloaded completely.
     """
     try:
         response: HTTPResponse = urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT)
-    except (ValueError, HTTPError):
-        return None
+    except DOWNLOAD_ERRORS as exc:
+        raise PyPIFallback(f"Failed to download {url}: {exc}") from exc
 
     if response.status != 200:
-        return None
+        response.close()
+        raise PyPIFallback(f"Failed to download {url}: HTTP status {response.status}")
     assert response.length is not None
     length = response.length
     buffer = b""
@@ -77,10 +92,17 @@ def download_file(url: str, file_name: str, no_progress_bar: bool) -> str | None
             reset_pos = "" if not buffer else "\033[F"
             print(reset_pos + display)
         remaining = length - len(buffer)
-        data = response.read(min(remaining, block_size))
+        try:
+            data = response.read(min(remaining, block_size))
+        except DOWNLOAD_ERRORS as exc:
+            response.close()
+            raise PyPIFallback(f"Failed to download {url}: {exc}") from exc
         if not data:  # the connection closed before the whole file arrived
             response.close()
-            return None
+            raise PyPIFallback(
+                f"Failed to download {url}: the connection closed after"
+                f" {len(buffer)} of {length} bytes"
+            )
         buffer += data
     response.close()
     if not no_progress_bar:
@@ -102,21 +124,22 @@ def fetch_index(url: str) -> dict:
     :param url: The URL of the index.
 
     :returns: The parsed index.
+    :raises PyPIFallback: If the index could not be downloaded or is not usable.
     """
     try:
         with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT) as response:
             index = json.loads(response.read().decode(encoding="utf-8"))
-    except ValueError as exc:  # an invalid URL or invalid JSON
-        raise OSError(f"Failed to download the index from {url}: {exc}") from exc
+    except DOWNLOAD_ERRORS as exc:  # invalid JSON is a ValueError too
+        raise PyPIFallback(f"Failed to download the index from {url}: {exc}") from exc
     if not isinstance(index, dict):
-        raise OSError(f"The index at {url} is not a JSON object.")
+        raise PyPIFallback(f"The index at {url} is not a JSON object.")
     if index.get("schema_version") != INDEX_SCHEMA_VERSION:
-        raise OSError(
+        raise PyPIFallback(
             f"Unsupported index schema version {index.get('schema_version')!r}"
             f" at {url}. Please upgrade clang-tools."
         )
     if not isinstance(index.get("versions"), dict):
-        raise OSError(f"The index at {url} has no versions.")
+        raise PyPIFallback(f"The index at {url} has no versions.")
     return index
 
 
@@ -143,6 +166,8 @@ def get_sha_checksum(binary_url: str) -> str:
 
     :returns: A `str` containing the SHA512 checksum (hash only) for the
         given binary.
+    :raises PyPIFallback: If ``SHA512SUMS`` could not be downloaded or does not list
+        the binary.
     """
     # Extract the binary filename from the URL (last path segment)
     bin_filename = binary_url.rsplit("/", 1)[-1]
@@ -151,7 +176,10 @@ def get_sha_checksum(binary_url: str) -> str:
     base_url = binary_url.rsplit("/", 1)[0]
     sha_url = f"{base_url}/SHA512SUMS"
 
-    content = _fetch_sha512sums(sha_url)
+    try:
+        content = _fetch_sha512sums(sha_url)
+    except DOWNLOAD_ERRORS as exc:
+        raise PyPIFallback(f"Failed to download {sha_url}: {exc}") from exc
 
     # Parse SHA512SUMS to find the line matching our binary.
     # Format: "<sha512hash>  <filename>" (hash and filename separated
@@ -162,7 +190,9 @@ def get_sha_checksum(binary_url: str) -> str:
         if len(parts) == 2 and parts[1] == bin_filename:
             return parts[0]
 
-    raise ValueError(f"Could not find SHA512 checksum for {bin_filename} in SHA512SUMS")
+    raise PyPIFallback(
+        f"Could not find SHA512 checksum for {bin_filename} in SHA512SUMS"
+    )
 
 
 def verify_sha512(checksum: str, exe: bytes) -> bool:

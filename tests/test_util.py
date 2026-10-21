@@ -1,6 +1,7 @@
 """Tests related to the utility functions."""
 
 import hashlib
+import http.client
 import urllib.request
 from pathlib import Path, PurePath
 from unittest.mock import Mock
@@ -11,6 +12,7 @@ import pytest
 from clang_tools import index_url, install_arch, install_os, suffix, util
 from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import (
+    PyPIFallback,
     Version,
     check_install_arch,
     check_install_os,
@@ -73,14 +75,14 @@ def test_get_sha(monkeypatch: pytest.MonkeyPatch, fake_release):
 
 
 def test_get_sha_value_error(monkeypatch: pytest.MonkeyPatch):
-    """Test get_sha_checksum raises ValueError when the binary is not found
+    """Test get_sha_checksum triggers the PyPI fallback when the binary is not found
     in the SHA512SUMS file."""
     monkeypatch.setattr(
         "clang_tools.util._fetch_sha512sums",
         Mock(return_value="somehash  some-other-file"),
     )
     with pytest.raises(
-        ValueError, match="Could not find SHA512 checksum for my-binary"
+        PyPIFallback, match="Could not find SHA512 checksum for my-binary"
     ):
         get_sha_checksum("https://example.com/release/my-binary")
 
@@ -137,36 +139,37 @@ def test_verify_sha512_with_filename_in_checksum():
     assert verify_sha512(checksum, data)
 
 
-def test_download_file_http_error(monkeypatch: pytest.MonkeyPatch):
-    """Tests that download_file returns None on HTTP error."""
+@pytest.mark.parametrize(
+    "error",
+    [
+        HTTPError("http://fake", 404, "Not Found", {}, None),
+        ValueError("invalid URL"),
+        TimeoutError("timed out"),
+        http.client.RemoteDisconnected("closed"),
+    ],
+    ids=["http-error", "invalid-url", "timeout", "disconnected"],
+)
+def test_download_file_error(monkeypatch: pytest.MonkeyPatch, error: Exception):
+    """Tests that a failed request triggers the PyPI fallback, keeping the cause."""
     monkeypatch.setattr(
-        "clang_tools.util.urllib.request.urlopen",
-        Mock(side_effect=HTTPError("http://fake", 404, "Not Found", {}, None)),
+        "clang_tools.util.urllib.request.urlopen", Mock(side_effect=error)
     )
-    result = download_file("http://fake/file.tar.gz", "file.tar.gz", True)
-    assert result is None
-
-
-def test_download_file_value_error(monkeypatch: pytest.MonkeyPatch):
-    """Tests that download_file returns None on ValueError (invalid URL)."""
-    monkeypatch.setattr(
-        "clang_tools.util.urllib.request.urlopen",
-        Mock(side_effect=ValueError("invalid URL")),
-    )
-    result = download_file("not-a-url", "file.tar.gz", True)
-    assert result is None
+    with pytest.raises(PyPIFallback, match="Failed to download") as exc_info:
+        download_file("http://fake/file.tar.gz", "file.tar.gz", True)
+    assert exc_info.value.__cause__ is error
 
 
 def test_download_file_bad_status(monkeypatch: pytest.MonkeyPatch):
-    """Tests that download_file returns None when HTTP status is not 200."""
+    """Tests that a status other than 200 triggers the PyPI fallback."""
     mock_response = Mock()
-    mock_response.status = 404
+    mock_response.status = 204
     monkeypatch.setattr(
         "clang_tools.util.urllib.request.urlopen",
         Mock(return_value=mock_response),
     )
-    result = download_file("http://fake/file.tar.gz", "file.tar.gz", True)
-    assert result is None
+    with pytest.raises(PyPIFallback, match="HTTP status 204"):
+        download_file("http://fake/file.tar.gz", "file.tar.gz", True)
+    mock_response.close.assert_called_once()
 
 
 def test_download_file_with_progress_bar(
@@ -283,10 +286,11 @@ def test_get_sha_checksum_fetches_sums_once(fake_release):
 
 
 def test_get_sha_checksum_missing_sums_file(fake_release):
-    """Tests that a release without a SHA512SUMS file is an error."""
+    """Tests that a release without a SHA512SUMS file triggers the PyPI fallback."""
     fake_release.serve("SHA512SUMS", b"Not Found", status=404)
-    with pytest.raises(HTTPError):
+    with pytest.raises(PyPIFallback, match="SHA512SUMS") as exc_info:
         get_sha_checksum("https://example.com/releases/download/tag/clang-format-12")
+    assert isinstance(exc_info.value.__cause__, HTTPError)
 
 
 def test_verify_sha512_empty_checksum():
@@ -314,7 +318,30 @@ def test_download_file_truncated(tmp_path: Path, fake_release):
     url = clang_tools_binary_url("clang-format", "21")
     fake_release.serve(url.rsplit("/", 1)[-1], b"x" * 40, length=100)
     destination = tmp_path / "downloaded"
-    assert download_file(url, str(destination), True) is None
+    with pytest.raises(PyPIFallback, match="closed after 40 of 100 bytes"):
+        download_file(url, str(destination), True)
+    assert not destination.exists()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [http.client.IncompleteRead(b"x"), ConnectionResetError("reset")],
+    ids=["incomplete-read", "connection-reset"],
+)
+def test_download_file_read_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, error: Exception
+):
+    """Tests that an error while reading the response triggers the PyPI fallback."""
+    response = Mock(status=200, length=100)
+    response.read.side_effect = error
+    monkeypatch.setattr(
+        "clang_tools.util.urllib.request.urlopen", Mock(return_value=response)
+    )
+    destination = tmp_path / "downloaded"
+    with pytest.raises(PyPIFallback, match="Failed to download") as exc_info:
+        download_file("http://fake/file", str(destination), True)
+    assert exc_info.value.__cause__ is error
+    response.close.assert_called_once()
     assert not destination.exists()
 
 
@@ -329,22 +356,22 @@ def test_download_file_small(tmp_path: Path, fake_release, size: int):
 
 
 def test_fetch_index_invalid_url():
-    """Test that an invalid index URL is an OSError (so the CLI falls back)."""
-    with pytest.raises(OSError, match="Failed to download the index"):
+    """Test that an invalid index URL triggers the PyPI fallback."""
+    with pytest.raises(PyPIFallback, match="Failed to download the index"):
         fetch_index("not-a-valid-url")
 
 
 def test_fetch_index_invalid_json(fake_release):
-    """Test that an index that is not JSON is an OSError."""
+    """Test that an index that is not JSON triggers the PyPI fallback."""
     fake_release.serve("index.json", b"<html>not json</html>")
-    with pytest.raises(OSError, match="Failed to download the index"):
+    with pytest.raises(PyPIFallback, match="Failed to download the index"):
         fetch_index("https://example.com/releases/download/x/index.json")
 
 
 def test_fetch_index_unsupported_schema(fake_release):
     """Test that a newer index schema asks the user to upgrade."""
     fake_release.serve("index.json", b'{"schema_version": 2, "versions": {}}')
-    with pytest.raises(OSError, match="Please upgrade clang-tools"):
+    with pytest.raises(PyPIFallback, match="Please upgrade clang-tools"):
         fetch_index("https://example.com/releases/download/x/index.json")
 
 
@@ -354,9 +381,9 @@ def test_fetch_index_unsupported_schema(fake_release):
     ids=["not-an-object", "no-versions"],
 )
 def test_fetch_index_malformed(fake_release, body: bytes, message: str):
-    """Test that a malformed index is an OSError (so the CLI falls back)."""
+    """Test that a malformed index triggers the PyPI fallback."""
     fake_release.serve("index.json", body)
-    with pytest.raises(OSError, match=message):
+    with pytest.raises(PyPIFallback, match=message):
         fetch_index("https://example.com/releases/download/x/index.json")
 
 

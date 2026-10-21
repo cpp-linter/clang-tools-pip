@@ -21,7 +21,7 @@ import sys
 
 from . import RESET_COLOR, YELLOW
 from .install import install_clang_tools, uninstall_clang_tools
-from .util import Version
+from .util import PyPIFallback, Version
 
 #: Known tool names commonly installed as Python wheels.
 #: With dynamic PyPI version resolution, any clang tool available on PyPI
@@ -62,9 +62,10 @@ def _wheel_install(tools: list[str], version: str | None) -> int:
 def _handle_install(args: argparse.Namespace) -> int:
     """Handle ``install`` subcommand — auto-detect backend.
 
-    When ``--version`` is given, binary (static build) is tried first;
-    on failure it falls back to wheel (PyPI pip install).
-    Without ``--version``, only wheel is possible.
+    When ``--version`` is given, binary (static build) is tried first. If it
+    raises `PyPIFallback`, the wheel (PyPI pip install) is installed instead;
+    any other error stops the command. Without ``--version``, only wheel is
+    possible.
     """
     tools = args.tools
     version = args.explicit_version
@@ -78,7 +79,7 @@ def _handle_install(args: argparse.Namespace) -> int:
             try:
                 install_clang_tools(v, tools, directory, overwrite, no_progress_bar)
                 return 0
-            except (OSError, ValueError) as exc:
+            except PyPIFallback as exc:
                 print(
                     f"{YELLOW}Binary install failed"
                     f" ({exc}), falling back to"

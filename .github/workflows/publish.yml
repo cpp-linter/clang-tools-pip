@@ -3,7 +3,7 @@ name: Upload Python Package
 # Publishing a GitHub release uploads the package to PyPI. Running this
 # workflow by hand on main uploads it to TestPyPI. Both use PyPI trusted
 # publishing (OIDC), so no API token is stored in this repository; the
-# publish jobs run in the "pypi" / "testpypi" environments.
+# publish jobs run in the "release" / "testpypi" environments.
 
 on:
   release:
@@ -74,7 +74,8 @@ jobs:
       github.repository_owner == 'cpp-linter'
     runs-on: ubuntu-latest
     environment:
-      name: pypi
+      # must match the environment set in the PyPI trusted publisher
+      name: release
       url: https://pypi.org/project/clang-tools/
     permissions:
       id-token: write # trusted publishing

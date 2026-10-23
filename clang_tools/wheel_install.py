@@ -20,7 +20,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 from . import install_arch, install_os, pypi_url, suffix
-from .install import binary_file_name, data_dir, link_binary, make_dir
+from .install import RE_ENTRY_NAME, binary_file_name, data_dir, link_binary, make_dir
 from .util import (
     DOWNLOAD_ERRORS,
     DOWNLOAD_TIMEOUT,
@@ -30,6 +30,15 @@ from .util import (
     major_version,
     version_matches,
 )
+
+#: The tools with a wheel on PyPI, and the import name of each wheel's package. No
+#: other project is downloaded, even if PyPI has one with the tool's name.
+WHEEL_TOOLS = {
+    "clang-format": "clang_format",
+    "clang-tidy": "clang_tidy",
+    "clang-include-cleaner": "clang_include_cleaner",
+    "clang-apply-replacements": "clang_apply_replacements",
+}
 
 #: The glibc versions of the legacy ``manylinux`` tags.
 LEGACY_MANYLINUX = {
@@ -145,7 +154,9 @@ def extract_wheel(wheel: Path, package: str, destination: Path) -> None:
             parts = PurePosixPath(info.filename.removeprefix(prefix)).parts
             if parts[0] not in ("bin", "lib"):
                 continue
-            if ".." in parts:
+            if not all(
+                RE_ENTRY_NAME.fullmatch(part) and part != ".." for part in parts
+            ):
                 raise SystemExit(f"Unexpected entry {info.filename!r} in {wheel.name}")
             target = destination.joinpath(*parts)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -167,17 +178,18 @@ def install_wheel(
 
     :returns: The installed version.
     """
-    try:
-        binary_file_name(tool, "0")  # the tool name must be a plain file name
-    except ValueError as exc:
-        raise SystemExit(str(exc)) from exc
+    if tool not in WHEEL_TOOLS:
+        raise SystemExit(
+            f"{tool} has no wheel on PyPI. Wheels are installed for "
+            f"{', '.join(WHEEL_TOOLS)}."
+        )
     resolved, file = find_wheel(tool, version)
     prefix = data_dir() / f"pypi-{tool}-{resolved}"
     exe = prefix / "bin" / f"{tool}{suffix}"
     if not exe.is_file():
         make_dir(data_dir())
         with tempfile.TemporaryDirectory(dir=data_dir()) as work_dir:
-            wheel = Path(work_dir, f"{tool}.whl")
+            wheel = Path(work_dir, "download.whl")
             try:
                 download_file(file["url"], str(wheel), no_progress_bar)
             except PyPIFallback as exc:
@@ -189,7 +201,7 @@ def install_wheel(
                     f" {file['url']}"
                 )
             extracted = Path(work_dir, "extracted")
-            extract_wheel(wheel, tool.replace("-", "_"), extracted)
+            extract_wheel(wheel, WHEEL_TOOLS[tool], extracted)
             if not (extracted / "bin" / exe.name).is_file():
                 raise SystemExit(f"{file['filename']} has no {exe.name} executable.")
             try:

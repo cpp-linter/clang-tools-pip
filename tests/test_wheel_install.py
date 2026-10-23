@@ -221,17 +221,23 @@ def test_install_wheel_without_executable(wheels: FakeRelease, tmp_path: Path):
         install_wheel("clang-format", "6", str(tmp_path), True)
 
 
-def test_install_wheel_invalid_tool(wheels: FakeRelease, tmp_path: Path):
-    """Test that a tool name can't point outside the install directory."""
-    with pytest.raises(SystemExit, match="Invalid tool name"):
-        install_wheel("../clang-format", None, str(tmp_path), True)
+@pytest.mark.parametrize("tool", ["clang-query", "../clang-format"])
+def test_install_wheel_unknown_tool(wheels: FakeRelease, tmp_path: Path, tool: str):
+    """Test that only the known wheels are downloaded, not any project on PyPI."""
+    wheels.add_wheel(tool, "21.1.8")
+    with pytest.raises(SystemExit, match=f"{tool} has no wheel on PyPI"):
+        install_wheel(tool, None, str(tmp_path), True)
+    assert wheels.requests == []
 
 
-def test_extract_wheel_rejects_parent_dirs(tmp_path: Path):
+@pytest.mark.parametrize(
+    "name", ["bin/../../../escape", "bin/C:/escape"], ids=["dotdot", "drive"]
+)
+def test_extract_wheel_rejects_parent_dirs(tmp_path: Path, name: str):
     """Test that a wheel can't write outside the directory it is extracted to."""
     wheel = tmp_path / "x.whl"
     with zipfile.ZipFile(wheel, "w") as archive:
-        archive.writestr("clang_format/data/bin/../../../escape", "x")
+        archive.writestr(f"clang_format/data/{name}", "x")
     with pytest.raises(SystemExit, match="Unexpected entry"):
         extract_wheel(wheel, "clang_format", tmp_path / "out")
     assert not (tmp_path / "escape").exists()

@@ -146,7 +146,7 @@ def test_path_warning(
     """Test the messages when a tool is neither a static binary nor on PyPI."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
-    with pytest.raises(SystemExit, match="Can't get the releases of x from"):
+    with pytest.raises(SystemExit, match="x has no wheel on PyPI"):
         install_clang_tools("12", ["x"], ".", False, False)
     result = capsys.readouterr()
     assert "directory is not in your environment variable PATH" in result.out

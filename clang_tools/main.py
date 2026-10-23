@@ -6,14 +6,14 @@ The unified CLI entry point for installing and managing clang-tools.
 
 Usage::
 
-    # Install one or more tools (auto-detect: binary→wheel)
-    clang-tools install clang-format clang-tidy --version 18
+    # Install one or more tools (static binary, else the wheel from PyPI)
+    clang-tools install clang-format clang-tidy --version 21
 
-    # Install latest version (wheel only, no version needed)
+    # Install the newest version
     clang-tools install clang-format
 
     # Uninstall
-    clang-tools uninstall clang-format --version 12
+    clang-tools uninstall clang-format --version 21
 """
 
 import argparse
@@ -21,81 +21,26 @@ import sys
 
 from . import RESET_COLOR, YELLOW
 from .install import install_clang_tools, uninstall_clang_tools
-from .util import PyPIFallback, Version
-
-#: Known tool names commonly installed as Python wheels.
-#: With dynamic PyPI version resolution, any clang tool available on PyPI
-#: can be installed, but these are the canonical ones.
-WHEEL_TOOLS = {
-    "clang-format",
-    "clang-tidy",
-    "clang-include-cleaner",
-    "clang-apply-replacements",
-}
-
-
-def _wheel_install(tools: list[str], version: str | None) -> int:
-    """Install tool(s) as Python wheels.
-
-    Tool versions are resolved dynamically from the PyPI JSON API —
-    no hardcoded list is maintained in-tree.
-
-    :returns: exit code (0 on success, 1 on failure).
-    """
-    from .wheel_install import resolve_wheel_install
-
-    ok = True
-    for tool in tools:
-        path, error = resolve_wheel_install(tool, version)
-        if error is not None:
-            print(f"{YELLOW}{error}{RESET_COLOR}", file=sys.stderr)
-            ok = False
-        elif path:
-            version_str = f" version {version}" if version else " latest version"
-            print(f"{tool}{version_str} installed at: {path}")
-        else:
-            print(f"Failed to install {tool}", file=sys.stderr)
-            ok = False
-    return 0 if ok else 1
+from .util import RE_VERSION
 
 
 def _handle_install(args: argparse.Namespace) -> int:
-    """Handle ``install`` subcommand — auto-detect backend.
+    """Handle the ``install`` subcommand.
 
-    When ``--version`` is given, binary (static build) is tried first. If it
-    raises `PyPIFallback`, the wheel (PyPI pip install) is installed instead;
-    any other error stops the command. Without ``--version``, only wheel is
-    possible.
+    :returns: exit code (0 on success, 1 on failure).
     """
-    tools = args.tools
     version = args.explicit_version
-    directory = args.directory
-    overwrite = args.overwrite
-    no_progress_bar = args.no_progress_bar
-
-    if version is not None:
-        v = Version(version)
-        if v.info != (0, 0, 0):
-            try:
-                install_clang_tools(v, tools, directory, overwrite, no_progress_bar)
-                return 0
-            except PyPIFallback as exc:
-                print(
-                    f"{YELLOW}Binary install failed"
-                    f" ({exc}), falling back to"
-                    f" wheel...{RESET_COLOR}",
-                    file=sys.stderr,
-                )
-    # fall back to wheel
-    for tool in tools:
-        if tool not in WHEEL_TOOLS:
-            print(
-                f"{YELLOW}Unknown tool '{tool}'. Expected one of: "
-                f"{', '.join(sorted(WHEEL_TOOLS))}{RESET_COLOR}",
-                file=sys.stderr,
-            )
-            return 1
-    return _wheel_install(tools, version)
+    if version is not None and not RE_VERSION.fullmatch(version):
+        print(
+            f"{YELLOW}Invalid version {version!r}. Give a version such as 21"
+            f" or 21.1.8.{RESET_COLOR}",
+            file=sys.stderr,
+        )
+        return 1
+    install_clang_tools(
+        version, args.tools, args.directory, args.overwrite, args.no_progress_bar
+    )
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -123,8 +68,9 @@ def get_parser() -> argparse.ArgumentParser:
         dest="explicit_version",
         default=None,
         metavar="VER",
-        help="Version to install (e.g. 18). When specified, binary install"
-        " is tried first, falling back to wheel.",
+        help="Version to install, such as 21 or 21.1.8 (default: the newest)."
+        " The static binary is installed if there is one for this version,"
+        " otherwise the wheel from PyPI.",
     )
     install_p.add_argument(
         "-d",

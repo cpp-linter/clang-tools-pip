@@ -13,13 +13,14 @@ import io
 import json
 import tarfile
 import urllib.request
+import zipfile
 from collections.abc import Iterator
 from pathlib import Path
 from urllib.error import HTTPError
 
 import pytest
 
-from clang_tools import MAX_VERSION, MIN_VERSION, index_url, util
+from clang_tools import MAX_VERSION, MIN_VERSION, index_url, pypi_url, suffix, util
 
 #: The tools published by the static binaries release (see the README).
 RELEASED_TOOLS = (
@@ -95,6 +96,29 @@ def headers_archive(major: int) -> bytes:
     )
 
 
+#: The base URL of the fake wheel downloads.
+WHEELS_URL = "https://files.pythonhosted.org/packages"
+#: The platform tag of the fake wheels. Tests make it the only compatible one.
+WHEEL_TAG = "test_platform"
+
+
+def make_wheel(tool: str, version: str, headers: bool = False) -> bytes:
+    """A wheel laid out like the clang tools wheels on PyPI."""
+    package = tool.replace("-", "_")
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as wheel:
+        wheel.writestr(f"{package}/__init__.py", "")
+        wheel.writestr(f"{package}/data/bin/", "")
+        wheel.writestr(f"{package}/data/bin/{tool}{suffix}", f"{tool} {version}\n")
+        wheel.writestr(f"{package}/data/bin/{tool}-diff.py", "print()\n")
+        if headers:
+            include = f"{package}/data/lib/clang/{version.split('.')[0]}/include"
+            wheel.writestr(f"{include}/stddef.h", "/* stddef.h */\n")
+        wheel.writestr(f"{package}/data/share/README", "not installed\n")
+        wheel.writestr(f"{package}-{version}.dist-info/RECORD", "")
+    return buffer.getvalue()
+
+
 #: The base URL of the fake per-version releases.
 RELEASES_URL = "https://github.com/cpp-linter/clang-tools-static-binaries/releases"
 
@@ -133,6 +157,35 @@ class FakeRelease:
         #: Replaces the generated ``index.json`` content when not `None`.
         self.index: dict | None = None
         self._served: dict[str, tuple[bytes, int, int | None]] = {}
+        #: The releases of each project on the fake PyPI, as in its JSON API.
+        self.pypi: dict[str, dict[str, list[dict]]] = {}
+        self._wheels: dict[str, bytes] = {}
+
+    def add_wheel(
+        self,
+        tool: str,
+        version: str,
+        tag: str = WHEEL_TAG,
+        data: bytes | None = None,
+        **info,
+    ) -> dict:
+        """Publish a wheel on the fake PyPI and return its file information."""
+        data = (
+            make_wheel(tool, version, headers=tool == "clang-tidy")
+            if data is None
+            else data
+        )
+        name = f"{tool.replace('-', '_')}-{version}-py2.py3-none-{tag}.whl"
+        self._wheels[name] = data
+        file = {
+            "filename": name,
+            "url": f"{WHEELS_URL}/{name}",
+            "digests": {"sha256": hashlib.sha256(data).hexdigest()},
+            "yanked": False,
+            **info,
+        }
+        self.pypi.setdefault(tool, {}).setdefault(version, []).append(file)
+        return file
 
     @staticmethod
     def published(name: str) -> bytes:
@@ -162,6 +215,16 @@ class FakeRelease:
             raise ValueError(f"unknown url type: {url!r}")
         if url == index_url:
             return FakeResponse(json.dumps(self._index()).encode())
+        if url.startswith(f"{pypi_url}/") and url.endswith("/json"):
+            project = url.split("/")[-2]
+            if project not in self.pypi:
+                raise HTTPError(url, 404, "Not Found", {}, None)
+            return FakeResponse(json.dumps({"releases": self.pypi[project]}).encode())
+        if url.startswith(f"{WHEELS_URL}/"):
+            name = url.rsplit("/", 1)[-1]
+            if name in self._served:
+                return FakeResponse(self._served[name][0])
+            return FakeResponse(self._wheels[name])
         if "/releases/download/" not in url:
             raise AssertionError(f"unexpected network access in a test: {url}")
         name = url.rsplit("/", 1)[-1]
@@ -184,7 +247,9 @@ class FakeRelease:
                 tool_version, platform = name.removesuffix(".exe").rsplit("_", 1)
                 tool, version = tool_version.rsplit("-", 1)
                 tag = f"llvm-{version}.1.0"
-                entry = versions.setdefault(version, {"tag": tag, "tools": {}})
+                entry = versions.setdefault(
+                    version, {"version": f"{version}.1.0", "tag": tag, "tools": {}}
+                )
                 entry["tools"].setdefault(tool, {})[platform] = {
                     "name": name,
                     "url": f"{RELEASES_URL}/download/{tag}/{name}",

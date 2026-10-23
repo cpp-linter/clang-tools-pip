@@ -31,11 +31,12 @@ from . import (
 )
 from .util import (
     PyPIFallback,
-    Version,
     download_file,
     fetch_index,
     get_sha_checksum,
+    major_version,
     verify_sha512,
+    version_matches,
 )
 
 #: This pattern is designed to match only the major version number.
@@ -46,17 +47,17 @@ RE_FILE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*")
 RE_ENTRY_NAME = re.compile(r"[A-Za-z0-9_.+-]+")
 
 
-def is_installed(tool_name: str, version: Version) -> Path | None:
+def is_installed(tool_name: str, version: str) -> Path | None:
     """Detect if the specified tool is installed.
 
     :param tool_name: The name of the specified tool.
-    :param version: The specific major version to expect.
+    :param version: The version to expect, such as ``21`` or ``21.1.8``.
 
     :returns: The path to the detected tool (if found), otherwise `None`.
     """
     exe_name = (
         f"{tool_name}"
-        + (f"-{version.info[0]}" if install_os != "windows" else "")
+        + (f"-{major_version(version)}" if install_os != "windows" else "")
         + suffix
     )
     try:
@@ -81,9 +82,8 @@ def is_installed(tool_name: str, version: Version) -> Path | None:
         return None  # failed to locate the binary
     path = Path(exe_path).resolve()
     print("at", str(path))
-    ver_tuple = ver_match.split(".")
-    if ver_tuple is None or ver_tuple[0] != str(version.info[0]):
-        return None  # version is unknown or not the desired major release
+    if not version_matches(version, ver_match):
+        return None  # not the desired version
     return path
 
 
@@ -116,6 +116,9 @@ class Binary(NamedTuple):
     sha512: str
     #: The tag of the release that holds the binary.
     tag: str
+    #: The LLVM version of the binary, such as ``21.1.8`` (only the major version
+    #: for a release picked with ``CLANG_TOOLS_TAG``).
+    version: str
     #: The download URL and SHA512 checksum of the release's clang resource headers,
     #: or `None` if the release has none.
     headers: tuple[str, str] | None
@@ -130,9 +133,14 @@ def find_binary(tool: str, version: str) -> Binary:
     :returns: The binary's download URL, checksum and release.
     :raises PyPIFallback: If the binary is not available.
     """
-    major = version.split(".", 1)[0]
+    major = major_version(version)
     if binary_tag:
-        url = clang_tools_binary_url(tool, version)
+        if version != major:
+            raise PyPIFallback(
+                f"{version} can't be checked in a release picked with CLANG_TOOLS_TAG,"
+                " which has one binary per major version."
+            )
+        url = clang_tools_binary_url(tool, major)
         base_url = url.rsplit("/", 1)[0]
         headers_url = f"{base_url}/clang-resource-headers-{major}.tar.gz"
         try:
@@ -142,12 +150,18 @@ def find_binary(tool: str, version: str) -> Binary:
             )
         except PyPIFallback:  # older releases have no headers
             headers = None
-        return Binary(url, get_sha_checksum(url), binary_tag, headers)
+        return Binary(url, get_sha_checksum(url), binary_tag, major, headers)
     entry = fetch_index(index_url)["versions"].get(major)
     if entry is None:
         raise PyPIFallback(
             f"{major} is not available in static binary builds. "
             f"Available versions: {', '.join(map(str, available_versions()))}."
+        )
+    full_version = entry.get("version", major)
+    if not version_matches(version, full_version):
+        raise PyPIFallback(
+            f"The static binaries of LLVM {major} are version {full_version},"
+            f" not {version}."
         )
     binary = entry["tools"].get(tool, {}).get(platform_name())
     if binary is None:
@@ -157,7 +171,7 @@ def find_binary(tool: str, version: str) -> Binary:
         )
     archive = entry.get("resource_headers")
     headers = None if archive is None else (archive["url"], archive["sha512"])
-    return Binary(binary["url"], binary["sha512"], entry["tag"], headers)
+    return Binary(binary["url"], binary["sha512"], entry["tag"], full_version, headers)
 
 
 def clang_tools_binary_url(tool: str, version: str) -> str:
@@ -414,7 +428,8 @@ def install_tool(
     it, named like ``clang-tidy-21``.
 
     :param tool_name: The name of the clang-tool to install.
-    :param version: The version of the tools to install.
+    :param version: The version of the tool to install, such as ``21`` or ``21.1.8``.
+        The binary must be that version, but it is named by the major version.
     :param directory: The installation directory.
     :param no_progress_bar: A flag used to disable the downloads' progress bar.
 
@@ -422,14 +437,14 @@ def install_tool(
         in the data directory.
     :raises PyPIFallback: If the binary is not available or could not be downloaded.
     """
+    major = major_version(version)
     try:
-        file_name = binary_file_name(tool_name, version)
+        file_name = binary_file_name(tool_name, major)
     except ValueError as exc:  # no static binary has such a name
         raise PyPIFallback(str(exc)) from exc
     binary = find_binary(tool_name, version)
     if not RE_FILE_NAME.fullmatch(binary.tag):
         raise PyPIFallback(f"Invalid release tag {binary.tag!r}")
-    major = version.split(".", 1)[0]
     prefix = data_dir() / binary.tag
     stored = prefix / "bin" / f"{tool_name}-{major}{suffix}"
     downloaded = download_verified(binary.url, binary.sha512, stored, no_progress_bar)
@@ -443,7 +458,9 @@ def install_tool(
             )
         else:
             install_headers(binary.headers, prefix, major, no_progress_bar)
-    link_binary(stored, Path(directory, file_name))
+    destination = Path(directory, file_name)
+    link_binary(stored, destination)
+    print(f"Installed {tool_name} {binary.version} as {destination}")
     return downloaded
 
 
@@ -588,7 +605,7 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
     :param directory: The directory from which to remove the
         installed clang-tools.
     """
-    tool_path = Path(directory, binary_file_name(tool_name, version))
+    tool_path = Path(directory, binary_file_name(tool_name, major_version(version)))
     if os.path.lexists(tool_path):  # also a link whose target is gone
         print("Removing", tool_path.name, "from", str(tool_path.parent))
         tool_path.unlink()
@@ -627,23 +644,24 @@ def is_managed(path: Path, install_dir: str) -> bool:
 
 
 def install_clang_tools(
-    version: Version,
+    version: str | None,
     tools: list[str],
     directory: str,
     overwrite: bool,
     no_progress_bar: bool,
 ) -> None:
-    """Wraps functions used to individually install tools.
+    """Install clang tools, each as a static binary or else as a wheel from PyPI.
 
-    :param version: The version of the tools to install.
+    :param version: The version of the tools to install, such as ``21`` or
+        ``21.1.8``. `None` installs the newest version.
     :param tools: The specify tool(s) to install.
     :param directory: The installation directory.
     :param overwrite: A flag to indicate if the creation of a symlink has
         permission to overwrite an existing symlink.
     :param no_progress_bar: A flag used to disable the downloads' progress bar.
-    :raises PyPIFallback: If a tool's static binary is not available or could not be
-        downloaded, so the wheel should be tried instead.
     """
+    from .wheel_install import install_wheel
+
     install_dir = install_dir_name(directory)
     create_install_dir(install_dir)
     if not is_in_path(install_dir):
@@ -652,17 +670,22 @@ def install_clang_tools(
             f"directory is not in your environment variable PATH.{RESET_COLOR}",
         )
     for tool_name in tools:
-        native_bin = is_installed(tool_name, version)
-        if native_bin is not None and is_managed(native_bin, install_dir):
-            native_bin = None  # installed by clang-tools: check it and its headers
-        if native_bin is None:  # (not already installed)
-            # only a download needs the list of available versions
-            versions = available_versions()
-            if version.info[0] not in versions:
-                raise PyPIFallback(
-                    f"{version.info[0]} is not available in static binary builds. "
-                    f"Available versions: {', '.join(map(str, versions))}."
-                )
-            # `install_tool()` guarantees that the binary exists now
-            install_tool(tool_name, version.string, install_dir, no_progress_bar)
-        create_sym_link(tool_name, version.string, install_dir, overwrite, native_bin)
+        native_bin = None
+        try:
+            # the newest static binaries, when no version is given
+            wanted = version or str(max(available_versions()))
+            native_bin = is_installed(tool_name, wanted)
+            if native_bin is not None and is_managed(native_bin, install_dir):
+                native_bin = None  # installed by clang-tools: check it and its headers
+            if native_bin is None:  # (not already installed)
+                install_tool(tool_name, wanted, install_dir, no_progress_bar)
+        except PyPIFallback as exc:
+            print(
+                f"{YELLOW}No static binary of {tool_name} ({str(exc).rstrip('.')})."
+                f" Installing the wheel from PyPI instead.{RESET_COLOR}",
+                file=sys.stderr,
+            )
+            wanted = install_wheel(tool_name, version, install_dir, no_progress_bar)
+        create_sym_link(
+            tool_name, major_version(wanted), install_dir, overwrite, native_bin
+        )

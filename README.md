@@ -21,6 +21,7 @@ clang-tools install clang-format clang-tidy --version 21
 ```
 
 This installs the LLVM 21 static binaries `clang-format-21` and `clang-tidy-21`. Without
+`--version`, it installs the newest LLVM version. Without
 `--directory`, they go to `~/.local/bin` on Linux, and on macOS and Windows to the folder that
 holds the Python executable (the `bin` or `Scripts` folder of a virtual environment).
 A `--directory` that doesn't exist is created, but the parent folder(s) must exist.
@@ -36,14 +37,21 @@ A `--directory` that doesn't exist is created, but the parent folder(s) must exi
 
 ## Usage
 
-`clang-tools install` with `--version` installs the static binary. It falls back to the wheel when
-there is no static binary for that version, tool or platform, or when the download fails; any other
-error stops the command. Without `--version`, it installs the latest wheel. For a full list of CLI
-options, see the [CLI reference](https://cpp-linter.github.io/clang-tools-pip/cli_args/).
+`clang-tools install` installs the static binary of each tool. It falls back to the tool's wheel
+from PyPI when there is no static binary for that version, tool or platform, or when the download
+fails; any other error stops the command. Without `--version`, it installs the newest version. For a
+full list of CLI options, see the [CLI reference](https://cpp-linter.github.io/clang-tools-pip/cli_args/).
+
+`--version` can be a major version (`21`) or a full one (`21.1.8`). Either way the binary is named
+by its major version (`clang-format-21`). A full version must match exactly: if the static binary of
+LLVM 21 is another patch release, the wheel of that exact version is installed instead.
 
 ### Install binaries
 
 ```bash
+# Install the newest version
+clang-tools install clang-format
+
 # Install a specific version (binary first, falls back to the wheel)
 clang-tools install clang-format --version 21
 
@@ -94,24 +102,19 @@ the data directory; delete it to free the space.
 
 ### Install wheels
 
-Without `--version`, the latest wheel is installed from PyPI:
+When there is no static binary, `clang-tools` downloads the tool's wheel from PyPI, checks its
+SHA256 checksum and installs it like a static binary: a link in the install directory (e.g.
+`clang-format-10`) to the executable kept in the data directory. pip is not needed, so this works
+in environments made by `uv`, `uvx` and `pipx`, and `--directory` and `clang-tools uninstall` work
+the same as for binaries.
 
 ```bash
-# Install the latest clang-format wheel
-clang-tools install clang-format
-
-# Install the latest clang-tidy wheel
-clang-tools install clang-tidy
+# clang-format 10 has no static binary, so its wheel is installed
+clang-tools install clang-format --version 10
 ```
 
-Wheels are installed with pip into the Python environment that runs `clang-tools`, so that
-environment needs pip. `--directory` does not apply to wheels, and `clang-tools uninstall` does not
-remove them; use `pip uninstall <tool>`.
-
-> [!NOTE]
-> Wheel installation resolves the latest matching version from PyPI
-> (e.g. `--version 18` finds `18.1.8`). If you know the exact version,
-> `pip install <tool>==<version>` is equivalent and more direct.
+Set `CLANG_TOOLS_PYPI_URL` to use a mirror of the PyPI JSON API
+(default: `https://pypi.org/pypi`).
 
 ### Install the development version
 
@@ -146,8 +149,9 @@ For more details, visit [clang-tools-static-binaries](https://github.com/cpp-lin
 - [clang-include-cleaner](https://pypi.org/project/clang-include-cleaner/#history) (LLVM 22)
 - [clang-apply-replacements](https://pypi.org/project/clang-apply-replacements/#history) (LLVM 16 and later)
 
-Only these four tools have wheels, so the other tools need `--version`. Check the respective PyPI
-pages for available versions and platform support.
+Wheels are used for versions and platforms that have no static binary, such as clang-format 10 or
+Linux on i686, ppc64le and s390x. Check the respective PyPI pages for available versions and platform
+support.
 
 ## Contributing
 

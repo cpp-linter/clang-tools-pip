@@ -11,7 +11,7 @@ from unittest.mock import Mock
 from urllib.error import HTTPError
 
 import pytest
-from conftest import headers_dir_name, make_tar
+from conftest import WHEEL_TAG, headers_dir_name, make_tar
 
 from clang_tools import MAX_VERSION, MIN_VERSION, install_arch, install_os, suffix
 from clang_tools.install import (
@@ -36,7 +36,7 @@ from clang_tools.install import (
     uninstall_clang_tools,
     uninstall_tool,
 )
-from clang_tools.util import PyPIFallback, Version
+from clang_tools.util import PyPIFallback
 
 
 @pytest.mark.parametrize(
@@ -136,24 +136,22 @@ def test_install_clang_include_cleaner(
 @pytest.mark.parametrize("version", ["0"])
 def test_is_installed(version: str):
     """Test if installed version matches specified ``version``"""
-    tool_path = is_installed("clang-format", version=Version(version))
+    tool_path = is_installed("clang-format", version=version)
     assert tool_path is None
 
 
-def test_path_warning(capsys: pytest.CaptureFixture):
-    """Explicitly fail to download a set of tools to test the prompts that
-
-    1. warns users about using a dir not in env var PATH.
-    2. indicates a failure when the requested version is out of the supported range
-    """
-    try:
-        install_clang_tools(Version("0"), ["x"], ".", False, False)
-    except PyPIFallback as exc:
-        if not is_in_path(install_dir_name(".")):  # pragma: no cover
-            # this warning does not happen in an activated venv
-            result = capsys.readouterr()
-            assert "directory is not in your environment variable PATH" in result.out
-        assert "is not available in static binary builds" in exc.args[0]
+def test_path_warning(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture
+):
+    """Test the messages when a tool is neither a static binary nor on PyPI."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    with pytest.raises(SystemExit, match="Can't get the releases of x from"):
+        install_clang_tools("12", ["x"], ".", False, False)
+    result = capsys.readouterr()
+    assert "directory is not in your environment variable PATH" in result.out
+    assert "No static binary of x" in result.err
+    assert "Installing the wheel from PyPI instead" in result.err
 
 
 def test_install_tool_download_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -171,26 +169,66 @@ def test_install_tool_download_error(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 
 
 def test_install_clang_tools_download_error(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, data_root: Path
 ):
-    """Test that a download failure inside install_clang_tools triggers the fallback.
-
-    Covers the loop body (lines that iterate tools and call install_tool) by using a
-    valid version with a broken repo URL, so the version check passes but the download
-    fails.
-    """
+    """Test that a failed binary download installs the wheel from PyPI instead."""
     monkeypatch.setattr("clang_tools.install.binary_repo", "not-a-valid-url")
     monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
     monkeypatch.setattr("clang_tools.install.get_sha_checksum", lambda url: "0" * 128)
-    with pytest.raises(PyPIFallback, match="Failed to download"):
-        install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
+    monkeypatch.setattr("clang_tools.install.is_installed", lambda tool, ver: None)
+    monkeypatch.setattr(
+        "clang_tools.wheel_install.is_compatible", lambda tag: tag == WHEEL_TAG
+    )
+    fake_release.add_wheel("clang-format", "12.0.1")
+    install_clang_tools("12", ["clang-format"], str(tmp_path), False, True)
+    installed = tmp_path / f"clang-format-12{suffix}"
+    assert installed.resolve().is_relative_to(data_root / "pypi-clang-format-12.0.1")
+    assert (tmp_path / f"clang-format{suffix}").resolve() == installed.resolve()
+
+
+@pytest.mark.parametrize(
+    "version,source",
+    [(None, f"llvm-{MAX_VERSION}.1.0"), ("21.1.0", "llvm-21.1.0"), ("21.1.8", "pypi")],
+)
+def test_install_clang_tools_picks_source(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_release,
+    data_root: Path,
+    version: str | None,
+    source: str,
+):
+    """Test the newest static binary by default, and the wheel for another patch."""
+    monkeypatch.setattr("clang_tools.install.is_installed", lambda tool, ver: None)
+    monkeypatch.setattr(
+        "clang_tools.wheel_install.is_compatible", lambda tag: tag == WHEEL_TAG
+    )
+    fake_release.add_wheel("clang-tidy", "21.1.8")
+    install_clang_tools(version, ["clang-tidy"], str(tmp_path), False, True)
+    major = MAX_VERSION if version is None else 21
+    installed = (tmp_path / f"clang-tidy-{major}{suffix}").resolve()
+    assert installed.relative_to(data_root).parts[0].startswith(source)
+
+
+def test_install_clang_tools_index_unreachable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, capsys
+):
+    """Test that the newest wheel is installed when the index can't be fetched."""
+    monkeypatch.setattr("clang_tools.install.index_url", "not-a-valid-url")
+    monkeypatch.setattr(
+        "clang_tools.wheel_install.is_compatible", lambda tag: tag == WHEEL_TAG
+    )
+    fake_release.add_wheel("clang-format", "23.1.3")
+    install_clang_tools(None, ["clang-format"], str(tmp_path), False, True)
+    assert (tmp_path / f"clang-format-23{suffix}").is_symlink()
+    assert "Failed to download the index" in capsys.readouterr().err
 
 
 def test_is_installed_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Test is_installed when the tool exists and has a matching major version."""
     tool_name = "clang-format"
-    version = Version("12")
-    exe_name = f"{tool_name}-{version.info[0]}{suffix}"
+    version = "12"
+    exe_name = f"{tool_name}-{version}{suffix}"
     fake_bin = tmp_path / exe_name
     fake_bin.write_bytes(b"fake binary")
     fake_bin.chmod(0o755)
@@ -210,8 +248,8 @@ def test_is_installed_wrong_major_version(
 ):
     """Test is_installed when the tool exists but has a different major version."""
     tool_name = "clang-format"
-    version = Version("12")
-    exe_name = f"{tool_name}-{version.info[0]}{suffix}"
+    version = "12"
+    exe_name = f"{tool_name}-{version}{suffix}"
     fake_bin = tmp_path / exe_name
     fake_bin.write_bytes(b"fake binary")
     fake_bin.chmod(0o755)
@@ -229,7 +267,7 @@ def test_is_installed_wrong_major_version(
 def test_is_installed_not_found_in_path(monkeypatch: pytest.MonkeyPatch):
     """Test is_installed when the tool runs but shutil.which can't find it."""
     tool_name = "clang-format"
-    version = Version("15")
+    version = "15"
 
     mock_result = Mock()
     mock_result.stdout = b"LLVM version 15.0.0\n"
@@ -351,21 +389,6 @@ def test_install_dir_name_default():
     assert isinstance(result, str) and len(result) > 1
 
 
-def test_install_clang_tools_path_not_in_env(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture
-):
-    """Test install_clang_tools warns when install dir is not in PATH."""
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("clang_tools.install.index_url", "not-a-valid-url")
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")
-
-    with pytest.raises(PyPIFallback):
-        install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
-
-    result = capsys.readouterr()
-    assert "directory is not in your environment variable PATH" in result.out
-
-
 def test_clang_tools_binary_url_non_macos(monkeypatch: pytest.MonkeyPatch):
     """Test clang_tools_binary_url with a non-macOS platform string."""
     monkeypatch.setattr("clang_tools.install.install_os", "linux")
@@ -463,7 +486,7 @@ def test_is_installed_command(
     monkeypatch.setattr("clang_tools.install.install_os", os_name)
     monkeypatch.setattr("clang_tools.install.suffix", ext)
     monkeypatch.setattr(subprocess, "run", fake_run)
-    assert is_installed("clang-format", Version("15")) is None
+    assert is_installed("clang-format", "15") is None
     assert calls == [[command, "--version"]]
 
 
@@ -474,7 +497,7 @@ def test_is_installed_tool_fails(monkeypatch: pytest.MonkeyPatch):
         raise subprocess.CalledProcessError(1, args)
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    assert is_installed("clang-format", Version("15")) is None
+    assert is_installed("clang-format", "15") is None
 
 
 def test_install_tool_installs_published_binary(
@@ -571,11 +594,12 @@ def test_find_binary_from_index(monkeypatch: pytest.MonkeyPatch, fake_release):
     """Test that the URL and checksum come from the index, for any 18.x.y."""
     monkeypatch.setattr("clang_tools.install.install_os", "linux")
     monkeypatch.setattr("clang_tools.install.install_arch", "arm64")
-    binary = find_binary("clang-tidy", "18.1.8")
+    binary = find_binary("clang-tidy", "18.1")
     assert binary.url.endswith(
         "/releases/download/llvm-18.1.0/clang-tidy-18_linux-arm64"
     )
     assert binary.tag == "llvm-18.1.0"
+    assert binary.version == "18.1.0"
     assert binary.headers is not None
     assert binary.headers[0].endswith("/llvm-18.1.0/clang-resource-headers-18.tar.gz")
     assert (
@@ -756,7 +780,7 @@ def test_install_clang_tools_dir_in_path(
     monkeypatch.setenv("PATH", str(tmp_path))
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("clang_tools.install.is_installed", lambda tool, ver: None)
-    install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
+    install_clang_tools("12", ["clang-format"], str(tmp_path), False, True)
     assert "not in your environment variable PATH" not in capsys.readouterr().out
     link = tmp_path / f"clang-format{suffix}"
     assert link.is_symlink()
@@ -775,7 +799,7 @@ def test_install_clang_tools_links_native_binary(
     native.write_bytes(b"native binary")
     monkeypatch.setattr("clang_tools.install.is_installed", lambda tool, ver: native)
     install_dir = tmp_path / "bin"
-    install_clang_tools(Version("12"), ["clang-format"], str(install_dir), False, True)
+    install_clang_tools("12", ["clang-format"], str(install_dir), False, True)
     assert fake_release.downloads() == []  # neither the index nor a binary
     assert not (install_dir / f"clang-format-12{suffix}").exists()
     link = install_dir / f"clang-format{suffix}"
@@ -787,10 +811,10 @@ def test_install_clang_tools_overwrite(monkeypatch: pytest.MonkeyPatch, tmp_path
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("clang_tools.install.is_installed", lambda tool, ver: None)
     link = tmp_path / f"clang-format{suffix}"
-    install_clang_tools(Version("12"), ["clang-format"], str(tmp_path), False, True)
-    install_clang_tools(Version("13"), ["clang-format"], str(tmp_path), False, True)
+    install_clang_tools("12", ["clang-format"], str(tmp_path), False, True)
+    install_clang_tools("13", ["clang-format"], str(tmp_path), False, True)
     assert link.resolve() == (tmp_path / f"clang-format-12{suffix}").resolve()
-    install_clang_tools(Version("13"), ["clang-format"], str(tmp_path), True, True)
+    install_clang_tools("13", ["clang-format"], str(tmp_path), True, True)
     assert link.resolve() == (tmp_path / f"clang-format-13{suffix}").resolve()
 
 
@@ -872,9 +896,7 @@ def test_install_clang_tools_missing_parent(tmp_path: Path, fake_release):
     """Test that nothing is downloaded when the install directory can't be made."""
     install_dir = tmp_path / "typo" / "bin"
     with pytest.raises(SystemExit, match="does not exist"):
-        install_clang_tools(
-            Version("12"), ["clang-format"], str(install_dir), False, True
-        )
+        install_clang_tools("12", ["clang-format"], str(install_dir), False, True)
     assert fake_release.downloads() == []
     assert not (tmp_path / "typo").exists()
 
@@ -1217,7 +1239,7 @@ def test_install_clang_tools_replaces_old_copy(
     monkeypatch.setattr(
         "clang_tools.install.is_installed", lambda tool, ver: old_copy.resolve()
     )
-    install_clang_tools(Version("21"), ["clang-tidy"], str(tmp_path), False, True)
+    install_clang_tools("21", ["clang-tidy"], str(tmp_path), False, True)
     assert old_copy.is_symlink()
     assert old_copy.resolve().is_relative_to(data_root)
 
@@ -1236,3 +1258,45 @@ def test_uninstall_tool_removes_dangling_link(tmp_path: Path):
     link.symlink_to(tmp_path / "data" / "gone")
     uninstall_tool("clang-tidy", "21", str(tmp_path))
     assert not os.path.lexists(link)
+
+
+def test_find_binary_other_patch(fake_release):
+    """Test that a binary of another patch version is not used."""
+    with pytest.raises(PyPIFallback, match="LLVM 18 are version 18.1.0, not 18.1.8"):
+        find_binary("clang-tidy", "18.1.8")
+
+
+def test_find_binary_tag_full_version(monkeypatch: pytest.MonkeyPatch, fake_release):
+    """Test that a CLANG_TOOLS_TAG release can't be checked for a patch version."""
+    monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
+    assert find_binary("clang-tidy", "18").version == "18"
+    with pytest.raises(PyPIFallback, match="one binary per major version"):
+        find_binary("clang-tidy", "18.1.8")
+
+
+@pytest.mark.parametrize(
+    "found,expected", [("21.1.8", True), ("21.1.0", False), ("18.1.8", False)]
+)
+def test_is_installed_full_version(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, found: str, expected: bool
+):
+    """Test that a binary in PATH must match every number of the version given."""
+    fake_bin = tmp_path / f"clang-tidy-21{suffix}"
+    fake_bin.write_bytes(b"fake binary")
+    result = Mock(stdout=f"LLVM version {found}\n".encode())
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: result)
+    monkeypatch.setattr("shutil.which", lambda x: str(fake_bin))
+    assert (is_installed("clang-tidy", "21.1.8") is not None) is expected
+
+
+def test_install_tool_names_by_major_version(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, capsys
+):
+    """Test that a full version installs a binary named by its major version."""
+    monkeypatch.chdir(tmp_path)
+    assert install_tool("clang-format", "21.1.0", str(tmp_path), True)
+    assert (tmp_path / f"clang-format-21{suffix}").is_symlink()
+    assert not (tmp_path / f"clang-format-21.1.0{suffix}").exists()
+    assert "Installed clang-format 21.1.0 as" in capsys.readouterr().out
+    uninstall_tool("clang-format", "21.1.0", str(tmp_path))
+    assert not os.path.lexists(tmp_path / f"clang-format-21{suffix}")

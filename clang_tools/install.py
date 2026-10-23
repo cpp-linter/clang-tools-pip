@@ -342,8 +342,8 @@ def link_binary(stored: Path, destination: Path) -> None:
     ``destination`` becomes a symbolic link, or a copy where links can't be created
     (Windows without Developer Mode). clang looks for its resource headers in
     ``../lib/clang`` from the binary it runs. Through a link, that is next to
-    ``stored`` on Linux and macOS, but next to the link on Windows (in LLVM 15 and
-    older at least). So for a copy, and on Windows, the headers are also copied to
+    ``stored`` on Linux and macOS, but next to the link on Windows (LLVM 12 to 17 at
+    least). So for a copy, and on Windows, the headers are also copied to
     ``<destination>/../../lib``.
     """
     copied = False

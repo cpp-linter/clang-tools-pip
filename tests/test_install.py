@@ -1103,7 +1103,7 @@ def test_link_binary_headers_next_to_link(
 ):
     """Test that on Windows the headers are also next to the link.
 
-    clang 12 to 15 on Windows look for them there, not next to the linked binary.
+    clang 12 to 17 on Windows (at least) look for them there, not next to the linked binary.
     """
     monkeypatch.setattr("clang_tools.install.install_os", os_name)
     prefix = tmp_path / "data" / "llvm-15.0.2"

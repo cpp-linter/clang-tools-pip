@@ -341,17 +341,20 @@ def link_binary(stored: Path, destination: Path) -> None:
         return
     print("Installing", destination.name, "to", str(destination.parent))
     try:
-        if os.path.lexists(destination):
-            destination.unlink()
-        try:
-            destination.symlink_to(stored)
-        except OSError:
-            shutil.copy2(stored, destination)
-            headers = stored.parent.parent / "lib"
-            if headers.is_dir():
-                lib = destination.parent.parent / "lib"
-                print("Copying the clang resource headers to", str(lib))
-                shutil.copytree(headers, lib, dirs_exist_ok=True)
+        # made next to `destination` and moved there in one step, which also
+        # replaces an older link or copy
+        with tempfile.TemporaryDirectory(dir=destination.parent) as work_dir:
+            staged = Path(work_dir, destination.name)
+            try:
+                staged.symlink_to(stored)
+            except OSError:
+                shutil.copy2(stored, staged)
+                headers = stored.parent.parent / "lib"
+                if headers.is_dir():
+                    lib = destination.parent.parent / "lib"
+                    print("Copying the clang resource headers to", str(lib))
+                    shutil.copytree(headers, lib, dirs_exist_ok=True)
+            os.replace(staged, destination)
     except PermissionError as exc:
         raise SystemExit(
             f"Don't have permission to install {destination.name} to"

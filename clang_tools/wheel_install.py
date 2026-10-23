@@ -2,194 +2,203 @@
 ``clang_tools.wheel_install``
 -----------------------------
 
-Self-contained wheel installation via PyPI.
+Install a clang tool from its wheel on PyPI, without pip.
 
-Tool versions are resolved dynamically from the PyPI JSON API —
-no hardcoded version list is maintained in-tree.
+The wheel is downloaded from the PyPI JSON API, checked against its SHA256 checksum,
+and its ``<package>/data`` folder (``bin/`` and, for clang-tidy, ``lib/clang/``) is
+kept in the data directory, like a static binary. The install directory gets a link
+to the executable.
 """
 
-import http.client
+import hashlib
 import json
-import logging
+import platform
 import re
-import shutil
-import subprocess
-import sys
+import tempfile
 import urllib.request
-from functools import lru_cache
-from pathlib import Path
+import zipfile
+from pathlib import Path, PurePosixPath
 
-LOG = logging.getLogger(__name__)
+from . import install_arch, install_os, pypi_url, suffix
+from .install import binary_file_name, data_dir, link_binary, make_dir
+from .util import (
+    DOWNLOAD_ERRORS,
+    DOWNLOAD_TIMEOUT,
+    RE_VERSION,
+    PyPIFallback,
+    download_file,
+    major_version,
+    version_matches,
+)
+
+#: The glibc versions of the legacy ``manylinux`` tags.
+LEGACY_MANYLINUX = {
+    "manylinux1": (2, 5),
+    "manylinux2010": (2, 12),
+    "manylinux2014": (2, 17),
+}
+RE_MANYLINUX = re.compile(r"(manylinux|musllinux)_(\d+)_(\d+)_(\w+)")
+RE_MACOSX = re.compile(r"macosx_(\d+)_(\d+)_(\w+)")
 
 
-@lru_cache(maxsize=4)
-def _get_pypi_versions(tool: str) -> tuple[str | None, list]:
-    """Fetch (latest_version, [stable_versions_descending]) from PyPI JSON API.
+def _major_minor(version: str) -> tuple[int, ...]:
+    """The first two numbers of a version, such as ``(2, 39)`` for glibc 2.39.
 
-    Results are cached per tool name so repeated calls within the same
-    process reuse the last HTTP response.
+    A missing or unparsable version is ``(0,)``.
     """
-    try:
-        url = f"https://pypi.org/pypi/{tool}/json"
-        with urllib.request.urlopen(url, timeout=10) as response:
-            data = json.loads(response.read())
-    # URLError, timeouts and dropped connections are all OSErrors
-    except (OSError, http.client.HTTPException, json.JSONDecodeError) as exc:
-        LOG.warning("Failed to fetch versions for %s from PyPI: %s", tool, exc)
-        return None, []
-
-    all_versions = list(data["releases"].keys())
-
-    # Filter out pre-release versions
-    pre_release_pattern = re.compile(
-        r".*(alpha|beta|rc|dev|a\d+|b\d+).*", re.IGNORECASE
-    )
-    stable = [v for v in all_versions if not pre_release_pattern.match(v)]
-
-    if not stable:
-        LOG.warning("No stable versions found for %s on PyPI", tool)
-        return None, []
-
-    # Sort ascending by version tuple
-    stable.sort(key=lambda x: tuple(map(int, x.split("."))))
-
-    latest = stable[-1]
-    # Return descending for prefix matching (newest first)
-    return latest, list(reversed(stable))
+    return tuple(int(n) for n in re.findall(r"\d+", version)[:2]) or (0,)
 
 
-def _detect_installed_version(tool: str) -> str | None:
-    """Return the version of *tool* already on PATH, or None.
-
-    Used as a fallback when PyPI is unreachable and no explicit version
-    was requested.  Extracts the version string from ``<tool> --version``
-    output (e.g. ``"clang-format version 18.1.8"`` → ``"18.1.8"``).
-    """
-    existing = shutil.which(tool)
-    if not existing:
-        return None
-    try:
-        result = subprocess.run(
-            [existing, "--version"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return None
-    match = re.search(r"(\d+\.\d+\.\d+(?:\.\d+)?)", result.stdout)
-    return match.group(1) if match else None
-
-
-def _resolve_version(
-    tool: str, user_input: str | None
-) -> tuple[str | None, str | None]:
-    """Resolve a version dynamically from PyPI.
-
-    Returns (resolved_version, error_message). The error_message is
-    suitable for displaying directly to the end user.
-
-    When PyPI is unreachable and no explicit version was requested,
-    falls back to whatever version is already installed on the host
-    so that pre-installed tools keep working offline.
-    """
-    latest, versions = _get_pypi_versions(tool)
-
-    if not versions:
-        if user_input is None:
-            installed = _detect_installed_version(tool)
-            if installed:
-                LOG.info(
-                    "PyPI unreachable; using locally installed %s %s",
-                    tool,
-                    installed,
-                )
-                return installed, None
+def is_compatible(tag: str) -> bool:
+    """Check if a wheel's platform tag (such as ``win_amd64``) runs on this machine."""
+    if install_os == "windows":
+        return tag == f"win_{install_arch}"
+    if install_os == "macosx":
+        match = RE_MACOSX.fullmatch(tag)
+        arch = "arm64" if install_arch == "arm64" else "x86_64"
         return (
-            None,
-            (
-                f"Could not find any stable versions of {tool} on PyPI. "
-                "Check your network connection."
-            ),
+            match is not None
+            and match[3] in (arch, "universal2")
+            and (int(match[1]), int(match[2])) <= _major_minor(platform.mac_ver()[0])
         )
-
-    if user_input is None:
-        return latest, None
-
-    # Exact match
-    if user_input in versions:
-        return user_input, None
-
-    # Prefix match on whole components (e.g. "20" → "20.1.8", but "2" does not
-    # match "20.1.8"). Versions are newest-first, so the first matching entry is
-    # the latest for that prefix.
-    matched = [v for v in versions if v.startswith(f"{user_input}.")]
-    if matched:
-        return matched[0], None
-
-    # No match – help the user
-    sample = ", ".join(versions[:15])
-    return (
-        None,
-        (
-            f"Unsupported {tool} version '{user_input}'.\n"
-            f"Latest stable version: {latest}\n"
-            f"Available versions (sample): {sample}\n"
-            f"Run `pip index versions {tool}` to see all available versions."
-        ),
-    )
+    arch = "aarch64" if install_arch == "arm64" else "x86_64"
+    libc, libc_version = platform.libc_ver()
+    glibc = libc == "glibc"
+    legacy, _, legacy_arch = tag.partition("_")
+    if legacy in LEGACY_MANYLINUX:
+        return (
+            glibc
+            and legacy_arch == arch
+            and (LEGACY_MANYLINUX[legacy] <= _major_minor(libc_version))
+        )
+    match = RE_MANYLINUX.fullmatch(tag)
+    if match is None or match[4] != arch:
+        return False
+    if match[1] == "musllinux":
+        return not glibc
+    return glibc and (int(match[2]), int(match[3])) <= _major_minor(libc_version)
 
 
-def _is_version_installed(tool: str, version: str) -> Path | None:
-    """Return the tool path if the installed version matches, otherwise None."""
-    existing = shutil.which(tool)
-    if not existing:
-        return None
-    result = subprocess.run(
-        [existing, "--version"], capture_output=True, text=True, check=False
-    )
-    if version in result.stdout:
-        return Path(existing)
-    return None
+def pypi_releases(tool: str) -> dict[str, list[dict]]:
+    """The stable releases of a tool on PyPI, with their files.
 
+    :param tool: The name of the project on PyPI, such as ``clang-format``.
 
-def _install_tool(tool: str, version: str) -> Path | None:
-    """Install a tool using pip, logging output on failure."""
-    result = subprocess.run(
-        [sys.executable, "-m", "pip", "install", f"{tool}=={version}"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode == 0:
-        return shutil.which(tool)
-    LOG.error("pip failed to install %s %s", tool, version)
-    LOG.error(result.stdout)
-    LOG.error(result.stderr)
-    return None
-
-
-def resolve_wheel_install(
-    tool: str, version: str | None
-) -> tuple[Path | None, str | None]:
-    """Resolve and install a clang tool as a Python wheel from PyPI.
-
-    Tool versions are resolved dynamically from the PyPI JSON API —
-    no hardcoded list is maintained in-tree.
-
-    :param tool: Tool name as registered on PyPI (e.g. ``"clang-format"``).
-    :param version: Desired version string, or ``None`` for the latest stable.
-
-    :returns: A tuple ``(path, error)`` where *path* is the installed
-        binary location on success and *error* is a user-facing message
-        on failure. Exactly one of the two is not ``None``.
+    :returns: The files of each release that only has numbers in its version.
     """
-    user_version, error = _resolve_version(tool, version)
-    if error is not None:
-        return None, error
+    url = f"{pypi_url}/{tool}/json"
+    try:
+        with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT) as response:
+            releases = json.loads(response.read().decode(encoding="utf-8"))["releases"]
+    except (*DOWNLOAD_ERRORS, KeyError, TypeError) as exc:
+        raise SystemExit(f"Can't get the releases of {tool} from {url}: {exc}") from exc
+    return {
+        version: files
+        for version, files in releases.items()
+        if RE_VERSION.fullmatch(version) and isinstance(files, list)
+    }
 
-    return (
-        _is_version_installed(tool, user_version) or _install_tool(tool, user_version),
-        None,
+
+def find_wheel(tool: str, version: str | None) -> tuple[str, dict]:
+    """Find the newest wheel of a tool that runs on this machine.
+
+    :param tool: The name of the project on PyPI.
+    :param version: The version to install, such as ``21`` or ``21.1.8``, or `None`
+        for the newest one.
+
+    :returns: The version and the file information (from the PyPI JSON API) of the
+        wheel.
+    """
+    releases = pypi_releases(tool)
+    candidates = sorted(
+        (v for v in releases if version is None or version_matches(version, v)),
+        key=lambda v: tuple(map(int, v.split("."))),
+        reverse=True,
     )
+    for candidate in candidates:
+        for file in releases[candidate]:
+            filename = file.get("filename", "")
+            if file.get("yanked") or not filename.endswith(".whl"):
+                continue
+            tags = filename.removesuffix(".whl").rsplit("-", 1)[-1].split(".")
+            if any(is_compatible(tag) for tag in tags):
+                return candidate, file
+    wanted = f"{tool} {version}" if version else tool
+    raise SystemExit(
+        f"No wheel of {wanted} on PyPI runs on this machine"
+        f" ({install_os} {install_arch})."
+    )
+
+
+def extract_wheel(wheel: Path, package: str, destination: Path) -> None:
+    """Extract the ``bin/`` and ``lib/`` folders of a wheel's ``<package>/data``.
+
+    :param wheel: The wheel file.
+    :param package: The import name of the package, such as ``clang_format``.
+    :param destination: The directory to extract into.
+    """
+    prefix = f"{package}/data/"
+    with zipfile.ZipFile(wheel) as archive:
+        for info in archive.infolist():
+            if not info.filename.startswith(prefix) or info.is_dir():
+                continue
+            parts = PurePosixPath(info.filename.removeprefix(prefix)).parts
+            if parts[0] not in ("bin", "lib"):
+                continue
+            if ".." in parts:
+                raise SystemExit(f"Unexpected entry {info.filename!r} in {wheel.name}")
+            target = destination.joinpath(*parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(archive.read(info))
+            if parts[0] == "bin":
+                target.chmod(0o755)
+
+
+def install_wheel(
+    tool: str, version: str | None, directory: str, no_progress_bar: bool
+) -> str:
+    """Install a tool from its wheel on PyPI, in the same way as a static binary.
+
+    :param tool: The name of the tool, which is also its project name on PyPI.
+    :param version: The version to install, such as ``21`` or ``21.1.8``, or `None`
+        for the newest one.
+    :param directory: The installation directory.
+    :param no_progress_bar: A flag used to disable the downloads' progress bar.
+
+    :returns: The installed version.
+    """
+    try:
+        binary_file_name(tool, "0")  # the tool name must be a plain file name
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    resolved, file = find_wheel(tool, version)
+    prefix = data_dir() / f"pypi-{tool}-{resolved}"
+    exe = prefix / "bin" / f"{tool}{suffix}"
+    if not exe.is_file():
+        make_dir(data_dir())
+        with tempfile.TemporaryDirectory(dir=data_dir()) as work_dir:
+            wheel = Path(work_dir, f"{tool}.whl")
+            try:
+                download_file(file["url"], str(wheel), no_progress_bar)
+            except PyPIFallback as exc:
+                raise SystemExit(str(exc)) from exc
+            checksum = hashlib.sha256(wheel.read_bytes()).hexdigest()
+            if checksum != file.get("digests", {}).get("sha256"):
+                raise SystemExit(
+                    f"{file['filename']} was corrupted during download from"
+                    f" {file['url']}"
+                )
+            extracted = Path(work_dir, "extracted")
+            extract_wheel(wheel, tool.replace("-", "_"), extracted)
+            if not (extracted / "bin" / exe.name).is_file():
+                raise SystemExit(f"{file['filename']} has no {exe.name} executable.")
+            try:
+                # one rename, so the directory is either complete or not there
+                extracted.rename(prefix)
+            except OSError:
+                if not exe.is_file():
+                    raise  # pragma: no cover (not a parallel install)
+    destination = Path(directory, binary_file_name(tool, major_version(resolved)))
+    link_binary(exe, destination)
+    print(f"Installed {tool} {resolved} (from PyPI) as {destination}")
+    return resolved

@@ -22,6 +22,9 @@ binary_repo = os.getenv(
     "CLANG_TOOLS_REPO", "https://github.com/cpp-linter/clang-tools-static-binaries"
 )
 binary_tag = os.getenv("CLANG_TOOLS_TAG", "")
+#: The base URL of the PyPI JSON API, used to install wheels when there is no
+#: static binary. Set ``CLANG_TOOLS_PYPI_URL`` to use a mirror.
+pypi_url = os.getenv("CLANG_TOOLS_PYPI_URL", "https://pypi.org/pypi").rstrip("/")
 
 #: The minimum major version in a release picked with ``CLANG_TOOLS_TAG``.
 MIN_VERSION = 12

@@ -8,6 +8,7 @@ A module containing utility functions.
 import hashlib
 import json
 import platform
+import re
 import urllib.request
 from functools import cache
 from http.client import HTTPException, HTTPResponse
@@ -212,33 +213,19 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
     return checksum == hashlib.sha512(exe).hexdigest()
 
 
-class Version:
-    """Parse the given version string into a semantic specification.
+#: A release version made of numbers only, such as ``21`` or ``21.1.8``.
+RE_VERSION = re.compile(r"\d+(\.\d+)*")
 
-    :param user_input: The version specification as a string.
+
+def major_version(version: str) -> str:
+    """The major version of a version, such as ``21`` for ``21.1.8``."""
+    return version.split(".", 1)[0]
+
+
+def version_matches(wanted: str, actual: str) -> bool:
+    """Check if ``actual`` is the version ``wanted``, which may omit numbers.
+
+    For example, ``21`` and ``21.1`` match ``21.1.8``, but ``21.1.0`` and ``2``
+    don't.
     """
-
-    def __init__(self, user_input: str):
-        """Construct a :class:`Version` from *user_input*.
-
-        :param user_input: The version specification as a string.
-        """
-        #: The version input in string form
-        self.string = user_input
-        version_tuple = user_input.split(".")
-        self.info: tuple[int, int, int]
-        """
-        A tuple of integers that describes the major, minor, and patch versions.
-        If the version `string` is a path, then this tuple is just 3 zeros.
-        """
-        if len(version_tuple) < 3:
-            # append minor and patch version numbers if not specified
-            version_tuple += ["0"] * (3 - len(version_tuple))
-        try:
-            self.info = (
-                int(version_tuple[0]),
-                int(version_tuple[1]),
-                int(version_tuple[2]),
-            )
-        except (ValueError, IndexError):
-            self.info = (0, 0, 0)
+    return actual.split(".")[: wanted.count(".") + 1] == wanted.split(".")

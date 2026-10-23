@@ -214,6 +214,15 @@ jobs:
           check_wheel clang-include-cleaner     22 22
           check_wheel clang-apply-replacements  16 17
 
+      - name: Install a wheel without pip
+        if: matrix.version == 23
+        shell: bash
+        run: |
+          # clang-format 10 has no static binary, so its wheel is installed
+          python -m pip uninstall -y pip
+          clang-tools install clang-format --version 10 --directory wheel-bin
+          wheel-bin/clang-format-10${{ runner.os == 'Windows' && '.exe' || '' }} --version | grep "version 10"
+
   docs:
     permissions:
       contents: read

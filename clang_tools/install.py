@@ -339,33 +339,62 @@ def install_headers(
 def link_binary(stored: Path, destination: Path) -> None:
     """Make ``destination`` run the binary ``stored`` in the data directory.
 
-    ``destination`` becomes a symbolic link, so clang finds the resource headers next
-    to ``stored``. Where links can't be created (Windows without Developer Mode), the
-    binary is copied instead, and its headers to ``<destination>/../../lib``.
+    ``destination`` becomes a symbolic link, or a copy where links can't be created
+    (Windows without Developer Mode). clang looks for its resource headers in
+    ``../lib/clang`` from the binary it runs. Through a link, that is next to
+    ``stored`` on Linux and macOS, but next to the link on Windows (in LLVM 15 and
+    older at least). So for a copy, and on Windows, the headers are also copied to
+    ``<destination>/../../lib``.
     """
-    if destination.is_symlink() and destination.resolve() == stored.resolve():
-        return
-    print("Installing", destination.name, "to", str(destination.parent))
+    copied = False
     try:
-        # made next to `destination` and moved there in one step, which also
-        # replaces an older link or copy
-        with tempfile.TemporaryDirectory(dir=destination.parent) as work_dir:
-            staged = Path(work_dir, destination.name)
-            try:
-                staged.symlink_to(stored)
-            except OSError:
-                shutil.copy2(stored, staged)
-                headers = stored.parent.parent / "lib"
-                if headers.is_dir():
-                    lib = destination.parent.parent / "lib"
-                    print("Copying the clang resource headers to", str(lib))
-                    shutil.copytree(headers, lib, dirs_exist_ok=True)
-            os.replace(staged, destination)
+        if not (destination.is_symlink() and destination.resolve() == stored.resolve()):
+            print("Installing", destination.name, "to", str(destination.parent))
+            # made next to `destination` and moved there in one step, which also
+            # replaces an older link or copy
+            with tempfile.TemporaryDirectory(dir=destination.parent) as work_dir:
+                staged = Path(work_dir, destination.name)
+                try:
+                    staged.symlink_to(stored)
+                except OSError:
+                    shutil.copy2(stored, staged)
+                    copied = True
+                os.replace(staged, destination)
+        if copied or install_os == "windows":
+            copy_headers(
+                stored.parent.parent / "lib", destination.parent.parent / "lib"
+            )
     except PermissionError as exc:
         raise SystemExit(
             f"Don't have permission to install {destination.name} to"
             f" {destination.parent}. Try to run with the appropriate permissions."
         ) from exc
+
+
+def copy_headers(source: Path, lib: Path) -> None:
+    """Copy each version of the clang resource headers in ``source`` that ``lib``
+    doesn't have yet.
+
+    :param source: The ``lib`` directory next to a stored binary's ``bin``.
+    :param lib: The ``lib`` directory next to the install directory.
+    """
+    if not (source / "clang").is_dir():
+        return
+    for version_dir in (source / "clang").iterdir():
+        target = lib / "clang" / version_dir.name
+        if target.is_dir():
+            continue
+        print("Copying the clang resource headers to", str(lib))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        # copied next to `target` and renamed, so `target` is complete or not there
+        with tempfile.TemporaryDirectory(dir=target.parent) as work_dir:
+            staged = Path(work_dir, version_dir.name)
+            shutil.copytree(version_dir, staged)
+            try:
+                staged.rename(target)
+            except OSError:
+                if not target.is_dir():
+                    raise  # pragma: no cover (not a parallel install)
 
 
 def install_tool(

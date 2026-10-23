@@ -81,8 +81,9 @@ the data directory; delete it to free the space.
 > [!NOTE]
 > To create symbolic links on Windows, you must enable
 > [Developer Mode](https://learn.microsoft.com/en-us/windows/advanced-settings/developer-mode).
-> Without it, the binaries are copied to the install directory, and clang's builtin headers to
-> `<install directory>\..\lib\clang`.
+> Without it, the binaries are copied to the install directory. On Windows, clang's builtin
+> headers are also copied to `<install directory>\..\lib\clang`, because clang (LLVM 15 and
+> older at least) looks for them next to the link rather than next to the binary it points to.
 
 > [!IMPORTANT]
 > This package only manages binary executables

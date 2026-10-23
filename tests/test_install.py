@@ -1097,6 +1097,36 @@ def test_link_binary_copies_without_symlinks(
     assert (install_dir / "clang-format-21").read_bytes() == b"format"
 
 
+@pytest.mark.parametrize("os_name", ["windows", "linux"])
+def test_link_binary_headers_next_to_link(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys, os_name: str
+):
+    """Test that on Windows the headers are also next to the link.
+
+    clang 12 to 15 on Windows look for them there, not next to the linked binary.
+    """
+    monkeypatch.setattr("clang_tools.install.install_os", os_name)
+    prefix = tmp_path / "data" / "llvm-15.0.2"
+    stored = prefix / "bin" / "clang-tidy-15"
+    stored.parent.mkdir(parents=True)
+    stored.write_bytes(b"binary")
+    headers = prefix / "lib" / "clang" / "15.0.2" / "include"
+    headers.mkdir(parents=True)
+    (headers / "stddef.h").write_bytes(b"header")
+    install_dir = tmp_path / "venv" / "Scripts"
+    install_dir.mkdir(parents=True)
+
+    link_binary(stored, install_dir / "clang-tidy-15")
+    assert (install_dir / "clang-tidy-15").resolve() == stored.resolve()
+    copied = tmp_path / "venv" / "lib" / "clang" / "15.0.2" / "include" / "stddef.h"
+    assert copied.is_file() is (os_name == "windows")
+    capsys.readouterr()
+
+    # already there: nothing to do
+    link_binary(stored, install_dir / "clang-tidy-15")
+    assert capsys.readouterr().out == ""
+
+
 @pytest.mark.parametrize(
     "os_name,env,expected",
     [

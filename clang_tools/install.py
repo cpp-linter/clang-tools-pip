@@ -41,6 +41,8 @@ from .util import (
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
 #: A binary's file name: no path separators, and not ``.`` or ``..``.
 RE_FILE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*")
+#: A file or directory name in an archive, such as ``__stddef_max_align_t.h``.
+RE_ENTRY_NAME = re.compile(r"[A-Za-z0-9_.+-]+")
 
 
 def is_installed(tool_name: str, version: Version) -> Path | None:
@@ -278,7 +280,11 @@ def extract_headers(archive: Path, destination: Path) -> PurePosixPath:
         versions = set()
         for member in members:
             parts = PurePosixPath(member.name).parts
-            inside = parts[:2] == expected[: len(parts)] and ".." not in parts
+            # plain names only: no "..", and no "\\" or ":" that Windows reads as
+            # a separator or a drive
+            inside = parts[:2] == expected[: len(parts)] and all(
+                RE_ENTRY_NAME.fullmatch(part) and part != ".." for part in parts
+            )
             if not inside or not (member.isdir() or len(parts) > 3 and member.isfile()):
                 raise PyPIFallback(
                     f"Unexpected entry {member.name!r} in {archive.name}"

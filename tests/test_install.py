@@ -1024,8 +1024,19 @@ def test_install_headers_parallel_install(
         {"lib/clang/stddef.h": b"x"},
         {"lib/clang/21/include/stddef.h": b"x", "lib/clang/22/include/x.h": b"x"},
         {"lib": None},
+        {"lib/clang/21/include/x\\..\\..\\..\\..\\escape.h": b"x"},
+        {"lib/clang/21/include/C:/escape.h": b"x"},
     ],
-    ids=["dotdot", "absolute", "not-clang", "no-version", "two-versions", "empty"],
+    ids=[
+        "dotdot",
+        "absolute",
+        "not-clang",
+        "no-version",
+        "two-versions",
+        "empty",
+        "backslash",
+        "drive",
+    ],
 )
 def test_extract_headers_rejects(tmp_path: Path, entries: dict):
     """Test that an archive can only add the headers of one version."""

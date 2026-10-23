@@ -487,7 +487,9 @@ def test_install_tool_installs_published_binary(
     asset = clang_tools_binary_url("clang-tidy", "17").rsplit("/", 1)[-1]
     assert installed.read_bytes() == fake_release.published(asset)
     assert os.access(installed, os.X_OK)
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["bin"]
+    # nothing else next to the install directory, but the headers on Windows
+    expected = ["bin", "lib"] if install_os == "windows" else ["bin"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == expected
 
 
 def test_install_tool_keeps_valid_binary(

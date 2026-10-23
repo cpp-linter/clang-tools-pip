@@ -325,7 +325,9 @@ def test_main_install_no_version(monkeypatch: pytest.MonkeyPatch):
     assert calls == [(None, ["clang-tidy"], "", False, False)]
 
 
-@pytest.mark.parametrize("version", ["/usr/lib/llvm-18/bin", "18.x", "", "v18"])
+@pytest.mark.parametrize(
+    "version", ["/usr/lib/llvm-18/bin", "18.x", "", "v18", "\u0661\u0668"]
+)
 def test_main_install_invalid_version(
     monkeypatch: pytest.MonkeyPatch, capsys, version: str
 ):

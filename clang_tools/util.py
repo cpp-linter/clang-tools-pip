@@ -214,7 +214,7 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
 
 
 #: A release version made of numbers only, such as ``21`` or ``21.1.8``.
-RE_VERSION = re.compile(r"\d+(\.\d+)*")
+RE_VERSION = re.compile(r"[0-9]+(\.[0-9]+)*")
 
 
 def major_version(version: str) -> str:

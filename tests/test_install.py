@@ -1092,6 +1092,10 @@ def test_link_binary_copies_without_symlinks(
     assert copied.read_bytes() == b"header"
     assert "Copying the clang resource headers to" in capsys.readouterr().out
 
+    # already copied: nothing to do
+    link_binary(stored, install_dir / "clang-tidy-21")
+    assert capsys.readouterr().out == ""
+
     # a tool without headers is just copied
     (install_dir / "clang-tidy-21").unlink()
     other = tmp_path / "data" / "tag" / "bin" / "clang-format-21"
@@ -1114,6 +1118,10 @@ def test_link_binary_headers_next_to_link(
     stored = prefix / "bin" / "clang-tidy-15"
     stored.parent.mkdir(parents=True)
     stored.write_bytes(b"binary")
+    try:
+        (tmp_path / "symlink-probe").symlink_to(stored)
+    except OSError:  # pragma: no cover (Windows without Developer Mode)
+        pytest.skip("this host can't create symbolic links")
     headers = prefix / "lib" / "clang" / "15.0.2" / "include"
     headers.mkdir(parents=True)
     (headers / "stddef.h").write_bytes(b"header")

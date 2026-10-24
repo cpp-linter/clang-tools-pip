@@ -5,6 +5,7 @@
 The module that performs the installation of clang-tools.
 """
 
+import filecmp
 import io
 import os
 import re
@@ -348,7 +349,13 @@ def link_binary(stored: Path, destination: Path) -> None:
     """
     copied = False
     try:
-        if not (destination.is_symlink() and destination.resolve() == stored.resolve()):
+        if destination.is_symlink():
+            current = destination.resolve() == stored.resolve()
+        else:
+            copied = current = destination.is_file() and filecmp.cmp(
+                destination, stored
+            )
+        if not current:
             print("Installing", destination.name, "to", str(destination.parent))
             # made next to `destination` and moved there in one step, which also
             # replaces an older link or copy

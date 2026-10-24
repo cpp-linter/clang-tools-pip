@@ -41,6 +41,7 @@ from .util import (
     PyPIFallback,
     download_file,
     major_version,
+    make_request,
     version_key,
     version_matches,
 )
@@ -222,9 +223,7 @@ def pypi_releases(tool: str) -> dict[str, list[WheelFile]]:
     index, credentials = split_credentials(pypi_url)
     url = f"{index}/{tool}/"
     try:
-        request = urllib.request.Request(url, headers={"Accept": SIMPLE_API_ACCEPT})
-        for name, value in credentials.items():
-            request.add_unredirected_header(name, value)  # not sent to a redirect
+        request = make_request(url, {"Accept": SIMPLE_API_ACCEPT}, credentials)
         with urllib.request.urlopen(request, timeout=DOWNLOAD_TIMEOUT) as response:
             body = response.read().decode(encoding="utf-8")
             files = parse_project_page(

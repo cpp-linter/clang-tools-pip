@@ -68,28 +68,39 @@ def check_install_os() -> str:
     return this_os
 
 
+def make_request(
+    url: str, headers: dict[str, str], auth: dict[str, str] | None = None
+) -> urllib.request.Request:
+    """An HTTP request that sends ``auth`` to ``url`` only, not to where it redirects.
+
+    :param headers: The HTTP headers to send, also after a redirect.
+    :param auth: HTTP headers with credentials, such as ``Authorization``.
+    """
+    request = urllib.request.Request(url, headers=headers)
+    for name, value in (auth or {}).items():
+        request.add_unredirected_header(name, value)
+    return request
+
+
 def download_file(
     url: str,
     file_name: str,
     no_progress_bar: bool,
-    headers: dict[str, str] | None = None,
+    auth: dict[str, str] | None = None,
 ) -> str:
     """Download the given file_name from the given url.
 
     :param url: The URL to download from.
     :param file_name: The file name to download.
-    :param headers: HTTP headers to send, such as ``Authorization``. They are sent to
-        ``url`` only, not to where it redirects.
+    :param auth: HTTP headers with credentials, such as ``Authorization``. They are
+        sent to ``url`` only, not to where it redirects.
 
     :returns: The path to downloaded file.
     :raises PyPIFallback: If the file could not be downloaded completely.
     """
     try:
-        request = urllib.request.Request(url)
-        for name, value in (headers or {}).items():
-            request.add_unredirected_header(name, value)  # not sent to a redirect
         response: HTTPResponse = urllib.request.urlopen(
-            request, timeout=DOWNLOAD_TIMEOUT
+            make_request(url, {}, auth), timeout=DOWNLOAD_TIMEOUT
         )
     except DOWNLOAD_ERRORS as exc:
         raise PyPIFallback(f"Failed to download {url}: {exc}") from exc

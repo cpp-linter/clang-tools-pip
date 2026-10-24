@@ -30,11 +30,11 @@ Utility functions shared across the package.
 
 ---
 
-## `clang_tools.wheel`
+## `clang_tools.wheel_install`
 
-Python wheel installation module (integrated into unified CLI).
+Installs a tool from its wheel on PyPI, without pip.
 
-[:octicons-code-16: View source](https://github.com/cpp-linter/clang-tools-pip/blob/main/clang_tools/wheel.py)
+[:octicons-code-16: View source](https://github.com/cpp-linter/clang-tools-pip/blob/main/clang_tools/wheel_install.py)
 
-Provides wheel-based installation via `cpp-linter-hooks`. Now
-accessible through the unified `clang-tools install` command.
+Used by `clang-tools install` when a tool has no static binary for the requested
+version or platform.

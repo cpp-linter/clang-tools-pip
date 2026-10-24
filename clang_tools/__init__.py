@@ -22,6 +22,27 @@ binary_repo = os.getenv(
     "CLANG_TOOLS_REPO", "https://github.com/cpp-linter/clang-tools-static-binaries"
 )
 binary_tag = os.getenv("CLANG_TOOLS_TAG", "")
+#: The package index that wheels are installed from when there is no static binary.
+#: It is a simple repository API (PEP 503 or PEP 691) such as
+#: ``https://pypi.org/simple``: ``CLANG_TOOLS_PYPI_URL``, else the index that uv or
+#: pip is told to use with ``UV_DEFAULT_INDEX``, ``UV_INDEX_URL`` or
+#: ``PIP_INDEX_URL``. The URL may hold a user name and password.
+pypi_url = next(
+    (
+        url
+        for url in map(
+            os.getenv,
+            (
+                "CLANG_TOOLS_PYPI_URL",
+                "UV_DEFAULT_INDEX",
+                "UV_INDEX_URL",
+                "PIP_INDEX_URL",
+            ),
+        )
+        if url
+    ),
+    "https://pypi.org/simple",
+).rstrip("/")
 
 #: The minimum major version in a release picked with ``CLANG_TOOLS_TAG``.
 MIN_VERSION = 12

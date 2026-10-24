@@ -8,6 +8,7 @@ A module containing utility functions.
 import hashlib
 import json
 import platform
+import re
 import urllib.request
 from functools import cache
 from http.client import HTTPException, HTTPResponse
@@ -34,12 +35,19 @@ class PyPIFallback(Exception):
 def check_install_arch() -> str:
     """Identify the CPU architecture.
 
-    :returns: ``"arm64"`` for ARM processors, ``"amd64"`` otherwise.
+    :returns: ``"amd64"`` for x86-64 and ``"arm64"`` for 64-bit ARM processors, as in
+        the static binaries' file names. Any other architecture keeps its own name in
+        lower case, such as ``"ppc64le"``, ``"s390x"`` or ``"i686"``. No static binary
+        is built for those, so only wheels can be installed on them.
     """
     machine = platform.machine().lower()
     if machine in ("arm64", "aarch64"):
         return "arm64"
-    return "amd64"
+    if machine in ("x86_64", "amd64", "x64"):
+        return "amd64"
+    if machine in ("i386", "i486", "i586", "i686", "x86"):
+        return "i686"
+    return machine
 
 
 def check_install_os() -> str:
@@ -60,17 +68,40 @@ def check_install_os() -> str:
     return this_os
 
 
-def download_file(url: str, file_name: str, no_progress_bar: bool) -> str:
+def make_request(
+    url: str, headers: dict[str, str], auth: dict[str, str] | None = None
+) -> urllib.request.Request:
+    """An HTTP request that sends ``auth`` to ``url`` only, not to where it redirects.
+
+    :param headers: The HTTP headers to send, also after a redirect.
+    :param auth: HTTP headers with credentials, such as ``Authorization``.
+    """
+    request = urllib.request.Request(url, headers=headers)
+    for name, value in (auth or {}).items():
+        request.add_unredirected_header(name, value)
+    return request
+
+
+def download_file(
+    url: str,
+    file_name: str,
+    no_progress_bar: bool,
+    auth: dict[str, str] | None = None,
+) -> str:
     """Download the given file_name from the given url.
 
     :param url: The URL to download from.
     :param file_name: The file name to download.
+    :param auth: HTTP headers with credentials, such as ``Authorization``. They are
+        sent to ``url`` only, not to where it redirects.
 
     :returns: The path to downloaded file.
     :raises PyPIFallback: If the file could not be downloaded completely.
     """
     try:
-        response: HTTPResponse = urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT)
+        response: HTTPResponse = urllib.request.urlopen(
+            make_request(url, {}, auth), timeout=DOWNLOAD_TIMEOUT
+        )
     except DOWNLOAD_ERRORS as exc:
         raise PyPIFallback(f"Failed to download {url}: {exc}") from exc
 
@@ -212,33 +243,24 @@ def verify_sha512(checksum: str, exe: bytes) -> bool:
     return checksum == hashlib.sha512(exe).hexdigest()
 
 
-class Version:
-    """Parse the given version string into a semantic specification.
+#: A release version made of numbers only, such as ``21`` or ``21.1.8``.
+RE_VERSION = re.compile(r"\d+(\.\d+)*", re.ASCII)
 
-    :param user_input: The version specification as a string.
+
+def major_version(version: str) -> str:
+    """The major version of a version, such as ``21`` for ``21.1.8``."""
+    return version.split(".", 1)[0]
+
+
+def version_key(version: str) -> tuple[int, ...]:
+    """The numbers of a version, to sort or compare versions such as ``21.1.8``."""
+    return tuple(map(int, version.split(".")))
+
+
+def version_matches(wanted: str, actual: str) -> bool:
+    """Check if ``actual`` is the version ``wanted``, which may omit numbers.
+
+    For example, ``21`` and ``21.1`` match ``21.1.8``, but ``21.1.0`` and ``2``
+    don't.
     """
-
-    def __init__(self, user_input: str):
-        """Construct a :class:`Version` from *user_input*.
-
-        :param user_input: The version specification as a string.
-        """
-        #: The version input in string form
-        self.string = user_input
-        version_tuple = user_input.split(".")
-        self.info: tuple[int, int, int]
-        """
-        A tuple of integers that describes the major, minor, and patch versions.
-        If the version `string` is a path, then this tuple is just 3 zeros.
-        """
-        if len(version_tuple) < 3:
-            # append minor and patch version numbers if not specified
-            version_tuple += ["0"] * (3 - len(version_tuple))
-        try:
-            self.info = (
-                int(version_tuple[0]),
-                int(version_tuple[1]),
-                int(version_tuple[2]),
-            )
-        except (ValueError, IndexError):
-            self.info = (0, 0, 0)
+    return actual.split(".")[: wanted.count(".") + 1] == wanted.split(".")

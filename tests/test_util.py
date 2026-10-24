@@ -13,13 +13,14 @@ from clang_tools import index_url, install_arch, install_os, suffix, util
 from clang_tools.install import clang_tools_binary_url
 from clang_tools.util import (
     PyPIFallback,
-    Version,
     check_install_arch,
     check_install_os,
     download_file,
     fetch_index,
     get_sha_checksum,
+    major_version,
     verify_sha512,
+    version_matches,
 )
 
 
@@ -85,37 +86,6 @@ def test_get_sha_value_error(monkeypatch: pytest.MonkeyPatch):
         PyPIFallback, match="Could not find SHA512 checksum for my-binary"
     ):
         get_sha_checksum("https://example.com/release/my-binary")
-
-
-def test_version_path():
-    """Tests version parsing when given specification is a path."""
-    version = str(Path(__file__).parent)
-    assert Version(version).info == (0, 0, 0)
-
-
-def test_version_non_numeric():
-    """Tests version parsing when given specification is non-numeric."""
-    assert Version("abc").info == (0, 0, 0)
-    assert Version("12.abc").info == (0, 0, 0)
-
-
-def test_version_full_semver():
-    """Tests version parsing with full semver specification."""
-    v = Version("14.0.1")
-    assert v.info == (14, 0, 1)
-    assert v.string == "14.0.1"
-
-
-def test_version_major_only():
-    """Tests version parsing with only major version."""
-    v = Version("15")
-    assert v.info == (15, 0, 0)
-
-
-def test_version_major_minor():
-    """Tests version parsing with major.minor."""
-    v = Version("15.3")
-    assert v.info == (15, 3, 0)
 
 
 def test_verify_sha512_valid():
@@ -215,12 +185,20 @@ def test_check_install_os_names(
         ("ARM64", "arm64"),
         ("AMD64", "amd64"),
         ("x86_64", "amd64"),
+        ("i686", "i686"),
+        ("x86", "i686"),
+        ("ppc64le", "ppc64le"),
+        ("s390x", "s390x"),
+        ("armv7l", "armv7l"),
     ],
 )
 def test_check_install_arch_names(
     monkeypatch: pytest.MonkeyPatch, machine: str, expected: str
 ):
-    """Tests that the CPU name is normalized for the release asset names."""
+    """Tests that the CPU name is normalized for the release asset names.
+
+    Architectures without static binaries keep their name, for the wheel tags.
+    """
     monkeypatch.setattr("platform.machine", lambda: machine)
     assert check_install_arch() == expected
 
@@ -301,7 +279,7 @@ def test_verify_sha512_empty_checksum():
 def test_network_is_disabled():
     """Tests that requests other than release downloads never leave the machine."""
     with pytest.raises(AssertionError, match="unexpected network access"):
-        urllib.request.urlopen("https://pypi.org/pypi/clang-format/json", timeout=1)
+        urllib.request.urlopen("https://example.com/clang-format", timeout=1)
 
 
 def test_download_file_timeout(tmp_path: Path, fake_release):
@@ -396,3 +374,26 @@ def test_fetch_index_once(fake_release):
     index = fetch_index(index_url)
     assert fetch_index(index_url) is index
     assert fake_release.requests == [(index_url, util.DOWNLOAD_TIMEOUT)]
+
+
+@pytest.mark.parametrize(
+    "wanted,actual,expected",
+    [
+        ("21", "21.1.8", True),
+        ("21.1", "21.1.8", True),
+        ("21.1.8", "21.1.8", True),
+        ("21.1.0", "21.1.8", False),
+        ("2", "21.1.8", False),
+        ("21.1.8.1", "21.1.8", False),
+        ("13.0.1", "13.0.1.1", True),
+    ],
+)
+def test_version_matches(wanted: str, actual: str, expected: bool):
+    """Tests that a version given with fewer numbers matches the full version."""
+    assert version_matches(wanted, actual) is expected
+
+
+def test_major_version():
+    """Tests the major version of a version."""
+    assert major_version("21.1.8") == "21"
+    assert major_version("21") == "21"

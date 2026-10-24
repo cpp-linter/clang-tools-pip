@@ -1,551 +1,466 @@
-"""Tests for clang_tools.wheel_install — PyPI version resolution and pip installation."""
+"""Tests for clang_tools.wheel_install: installing wheels from PyPI without pip."""
 
-import http.client
-import json
-import logging
-import subprocess
-import sys
-import urllib.request
+import io
+import os
+import zipfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
+from conftest import WHEEL_TAG, FakeRelease
 
+from clang_tools import pypi_url, suffix
 from clang_tools.wheel_install import (
-    _detect_installed_version,
-    _get_pypi_versions,
-    _install_tool,
-    _is_version_installed,
-    _resolve_version,
-    resolve_wheel_install,
+    WheelFile,
+    extract_wheel,
+    find_wheel,
+    install_wheel,
+    is_compatible,
+    pypi_releases,
+    split_credentials,
 )
 
 
-def _pypi_response(releases: dict) -> MagicMock:
-    """Build a mock HTTP response that works as a context manager for urlopen."""
-    resp = MagicMock()
-    resp.read.return_value = json.dumps({"releases": releases})
-    resp.__enter__.return_value = resp
-    return resp
-
-
-@pytest.fixture(autouse=True)
-def _clear_cache():
-    """Clear the LRU cache on _get_pypi_versions between tests."""
-    _get_pypi_versions.cache_clear()
-    yield
-    _get_pypi_versions.cache_clear()
-
-
-# ---------------------------------------------------------------------------
-#  _get_pypi_versions
-# ---------------------------------------------------------------------------
-
-
-def test_get_pypi_versions_success():
-    """Fetch versions from a mocked PyPI JSON response."""
-    resp = _pypi_response(
-        {
-            "18.1.8": [],
-            "19.1.0": [],
-            "19.1.1": [],
-            "20.1.0": [],
-            "20.1.8": [],
-            "20.1.3rc1": [],  # pre-release — filtered
-            "21.0.0.dev1": [],  # dev — filtered
-            "21.1.0": [],
-            "21.1.1": [],
-            "22.0.0a1": [],  # alpha — filtered
-        }
+@pytest.fixture
+def wheels(monkeypatch: pytest.MonkeyPatch, fake_release: FakeRelease) -> FakeRelease:
+    """The fake PyPI, where only wheels tagged `WHEEL_TAG` run on this machine."""
+    monkeypatch.setattr(
+        "clang_tools.wheel_install.is_compatible", lambda tag: tag == WHEEL_TAG
     )
-
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        latest, versions = _get_pypi_versions("clang-format")
-
-    assert latest == "21.1.1"
-    assert versions == [
-        "21.1.1",
-        "21.1.0",
-        "20.1.8",
-        "20.1.0",
-        "19.1.1",
-        "19.1.0",
-        "18.1.8",
-    ]
-    assert "20.1.3rc1" not in versions
-    assert "21.0.0.dev1" not in versions
-    assert "22.0.0a1" not in versions
+    return fake_release
 
 
-def test_get_pypi_versions_network_error():
-    """When PyPI is unreachable, return (None, [])."""
-    with patch.object(
-        urllib.request, "urlopen", side_effect=urllib.request.URLError("timeout")
-    ):
-        latest, versions = _get_pypi_versions("clang-format")
-    assert latest is None
-    assert versions == []
+# ---------------------------------------------------------------------------
+#  Platform tags
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
-    "error",
+    "os_name,arch,libc,mac,tag,expected",
     [
-        TimeoutError("The read operation timed out"),
-        ConnectionResetError("Connection reset by peer"),
-        http.client.IncompleteRead(b'{"releases": '),
+        ("windows", "amd64", ("", ""), "", "win_amd64", True),
+        ("windows", "amd64", ("", ""), "", "win32", False),
+        ("windows", "arm64", ("", ""), "", "win_arm64", True),
+        ("windows", "arm64", ("", ""), "", "win_amd64", False),
+        ("macosx", "arm64", ("", ""), "14.5", "macosx_11_0_arm64", True),
+        ("macosx", "arm64", ("", ""), "14.5", "macosx_10_9_universal2", True),
+        ("macosx", "arm64", ("", ""), "14.5", "macosx_10_9_x86_64", False),
+        ("macosx", "amd64", ("", ""), "10.15", "macosx_10_9_x86_64", True),
+        ("macosx", "amd64", ("", ""), "10.15", "macosx_11_0_x86_64", False),
+        ("macosx", "amd64", ("", ""), "", "macosx_10_9_x86_64", False),
+        ("linux", "amd64", ("glibc", "2.39"), "", "manylinux_2_28_x86_64", True),
+        ("linux", "amd64", ("glibc", "2.17"), "", "manylinux_2_28_x86_64", False),
+        ("linux", "amd64", ("glibc", "2.39"), "", "manylinux_2_28_aarch64", False),
+        ("linux", "arm64", ("glibc", "2.39"), "", "manylinux_2_28_aarch64", True),
+        ("linux", "amd64", ("glibc", "2.39"), "", "manylinux2014_x86_64", True),
+        ("linux", "amd64", ("glibc", "2.12"), "", "manylinux2014_x86_64", False),
+        ("linux", "amd64", ("glibc", "2.39"), "", "manylinux1_i686", False),
+        ("linux", "amd64", ("glibc", "2.39"), "", "musllinux_1_2_x86_64", False),
+        ("linux", "amd64", ("", ""), "", "musllinux_1_2_x86_64", True),
+        ("linux", "amd64", ("", ""), "", "manylinux_2_28_x86_64", False),
+        ("linux", "amd64", ("glibc", "2.39"), "", "linux_x86_64", False),
+        ("linux", "amd64", ("glibc", "2.39"), "", "any", False),
+        ("linux", "ppc64le", ("glibc", "2.39"), "", "manylinux_2_17_ppc64le", True),
+        ("linux", "ppc64le", ("glibc", "2.39"), "", "manylinux_2_17_x86_64", False),
+        ("linux", "s390x", ("glibc", "2.39"), "", "manylinux2014_s390x", True),
+        ("linux", "i686", ("glibc", "2.39"), "", "manylinux1_i686", True),
+        ("windows", "i686", ("", ""), "", "win32", True),
+        ("windows", "i686", ("", ""), "", "win_amd64", False),
+        ("macosx", "ppc64le", ("", ""), "14.5", "macosx_10_9_x86_64", False),
     ],
 )
-def test_get_pypi_versions_read_error(error: Exception):
-    """A failure while reading PyPI's answer counts as PyPI being unreachable."""
-    resp = MagicMock()
-    resp.read.side_effect = error
-    resp.__enter__.return_value = resp
-
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        assert _get_pypi_versions("clang-format") == (None, [])
-
-
-def test_get_pypi_versions_no_stable():
-    """When only pre-release versions exist, return (None, [])."""
-    resp = _pypi_response({"1.0.0alpha": [], "1.0.0b1": [], "1.0.0rc1": []})
-
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        latest, versions = _get_pypi_versions("clang-format")
-
-    assert latest is None
-    assert versions == []
-
-
-def test_get_pypi_versions_cached():
-    """LRU cache reuses the first result on repeated calls."""
-    call_count = 0
-
-    def counting_urlopen(url, timeout=None):
-        nonlocal call_count
-        call_count += 1
-        return _pypi_response({"1.0.0": [], "2.0.0": []})
-
-    with patch.object(urllib.request, "urlopen", side_effect=counting_urlopen):
-        result1 = _get_pypi_versions("clang-format")
-        result2 = _get_pypi_versions("clang-format")
-        _get_pypi_versions("clang-tidy")  # different tool → new call
-
-    assert call_count == 2
-    assert result1 == result2
+def test_is_compatible(
+    monkeypatch: pytest.MonkeyPatch,
+    os_name: str,
+    arch: str,
+    libc: tuple[str, str],
+    mac: str,
+    tag: str,
+    expected: bool,
+):
+    """Test which platform tags run on a machine."""
+    monkeypatch.setattr("clang_tools.wheel_install.install_os", os_name)
+    monkeypatch.setattr("clang_tools.wheel_install.install_arch", arch)
+    monkeypatch.setattr("platform.libc_ver", lambda: libc)
+    monkeypatch.setattr("platform.mac_ver", lambda: (mac, ("", "", ""), ""))
+    assert is_compatible(tag) is expected
 
 
 # ---------------------------------------------------------------------------
-#  _detect_installed_version
+#  Finding a wheel
 # ---------------------------------------------------------------------------
 
 
-def test_detect_installed_version_found():
-    """Detect version from ``<tool> --version`` output."""
-    with (
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(
-                stdout="clang-format version 18.1.8\n",
-                spec=subprocess.CompletedProcess,
-            ),
-        ),
+@pytest.mark.parametrize("html", [False, True], ids=["json", "html"])
+def test_pypi_releases_only_stable(wheels: FakeRelease, html: bool):
+    """Test that pre-releases, sdists and other projects' files are left out."""
+    wheels.pypi_html = html
+    for version in ("21.1.8", "22.1.0rc1", "22.1.0.dev1", "13.0.1.1"):
+        wheels.add_wheel("clang-format", version)
+    for name in (
+        "clang_format-21.1.6.tar.gz",
+        "clang_format_x-21.1.5-py3-none-any.whl",
+        "clang_format-21.1.4.whl",
     ):
-        version = _detect_installed_version("clang-format")
-    assert version == "18.1.8"
+        wheels.pypi["clang-format"].append(
+            {"filename": name, "url": "x", "hashes": {}, "yanked": False}
+        )
+    assert sorted(pypi_releases("clang-format")) == ["13.0.1.1", "21.1.8"]
 
 
-def test_detect_installed_version_not_found():
-    """Return None when tool is not on PATH."""
-    with patch("shutil.which", return_value=None):
-        version = _detect_installed_version("clang-format")
-    assert version is None
-
-
-def test_detect_installed_version_subprocess_error():
-    """Return None when subprocess fails."""
-    with (
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(subprocess, "run", side_effect=OSError("bad")),
-    ):
-        version = _detect_installed_version("clang-format")
-    assert version is None
-
-
-def test_detect_installed_version_no_version_in_output():
-    """Return None when --version output has no recognizable version."""
-    with (
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(
-                stdout="unknown output\n",
-                spec=subprocess.CompletedProcess,
-            ),
-        ),
-    ):
-        version = _detect_installed_version("clang-format")
-    assert version is None
-
-
-# ---------------------------------------------------------------------------
-#  _resolve_version
-# ---------------------------------------------------------------------------
-
-
-def test_resolve_version_null_input():
-    """When user_input is None, return the latest stable version."""
-    resp = _pypi_response({"18.1.8": [], "19.1.0": [], "20.1.8": []})
-
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        resolved, error = _resolve_version("clang-format", None)
-
-    assert resolved == "20.1.8"
-    assert error is None
-
-
-def test_resolve_version_exact_match():
-    """When user_input exactly matches an available version."""
-    resp = _pypi_response({"18.1.8": [], "19.1.0": [], "20.1.8": []})
-
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        resolved, error = _resolve_version("clang-format", "18.1.8")
-
-    assert resolved == "18.1.8"
-    assert error is None
-
-
-def test_resolve_version_prefix_match():
-    """Prefix match picks the newest version starting with the prefix."""
-    resp = _pypi_response(
+@pytest.mark.parametrize("html", [False, True], ids=["json", "html"])
+def test_pypi_releases_files(wheels: FakeRelease, html: bool):
+    """Test that both forms of the simple API give the same files."""
+    wheels.pypi_html = html
+    file = wheels.add_wheel("clang-format", "21.1.8")
+    wheels.add_wheel("clang-format", "21.1.7", yanked=True)
+    wheels.pypi["clang-format"].append(
         {
-            "18.1.8": [],
-            "19.1.0": [],
-            "19.1.1": [],
-            "19.1.7": [],
-            "20.1.8": [],
+            "filename": "clang_format-21.1.6-py2.py3-none-any.whl",
+            "url": "../../files/clang_format-21.1.6-py2.py3-none-any.whl",
+            "hashes": {},
+            "yanked": "broken",
         }
     )
-
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        resolved, error = _resolve_version("clang-format", "19")
-
-    assert resolved == "19.1.7"
-    assert error is None
+    releases = pypi_releases("clang-format")
+    assert releases["21.1.8"] == [
+        WheelFile(file["filename"], file["url"], file["hashes"]["sha256"], False)
+    ]
+    assert releases["21.1.7"][0].yanked
+    # a relative URL is resolved against the page
+    assert releases["21.1.6"] == [
+        WheelFile(
+            "clang_format-21.1.6-py2.py3-none-any.whl",
+            f"{pypi_url.rsplit('/', 1)[0]}/files/clang_format-21.1.6-py2.py3-none-any.whl",
+            "",
+            True,
+        )
+    ]
+    assert wheels.request_headers[-1]["Accept"].startswith(
+        "application/vnd.pypi.simple.v1+json"
+    )
 
 
 @pytest.mark.parametrize(
-    "user_input,expected",
-    [("9", "9.0.0"), ("22", "22.10.0"), ("22.1", "22.1.8"), ("1", None), ("2", None)],
+    "body", [b"not json", b'{"no": "files"}', b"[]"], ids=["json", "key", "type"]
 )
-def test_resolve_version_whole_components(user_input: str, expected: str | None):
-    """A prefix only matches whole version components ("2" is not "22.1.8")."""
-    resp = _pypi_response(
-        {"9.0.0": [], "19.1.7": [], "20.1.8": [], "22.1.8": [], "22.10.0": []}
+def test_pypi_releases_unusable(
+    monkeypatch: pytest.MonkeyPatch, wheels: FakeRelease, body: bytes
+):
+    """Test the message when the index answers with something unexpected."""
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        lambda url, timeout=None: FakeResponse(
+            body, content_type="application/vnd.pypi.simple.v1+json"
+        ),
+    )
+    with pytest.raises(SystemExit, match="Can't get the releases of clang-format"):
+        pypi_releases("clang-format")
+
+
+def test_pypi_releases_unknown_project(wheels: FakeRelease):
+    """Test the message for a tool that is not on PyPI."""
+    with pytest.raises(SystemExit, match="HTTP Error 404"):
+        pypi_releases("clang-nope")
+
+
+@pytest.mark.parametrize(
+    "version,expected",
+    [(None, "210.0.0"), ("21", "21.1.8"), ("21.1", "21.1.8"), ("21.1.0", "21.1.0")],
+)
+def test_find_wheel_version(wheels: FakeRelease, version: str | None, expected: str):
+    """Test that the newest matching version is picked."""
+    for v in ("21.1.0", "21.1.8", "22.1.8", "2.0.0", "210.0.0"):
+        wheels.add_wheel("clang-format", v)
+    assert find_wheel("clang-format", version)[0] == expected
+
+
+def test_find_wheel_skips_unusable_files(wheels: FakeRelease):
+    """Test that yanked files, sdists and other platforms are skipped."""
+    wheels.add_wheel("clang-format", "21.1.0")
+    wheels.add_wheel("clang-format", "21.1.8", tag="other_platform")
+    wheels.add_wheel("clang-format", "21.1.7", yanked=True)
+    wheels.pypi["clang-format"].append(
+        {
+            "filename": "clang_format-21.1.6.tar.gz",
+            "url": "x",
+            "hashes": {},
+            "yanked": False,
+        }
+    )
+    version, file = find_wheel("clang-format", "21")
+    assert version == "21.1.0"
+    assert file.filename.endswith(f"-{WHEEL_TAG}.whl")
+
+
+def test_find_wheel_multiple_tags(wheels: FakeRelease):
+    """Test a wheel with several platform tags in its name."""
+    wheels.add_wheel("clang-format", "21.1.8", tag=f"other_platform.{WHEEL_TAG}")
+    assert find_wheel("clang-format", None)[0] == "21.1.8"
+
+
+@pytest.mark.parametrize("version", ["21", None])
+def test_find_wheel_none(wheels: FakeRelease, version: str | None):
+    """Test the message when no wheel runs on this machine."""
+    wheels.add_wheel("clang-format", "21.1.8", tag="other_platform")
+    wanted = "clang-format 21" if version else "clang-format on"
+    with pytest.raises(SystemExit, match=f"No wheel of {wanted}"):
+        find_wheel("clang-format", version)
+
+
+@pytest.mark.parametrize(
+    "version,available",
+    [
+        ("21.1.8", "Available versions: 21.1.0, 21.1.6."),
+        ("99", "Available versions: 13, 21."),
+        (None, ""),
+    ],
+)
+def test_find_wheel_no_such_version(
+    wheels: FakeRelease, version: str | None, available: str
+):
+    """Test the message when the index has no such version."""
+    if version is not None:
+        for v in ("21.1.6", "13.0.1", "21.1.0"):
+            wheels.add_wheel("clang-format", v)
+    else:
+        wheels.pypi["clang-format"] = []
+    wanted = f"clang-format {version}" if version else "releases of clang-format"
+    with pytest.raises(SystemExit) as error:
+        find_wheel("clang-format", version)
+    assert str(error.value) == f"{pypi_url} has no {wanted}." + (
+        f" {available}" if available else ""
     )
 
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        resolved, error = _resolve_version("clang-format", user_input)
-
-    assert resolved == expected
-    assert (error is None) is (expected is not None)
-
-
-def test_resolve_version_no_match():
-    """When no version matches, return an error message."""
-    resp = _pypi_response({"18.1.8": [], "19.1.0": []})
-
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        resolved, error = _resolve_version("clang-format", "999")
-
-    assert resolved is None
-    assert error is not None
-    assert "Unsupported" in error
-    assert "Latest stable version" in error
-    assert "pip index versions" in error
-
-
-def test_resolve_version_pypi_unreachable_no_input():
-    """When PyPI is unreachable and user gives no version, fall back to local."""
-    with (
-        patch.object(
-            urllib.request, "urlopen", side_effect=urllib.request.URLError("timeout")
-        ),
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(
-                stdout="clang-format version 18.1.8\n",
-                spec=subprocess.CompletedProcess,
-            ),
-        ),
-    ):
-        resolved, error = _resolve_version("clang-format", None)
-
-    assert resolved == "18.1.8"
-    assert error is None
-
-
-def test_resolve_version_pypi_unreachable_no_local():
-    """When PyPI is unreachable AND no local tool, return error."""
-    with (
-        patch.object(
-            urllib.request, "urlopen", side_effect=urllib.request.URLError("timeout")
-        ),
-        patch("shutil.which", return_value=None),
-    ):
-        resolved, error = _resolve_version("clang-format", None)
-
-    assert resolved is None
-    assert error is not None
-    assert "Could not find any stable versions" in error
-
-
-def test_resolve_version_pypi_unreachable_with_version():
-    """When PyPI is unreachable and user specified a version, return error."""
-    with patch.object(
-        urllib.request, "urlopen", side_effect=urllib.request.URLError("timeout")
-    ):
-        resolved, error = _resolve_version("clang-format", "18.1.8")
-
-    assert resolved is None
-    assert error is not None
-    assert "Could not find any stable versions" in error
-
 
 # ---------------------------------------------------------------------------
-#  _is_version_installed
+#  Installing a wheel
 # ---------------------------------------------------------------------------
 
 
-def test_is_version_installed_found():
-    """Return path when installed version matches."""
-    with (
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(
-                stdout="clang-format version 18.1.8\n",
-                spec=subprocess.CompletedProcess,
-            ),
-        ),
-    ):
-        path = _is_version_installed("clang-format", "18.1.8")
-    assert path == Path("/usr/bin/clang-format")
+def test_install_wheel(wheels: FakeRelease, tmp_path: Path, data_root: Path, capsys):
+    """Test that the wheel's executable is linked from the install directory."""
+    wheels.add_wheel("clang-format", "21.1.8")
+    assert install_wheel("clang-format", "21", str(tmp_path), True) == "21.1.8"
+    prefix = data_root / "pypi-clang-format-21.1.8"
+    exe = prefix / "bin" / f"clang-format{suffix}"
+    link = tmp_path / f"clang-format-21{suffix}"
+    assert link.resolve() == exe.resolve()
+    assert link.read_text() == "clang-format 21.1.8\n"
+    assert os.access(exe, os.X_OK)
+    assert sorted(p.name for p in prefix.iterdir()) == ["bin"]  # not share/
+    assert "Installed clang-format 21.1.8 (from PyPI)" in capsys.readouterr().out
+
+    # installing again reuses the extracted wheel
+    downloads = len(wheels.requests)
+    other = tmp_path / "other"
+    other.mkdir()
+    install_wheel("clang-format", "21", str(other), True)
+    assert wheels.downloads()[downloads:] == ["clang-format"]  # only the file list
+    assert (other / f"clang-format-21{suffix}").resolve() == exe.resolve()
 
 
-def test_is_version_installed_not_on_path():
-    """Return None when tool is not found."""
-    with patch("shutil.which", return_value=None):
-        path = _is_version_installed("clang-format", "18.1.8")
-    assert path is None
+def test_install_wheel_headers(wheels: FakeRelease, tmp_path: Path, data_root: Path):
+    """Test that clang-tidy's headers are kept next to it, where clang finds them."""
+    wheels.add_wheel("clang-tidy", "21.1.8")
+    install_wheel("clang-tidy", None, str(tmp_path), True)
+    exe = (tmp_path / f"clang-tidy-21{suffix}").resolve()
+    assert (exe.parent.parent / "lib/clang/21/include/stddef.h").is_file()
 
 
-def test_is_version_installed_wrong_version():
-    """Return None when the installed version does not match."""
-    with (
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(
-                stdout="clang-format version 19.1.0\n",
-                spec=subprocess.CompletedProcess,
-            ),
-        ),
-    ):
-        path = _is_version_installed("clang-format", "18.1.8")
-    assert path is None
+def test_install_wheel_corrupted(wheels: FakeRelease, tmp_path: Path, data_root: Path):
+    """Test that a download not matching the checksum on PyPI is an error."""
+    file = wheels.add_wheel("clang-format", "21.1.8")
+    wheels.serve(file["filename"], b"not the wheel")
+    with pytest.raises(SystemExit, match="corrupted during download"):
+        install_wheel("clang-format", "21", str(tmp_path), True)
+    assert list(data_root.iterdir()) == []
+    assert list(tmp_path.iterdir()) == []
 
 
-# ---------------------------------------------------------------------------
-#  _install_tool
-# ---------------------------------------------------------------------------
+def test_install_wheel_download_error(
+    monkeypatch: pytest.MonkeyPatch, wheels: FakeRelease, tmp_path: Path
+):
+    """Test the message when the wheel can't be downloaded."""
+    file = wheels.add_wheel("clang-format", "21.1.8")
+    real_urlopen = wheels.urlopen
+
+    def urlopen(url, timeout=None):
+        if getattr(url, "full_url", url) == file["url"]:
+            raise OSError("network is down")
+        return real_urlopen(url, timeout)
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    with pytest.raises(SystemExit, match="network is down"):
+        install_wheel("clang-format", "21", str(tmp_path), True)
 
 
-def test_install_tool_success():
-    """Successful pip install returns the tool path."""
-    with (
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(returncode=0, spec=subprocess.CompletedProcess),
-        ),
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-    ):
-        path = _install_tool("clang-format", "18.1.8")
-    assert path == "/usr/bin/clang-format"
+def test_install_wheel_without_executable(wheels: FakeRelease, tmp_path: Path):
+    """Test a wheel that is laid out differently (like clang-format 6.0.1)."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as wheel:
+        wheel.writestr("clang_format/__init__.py", "")
+    wheels.add_wheel("clang-format", "6.0.1", data=buffer.getvalue())
+    with pytest.raises(SystemExit, match=f"has no clang-format{suffix} executable"):
+        install_wheel("clang-format", "6", str(tmp_path), True)
 
 
-def test_install_tool_failure():
-    """Failed pip install returns None."""
-    with patch.object(
-        subprocess,
-        "run",
-        return_value=MagicMock(
-            returncode=1,
-            stdout="error",
-            stderr="pip error",
-            spec=subprocess.CompletedProcess,
-        ),
-    ):
-        path = _install_tool("clang-format", "18.1.8")
-    assert path is None
+@pytest.mark.parametrize("tool", ["clang-query", "../clang-format"])
+def test_install_wheel_unknown_tool(wheels: FakeRelease, tmp_path: Path, tool: str):
+    """Test that only the known wheels are downloaded, not any project on PyPI."""
+    wheels.add_wheel(tool, "21.1.8")
+    with pytest.raises(SystemExit, match=f"{tool} has no wheel on PyPI"):
+        install_wheel(tool, None, str(tmp_path), True)
+    assert wheels.requests == []
 
 
-# ---------------------------------------------------------------------------
-#  resolve_wheel_install (integration / public API)
-# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "name", ["bin/../../../escape", "bin/C:/escape"], ids=["dotdot", "drive"]
+)
+def test_extract_wheel_rejects_parent_dirs(tmp_path: Path, name: str):
+    """Test that a wheel can't write outside the directory it is extracted to."""
+    wheel = tmp_path / "x.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr(f"clang_format/data/{name}", "x")
+    with pytest.raises(SystemExit, match="Unexpected entry"):
+        extract_wheel(wheel, "clang_format", tmp_path / "out")
+    assert not (tmp_path / "escape").exists()
 
 
-def test_resolve_wheel_install_success():
-    """Full successful resolution and install."""
-    resp = _pypi_response({"18.1.8": [], "20.1.8": []})
+def test_install_wheel_parallel_install(
+    monkeypatch: pytest.MonkeyPatch,
+    wheels: FakeRelease,
+    tmp_path: Path,
+    data_root: Path,
+):
+    """Test that a wheel extracted meanwhile by another process is kept."""
+    wheels.add_wheel("clang-format", "21.1.8")
+    exe = data_root / "pypi-clang-format-21.1.8" / "bin" / f"clang-format{suffix}"
+    real_extract = extract_wheel
 
-    with (
-        patch.object(urllib.request, "urlopen", return_value=resp),
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(
-                stdout="clang-format version 18.1.8\n",
-                spec=subprocess.CompletedProcess,
-            ),
-        ),
-    ):
-        path, error = resolve_wheel_install("clang-format", "18.1.8")
+    def extract_and_race(wheel, package, destination):
+        real_extract(wheel, package, destination)
+        exe.parent.mkdir(parents=True)  # the other process finished first
+        exe.write_text("from the other process")
 
-    assert path == Path("/usr/bin/clang-format")
-    assert error is None
-
-
-def test_resolve_wheel_install_latest():
-    """Install the latest stable version when version is None."""
-    resp = _pypi_response({"18.1.8": [], "20.1.8": []})
-
-    with (
-        patch.object(urllib.request, "urlopen", return_value=resp),
-        patch("shutil.which", side_effect=[None, "/usr/bin/clang-format"]),
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(returncode=0, spec=subprocess.CompletedProcess),
-        ),
-    ):
-        path, error = resolve_wheel_install("clang-format", None)
-
-    assert path == "/usr/bin/clang-format"
-    assert error is None
-
-
-def test_resolve_wheel_install_version_error():
-    """Returns error when version cannot be resolved."""
-    resp = _pypi_response({"18.1.8": []})
-
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        path, error = resolve_wheel_install("clang-format", "999")
-
-    assert path is None
-    assert error is not None
-    assert "Unsupported" in error
+    monkeypatch.setattr("clang_tools.wheel_install.extract_wheel", extract_and_race)
+    install_wheel("clang-format", "21", str(tmp_path), True)
+    assert (
+        tmp_path / f"clang-format-21{suffix}"
+    ).read_text() == "from the other process"
 
 
 # ---------------------------------------------------------------------------
-#  Requests and commands
+#  Mirrors and installing outside the home directory
 # ---------------------------------------------------------------------------
 
 
-def test_get_pypi_versions_request():
-    """The PyPI JSON API is queried for the tool, with a timeout."""
-    with patch.object(
-        urllib.request, "urlopen", return_value=_pypi_response({"1.0.0": []})
-    ) as urlopen:
-        _get_pypi_versions("clang-tidy")
-    urlopen.assert_called_once()
-    assert urlopen.call_args.args == ("https://pypi.org/pypi/clang-tidy/json",)
-    assert urlopen.call_args.kwargs["timeout"] > 0
-
-
-def test_get_pypi_versions_invalid_json():
-    """An unexpected (non-JSON) answer is treated like an unreachable PyPI."""
-    resp = MagicMock()
-    resp.read.return_value = b"<html>maintenance</html>"
-    resp.__enter__.return_value = resp
-    with patch.object(urllib.request, "urlopen", return_value=resp):
-        assert _get_pypi_versions("clang-format") == (None, [])
-
-
-def test_detect_installed_version_timeout():
-    """Return None when ``<tool> --version`` does not finish in time."""
-    with (
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(
-            subprocess,
-            "run",
-            side_effect=subprocess.TimeoutExpired(["clang-format"], 10),
+@pytest.mark.parametrize(
+    "url,expected,auth",
+    [
+        ("https://pypi.org/simple", "https://pypi.org/simple", None),
+        (
+            "https://me:p%40ss@mirror.example:8443/simple",
+            "https://mirror.example:8443/simple",
+            "me:p@ss",
         ),
-    ):
-        assert _detect_installed_version("clang-format") is None
-
-
-def test_install_tool_command():
-    """pip installs the exact version into the running interpreter, no shell."""
-    with (
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(returncode=0, spec=subprocess.CompletedProcess),
-        ) as run,
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-    ):
-        _install_tool("clang-format", "18.1.8")
-    run.assert_called_once()
-    assert run.call_args.args == (
-        [sys.executable, "-m", "pip", "install", "clang-format==18.1.8"],
-    )
-    assert not run.call_args.kwargs.get("shell", False)
-
-
-def test_install_tool_failure_logs(caplog: pytest.LogCaptureFixture):
-    """pip's output is logged when the installation fails."""
-    with (
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(
-                returncode=1,
-                stdout="pip stdout",
-                stderr="No matching distribution found",
-                spec=subprocess.CompletedProcess,
-            ),
+        (
+            "https://token@mirror.example/simple",
+            "https://mirror.example/simple",
+            "token:",
         ),
-        caplog.at_level(logging.ERROR, logger="clang_tools.wheel_install"),
-    ):
-        assert _install_tool("clang-format", "18.1.8") is None
-    assert "pip failed to install clang-format 18.1.8" in caplog.text
-    assert "No matching distribution found" in caplog.text
+    ],
+)
+def test_split_credentials(url: str, expected: str, auth: str | None):
+    """Test that a user name and password become an Authorization header."""
+    import base64
+
+    plain, headers = split_credentials(url)
+    assert plain == expected
+    if auth is None:
+        assert headers == {}
+    else:
+        token = base64.b64encode(auth.encode()).decode()
+        assert headers == {"Authorization": f"Basic {token}"}
 
 
-def test_resolve_wheel_install_already_installed():
-    """An installed tool of the resolved version is not installed again."""
-    resp = _pypi_response({"20.1.8": []})
-    with (
-        patch.object(urllib.request, "urlopen", return_value=resp),
-        patch("shutil.which", return_value="/usr/bin/clang-format"),
-        patch.object(
-            subprocess,
-            "run",
-            return_value=MagicMock(
-                stdout="clang-format version 20.1.8\n",
-                spec=subprocess.CompletedProcess,
-            ),
-        ) as run,
-    ):
-        path, error = resolve_wheel_install("clang-format", "20")
-    assert (path, error) == (Path("/usr/bin/clang-format"), None)
-    run.assert_called_once()  # only ``clang-format --version``, no pip
+@pytest.mark.parametrize("same_server", [True, False])
+def test_install_wheel_mirror_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    wheels: FakeRelease,
+    tmp_path: Path,
+    same_server: bool,
+    capsys,
+):
+    """Test that the password is sent to the mirror only, and never printed."""
+    mirror = "https://me:secret@files.pythonhosted.org/simple"
+    if not same_server:
+        mirror = "https://me:secret@mirror.example/simple"
+    monkeypatch.setattr("clang_tools.wheel_install.pypi_url", mirror)
+    plain = split_credentials(mirror)[0]
+    real_urlopen = wheels.urlopen
+
+    requests = []
+
+    def urlopen(request, timeout=None):
+        requests.append(request)
+        url = getattr(request, "full_url", request)
+        if url.startswith(f"{plain}/"):  # the mirror's project page
+            url = url.replace(plain, "https://pypi.org/simple")
+            request.full_url = url
+        return real_urlopen(request, timeout)
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    monkeypatch.setattr("clang_tools.wheel_install.pypi_url", mirror)
+    wheels.add_wheel("clang-format", "21.1.8")
+    install_wheel("clang-format", "21", str(tmp_path), True)
+    page, download = wheels.request_headers
+    assert "Authorization" in page
+    assert ("Authorization" in download) is same_server
+    # a redirect gets only the headers that aren't "unredirected"
+    assert not any("Authorization" in request.headers for request in requests)
+    out = capsys.readouterr()
+    assert "secret" not in out.out + out.err
+
+
+def test_install_wheel_no_checksum(wheels: FakeRelease, tmp_path: Path):
+    """Test that a wheel without a SHA256 checksum is not installed."""
+    wheels.add_wheel("clang-format", "21.1.8", hashes={})
+    with pytest.raises(SystemExit, match="gives no SHA256 checksum"):
+        install_wheel("clang-format", "21", str(tmp_path), True)
+
+
+def test_install_wheel_outside_home(
+    wheels: FakeRelease, tmp_path: Path, outside_home: Path, capsys
+):
+    """Test that the wheel's executable and headers are copied, not linked to HOME."""
+    wheels.add_wheel("clang-tidy", "21.1.8")
+    install_wheel("clang-tidy", "21", str(outside_home), True)
+    exe = outside_home / f"clang-tidy-21{suffix}"
+    assert not exe.is_symlink()
+    assert exe.read_text() == "clang-tidy 21.1.8\n"
+    assert (
+        tmp_path / "usr" / "lib" / "clang" / "21" / "include" / "stddef.h"
+    ).is_file()
+    assert list((tmp_path / "home").iterdir()) == []
+    assert sorted(p.name for p in outside_home.iterdir()) == [exe.name]
+    capsys.readouterr()
+
+    # installing again changes nothing
+    install_wheel("clang-tidy", "21", str(outside_home), True)
+    assert "Installing" not in capsys.readouterr().out
+
+
+def test_install_wheel_outside_home_not_allowed(
+    monkeypatch: pytest.MonkeyPatch, wheels: FakeRelease, outside_home: Path
+):
+    """Test the message when the install directory can't be written."""
+    wheels.add_wheel("clang-format", "21.1.8")
+
+    def refuse(*args, **kwargs):
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr("tempfile.TemporaryDirectory", refuse)
+    with pytest.raises(SystemExit, match="Don't have permission to install"):
+        install_wheel("clang-format", "21", str(outside_home), True)

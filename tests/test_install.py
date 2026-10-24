@@ -2,6 +2,7 @@
 
 import io
 import os
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -17,6 +18,7 @@ from clang_tools.install import (
     available_versions,
     binary_file_name,
     clang_tools_binary_url,
+    copy_headers,
     create_install_dir,
     create_sym_link,
     data_dir,
@@ -1127,6 +1129,29 @@ def test_link_binary_headers_next_to_link(
     # already there: nothing to do
     link_binary(stored, install_dir / "clang-tidy-15")
     assert capsys.readouterr().out == ""
+
+
+def test_copy_headers_parallel_install(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test that headers copied meanwhile by another process are kept."""
+    source = tmp_path / "data" / "lib"
+    (source / "clang" / "21" / "include").mkdir(parents=True)
+    (source / "clang" / "21" / "include" / "stddef.h").write_bytes(b"header")
+    lib = tmp_path / "venv" / "lib"
+    target = lib / "clang" / "21" / "include"
+    copytree = shutil.copytree
+
+    def copy_meanwhile(*args, **kwargs):
+        copied = copytree(*args, **kwargs)
+        if not target.exists():
+            # the other process finished after this one checked
+            target.mkdir(parents=True)
+            (target / "stddef.h").write_bytes(b"from the other process")
+        return copied
+
+    monkeypatch.setattr("clang_tools.install.shutil.copytree", copy_meanwhile)
+    copy_headers(source, lib)
+    assert (target / "stddef.h").read_bytes() == b"from the other process"
+    assert [p.name for p in (lib / "clang").iterdir()] == ["21"]
 
 
 @pytest.mark.parametrize(

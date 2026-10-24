@@ -243,6 +243,31 @@ def _version_key(version: str) -> tuple[int, ...]:
     return tuple(map(int, version.split(".")))
 
 
+def runs_here(file: WheelFile) -> bool:
+    """Check if a wheel runs on this machine and was not yanked."""
+    tags = file.filename.removesuffix(".whl").rsplit("-", 1)[-1].split(".")
+    return not file.yanked and any(is_compatible(tag) for tag in tags)
+
+
+def no_such_version(tool: str, version: str | None, versions: list[str]) -> SystemExit:
+    """The error for a version that the package index doesn't have.
+
+    :param versions: The versions that the index has, listed in the message: those
+        of the same major version, else every major version.
+    """
+    wanted = f"{tool} {version}" if version else f"a release of {tool}"
+    same_major = [
+        v for v in versions if version and major_version(v) == major_version(version)
+    ]
+    available = sorted(
+        same_major or {major_version(v) for v in versions}, key=_version_key
+    )
+    return SystemExit(
+        f"{pypi_url_shown()} has no {wanted}."
+        + (f" Available versions: {', '.join(available)}." if available else "")
+    )
+
+
 def find_wheel(tool: str, version: str | None) -> tuple[str, WheelFile]:
     """Find the newest wheel of a tool that runs on this machine.
 
@@ -259,26 +284,11 @@ def find_wheel(tool: str, version: str | None) -> tuple[str, WheelFile]:
         reverse=True,
     )
     if not candidates:
-        wanted = f"{tool} {version}" if version else f"a release of {tool}"
-        same_major = [
-            v
-            for v in releases
-            if version and major_version(v) == major_version(version)
-        ]
-        available = sorted(
-            same_major or {major_version(v) for v in releases}, key=_version_key
-        )
-        raise SystemExit(
-            f"{pypi_url_shown()} has no {wanted}."
-            + (f" Available versions: {', '.join(available)}." if available else "")
-        )
+        raise no_such_version(tool, version, list(releases))
     for candidate in candidates:
-        for file in releases[candidate]:
-            if file.yanked:
-                continue
-            tags = file.filename.removesuffix(".whl").rsplit("-", 1)[-1].split(".")
-            if any(is_compatible(tag) for tag in tags):
-                return candidate, file
+        file = next(filter(runs_here, releases[candidate]), None)
+        if file is not None:
+            return candidate, file
     wanted = f"{tool} {version}" if version else tool
     raise SystemExit(
         f"No wheel of {wanted} on {pypi_url_shown()} runs on this machine"

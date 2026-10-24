@@ -1,29 +1,38 @@
 """Tests related to installing a clang tool."""
 
+import io
 import os
+import shutil
 import subprocess
 import sys
+import tarfile
 from pathlib import Path, PurePath
 from unittest.mock import Mock
 from urllib.error import HTTPError
 
 import pytest
+from conftest import headers_dir_name, make_tar
 
 from clang_tools import MAX_VERSION, MIN_VERSION, install_arch, install_os, suffix
 from clang_tools.install import (
     available_versions,
     binary_file_name,
     clang_tools_binary_url,
+    copy_headers,
     create_install_dir,
     create_sym_link,
+    data_dir,
     default_install_dir,
+    extract_headers,
     find_binary,
     install_clang_tools,
     install_dir_name,
     install_tool,
     is_in_path,
     is_installed,
-    move_and_chmod_bin,
+    is_managed,
+    link_binary,
+    platform_name,
     uninstall_clang_tools,
     uninstall_tool,
 )
@@ -244,27 +253,26 @@ def test_install_tool_sha512_mismatch(monkeypatch: pytest.MonkeyPatch, tmp_path:
     existing_bin = tmp_path / bin_name
     existing_bin.write_bytes(b"corrupted binary data")
 
-    # install_tool should detect invalid sha, uninstall, and re-download
+    # install_tool replaces the file with a link to the verified binary
     assert install_tool(tool_name, version, str(tmp_path), False)
-    assert existing_bin.exists()
+    assert existing_bin.is_symlink()
+    assert existing_bin.read_bytes() != b"corrupted binary data"
 
 
-def test_move_and_chmod_bin(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    """Test move_and_chmod_bin directly."""
-    monkeypatch.chdir(tmp_path)
-    old_name = "downloaded-file"
-    new_name = "clang-format-12"
-    src_file = tmp_path / old_name
-    src_file.write_bytes(b"binary content")
+def test_link_binary(tmp_path: Path, capsys):
+    """Test that the install directory gets a link to the stored binary."""
+    stored = tmp_path / "data" / "bin" / "clang-format-12"
+    stored.parent.mkdir(parents=True)
+    stored.write_bytes(b"binary content")
+    destination = tmp_path / "clang-format-12"
+    destination.write_bytes(b"an older copy")
 
-    install_dir = tmp_path / "bin"
-    install_dir.mkdir()
-    move_and_chmod_bin(old_name, new_name, str(install_dir))
-
-    target = install_dir / new_name
-    assert target.exists()
-    assert not src_file.exists()  # moved, not copied
-    assert os.access(target, os.X_OK)
+    link_binary(stored, destination)
+    assert destination.is_symlink()
+    assert destination.resolve() == stored.resolve()
+    assert "Installing clang-format-12 to" in capsys.readouterr().out
+    link_binary(stored, destination)  # already linked: nothing to do
+    assert capsys.readouterr().out == ""
 
 
 def test_create_symlink_with_target(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -481,7 +489,9 @@ def test_install_tool_installs_published_binary(
     asset = clang_tools_binary_url("clang-tidy", "17").rsplit("/", 1)[-1]
     assert installed.read_bytes() == fake_release.published(asset)
     assert os.access(installed, os.X_OK)
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["bin"]
+    # nothing else next to the install directory, but the headers on Windows
+    expected = ["bin", "lib"] if install_os == "windows" else ["bin"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == expected
 
 
 def test_install_tool_keeps_valid_binary(
@@ -522,7 +532,7 @@ def test_install_tool_without_checksums(
 
 
 def test_install_tool_ignores_files_in_cwd(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, data_root: Path
 ):
     """Test that the download does not write through a link in the CWD."""
     cwd = tmp_path / "cwd"
@@ -538,7 +548,7 @@ def test_install_tool_ignores_files_in_cwd(
     assert install_tool("clang-format", "12", str(install_dir), True)
     assert victim.read_text(encoding="utf-8") == "keep me"
     installed = install_dir / f"clang-format-12{suffix}"
-    assert not installed.is_symlink()
+    assert installed.resolve().is_relative_to(data_root)
     assert installed.read_bytes() == fake_release.published(url.rsplit("/", 1)[-1])
 
 
@@ -561,10 +571,15 @@ def test_find_binary_from_index(monkeypatch: pytest.MonkeyPatch, fake_release):
     """Test that the URL and checksum come from the index, for any 18.x.y."""
     monkeypatch.setattr("clang_tools.install.install_os", "linux")
     monkeypatch.setattr("clang_tools.install.install_arch", "arm64")
-    url, checksum = find_binary("clang-tidy", "18.1.8")
-    assert url.endswith("/releases/download/llvm-18.1.0/clang-tidy-18_linux-arm64")
+    binary = find_binary("clang-tidy", "18.1.8")
+    assert binary.url.endswith(
+        "/releases/download/llvm-18.1.0/clang-tidy-18_linux-arm64"
+    )
+    assert binary.tag == "llvm-18.1.0"
+    assert binary.headers is not None
+    assert binary.headers[0].endswith("/llvm-18.1.0/clang-resource-headers-18.tar.gz")
     assert (
-        checksum
+        binary.sha512
         == fake_release._index()["versions"]["18"]["tools"]["clang-tidy"][
             "linux-arm64"
         ]["sha512"]
@@ -613,17 +628,16 @@ def test_index_url_from_environment():
     assert result.stdout.split() == ["https://example.com/index.json"]
 
 
-def test_move_and_chmod_bin_permission_error(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-):
+def test_link_binary_permission_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Test the message when the install directory is not writable."""
 
     def deny(*args, **kwargs):
         raise PermissionError("denied")
 
-    monkeypatch.setattr("shutil.move", deny)
+    monkeypatch.setattr(Path, "symlink_to", deny)
+    monkeypatch.setattr("shutil.copy2", deny)
     with pytest.raises(SystemExit, match="permission to install clang-format-12"):
-        move_and_chmod_bin("downloaded", "clang-format-12", str(tmp_path))
+        link_binary(tmp_path / "stored", tmp_path / "clang-format-12")
 
 
 def test_create_sym_link_overwrite_repoints_link(tmp_path: Path):
@@ -880,3 +894,345 @@ def test_is_in_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     assert not is_in_path(resolved)
     monkeypatch.delenv("PATH")
     assert not is_in_path(resolved)
+
+
+# ---------------------------------------------------------------------------
+#  The data directory and the clang resource headers
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("version", [15, 21])
+def test_install_tool_installs_headers(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_release,
+    data_root: Path,
+    version: int,
+):
+    """Test that clang-tidy is linked to a binary next to its resource headers."""
+    monkeypatch.chdir(tmp_path)
+    assert install_tool("clang-tidy", str(version), str(tmp_path), True)
+    prefix = data_root / f"llvm-{version}.1.0"
+    stored = prefix / "bin" / f"clang-tidy-{version}{suffix}"
+    installed = tmp_path / f"clang-tidy-{version}{suffix}"
+    assert installed.resolve() == stored.resolve()
+    assert os.access(stored, os.X_OK)
+    # where clang looks for them: <real path of the binary>/../lib/clang/<version>
+    include = stored.parent.parent / "lib" / "clang" / headers_dir_name(version)
+    assert (include / "include" / "stddef.h").is_file()
+    assert sorted(p.name for p in prefix.iterdir()) == ["bin", "lib"]
+    assert fake_release.downloads() == [
+        "index.json",
+        f"clang-tidy-{version}_{platform_name()}{suffix}",
+        f"clang-resource-headers-{version}.tar.gz",
+    ]
+
+    # another install directory reuses the binary and the headers
+    other = tmp_path / "other"
+    other.mkdir()
+    assert not install_tool("clang-tidy", str(version), str(other), True)
+    assert fake_release.downloads()[3:] == []
+    assert (other / f"clang-tidy-{version}{suffix}").resolve() == stored.resolve()
+
+
+def test_install_tool_without_headers_for_clang_format(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, data_root: Path
+):
+    """Test that tools that don't parse code don't download the headers."""
+    monkeypatch.chdir(tmp_path)
+    assert install_tool("clang-format", "21", str(tmp_path), True)
+    assert not (data_root / "llvm-21.1.0" / "lib").exists()
+
+
+def test_install_tool_redownloads_corrupted_store(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, data_root: Path
+):
+    """Test that a stored binary that doesn't match its checksum is replaced."""
+    monkeypatch.chdir(tmp_path)
+    stored = data_root / "llvm-12.1.0" / "bin" / f"clang-format-12{suffix}"
+    stored.parent.mkdir(parents=True)
+    stored.write_bytes(b"corrupted")
+    assert install_tool("clang-format", "12", str(tmp_path), True)
+    asset = clang_tools_binary_url("clang-format", "12").rsplit("/", 1)[-1]
+    assert stored.read_bytes() == fake_release.published(asset)
+
+
+def test_install_tool_rejects_corrupted_headers(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, data_root: Path
+):
+    """Test that headers not matching the published checksum are an error."""
+    monkeypatch.chdir(tmp_path)
+    fake_release.serve("clang-resource-headers-21.tar.gz", b"not the archive")
+    with pytest.raises(PyPIFallback, match="corrupted during download"):
+        install_tool("clang-tidy", "21", str(tmp_path / "bin"), True)
+    assert not (data_root / "llvm-21.1.0" / "lib").exists()
+    assert sorted(p.name for p in (data_root / "llvm-21.1.0").iterdir()) == ["bin"]
+
+
+def test_install_tool_invalid_tag(tmp_path: Path, fake_release):
+    """Test that a release tag from the index can't point outside the data dir."""
+    fake_release._index()["versions"]["21"]["tag"] = "../../escape"
+    with pytest.raises(PyPIFallback, match="Invalid release tag"):
+        install_tool("clang-format", "21", str(tmp_path), True)
+
+
+@pytest.mark.parametrize("has_archive", [True, False])
+def test_install_tool_tag_headers(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_release,
+    data_root: Path,
+    capsys,
+    has_archive: bool,
+):
+    """Test the headers of a release picked with CLANG_TOOLS_TAG, if it has them."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("clang_tools.install.binary_tag", "2026.01.01-abc")
+    if not has_archive:  # like the releases from before the headers existed
+        fake_release.sha512sums = "".join(
+            line
+            for line in fake_release._sha512sums().splitlines(keepends=True)
+            if "clang-resource-headers" not in line
+        )
+    assert install_tool("clang-tidy", "21", str(tmp_path), True)
+    headers = data_root / "2026.01.01-abc" / "lib" / "clang" / "21" / "include"
+    assert (headers / "stddef.h").is_file() is has_archive
+    warning = "has no clang resource headers" in capsys.readouterr().err
+    assert warning is not has_archive
+
+
+def test_install_headers_parallel_install(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, data_root: Path
+):
+    """Test that headers installed meanwhile by another process are kept."""
+    monkeypatch.chdir(tmp_path)
+    existing = data_root / "llvm-21.1.0" / "lib" / "clang" / "21" / "include"
+    existing.mkdir(parents=True)
+    (existing / "stddef.h").write_bytes(b"from the other process")
+    # the other process finished after this one checked
+    monkeypatch.setattr("clang_tools.install.has_headers", lambda prefix, major: False)
+    assert install_tool("clang-tidy", "21", str(tmp_path), True)
+    assert (existing / "stddef.h").read_bytes() == b"from the other process"
+    assert sorted(p.name for p in (data_root / "llvm-21.1.0").iterdir()) == [
+        "bin",
+        "lib",
+    ]
+
+
+@pytest.mark.parametrize(
+    "entries",
+    [
+        {"lib/clang/21/include/../../../../escape.h": b"x"},
+        {"/lib/clang/21/include/stddef.h": b"x"},
+        {"lib/other/21/include/stddef.h": b"x"},
+        {"lib/clang/stddef.h": b"x"},
+        {"lib/clang/21/include/stddef.h": b"x", "lib/clang/22/include/x.h": b"x"},
+        {"lib": None},
+        {"lib/clang/21/include/x\\..\\..\\..\\..\\escape.h": b"x"},
+        {"lib/clang/21/include/C:/escape.h": b"x"},
+    ],
+    ids=[
+        "dotdot",
+        "absolute",
+        "not-clang",
+        "no-version",
+        "two-versions",
+        "empty",
+        "backslash",
+        "drive",
+    ],
+)
+def test_extract_headers_rejects(tmp_path: Path, entries: dict):
+    """Test that an archive can only add the headers of one version."""
+    archive = tmp_path / "headers.tar.gz"
+    archive.write_bytes(make_tar(entries))
+    with pytest.raises(PyPIFallback):
+        extract_headers(archive, tmp_path / "out")
+    assert not (tmp_path / "out").exists()
+
+
+def test_extract_headers_rejects_links(tmp_path: Path):
+    """Test that an archive can't hold a symbolic link."""
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
+        link = tarfile.TarInfo("lib/clang/21/include/stddef.h")
+        link.type = tarfile.SYMTYPE
+        link.linkname = "/etc/passwd"
+        tar.addfile(link)
+    archive = tmp_path / "headers.tar.gz"
+    archive.write_bytes(buffer.getvalue())
+    with pytest.raises(PyPIFallback, match="Unexpected entry"):
+        extract_headers(archive, tmp_path / "out")
+
+
+def test_link_binary_copies_without_symlinks(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys
+):
+    """Test the copy used where links can't be made (Windows without Developer Mode).
+
+    clang looks for the headers next to the copy then.
+    """
+    prefix = tmp_path / "data" / "llvm-21.1.0"
+    stored = prefix / "bin" / "clang-tidy-21"
+    stored.parent.mkdir(parents=True)
+    stored.write_bytes(b"binary")
+    headers = prefix / "lib" / "clang" / "21" / "include"
+    headers.mkdir(parents=True)
+    (headers / "stddef.h").write_bytes(b"header")
+    install_dir = tmp_path / "venv" / "Scripts"
+    install_dir.mkdir(parents=True)
+
+    def refuse(self, target, target_is_directory=False):
+        raise OSError(1, "symlinks are not allowed")
+
+    monkeypatch.setattr(Path, "symlink_to", refuse)
+    link_binary(stored, install_dir / "clang-tidy-21")
+    assert (install_dir / "clang-tidy-21").read_bytes() == b"binary"
+    copied = tmp_path / "venv" / "lib" / "clang" / "21" / "include" / "stddef.h"
+    assert copied.read_bytes() == b"header"
+    assert "Copying the clang resource headers to" in capsys.readouterr().out
+
+    # already copied: nothing to do
+    link_binary(stored, install_dir / "clang-tidy-21")
+    assert capsys.readouterr().out == ""
+
+    # a tool without headers is just copied
+    (install_dir / "clang-tidy-21").unlink()
+    other = tmp_path / "data" / "tag" / "bin" / "clang-format-21"
+    other.parent.mkdir(parents=True)
+    other.write_bytes(b"format")
+    link_binary(other, install_dir / "clang-format-21")
+    assert (install_dir / "clang-format-21").read_bytes() == b"format"
+
+
+@pytest.mark.parametrize("os_name", ["windows", "linux"])
+def test_link_binary_headers_next_to_link(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys, os_name: str
+):
+    """Test that on Windows the headers are also next to the link.
+
+    clang 12 to 17 on Windows (at least) look for them there, not next to the linked binary.
+    """
+    monkeypatch.setattr("clang_tools.install.install_os", os_name)
+    prefix = tmp_path / "data" / "llvm-15.0.2"
+    stored = prefix / "bin" / "clang-tidy-15"
+    stored.parent.mkdir(parents=True)
+    stored.write_bytes(b"binary")
+    try:
+        (tmp_path / "symlink-probe").symlink_to(stored)
+    except OSError:  # pragma: no cover (Windows without Developer Mode)
+        pytest.skip("this host can't create symbolic links")
+    headers = prefix / "lib" / "clang" / "15.0.2" / "include"
+    headers.mkdir(parents=True)
+    (headers / "stddef.h").write_bytes(b"header")
+    install_dir = tmp_path / "venv" / "Scripts"
+    install_dir.mkdir(parents=True)
+
+    link_binary(stored, install_dir / "clang-tidy-15")
+    assert (install_dir / "clang-tidy-15").resolve() == stored.resolve()
+    copied = tmp_path / "venv" / "lib" / "clang" / "15.0.2" / "include" / "stddef.h"
+    assert copied.is_file() is (os_name == "windows")
+    capsys.readouterr()
+
+    # already there: nothing to do
+    link_binary(stored, install_dir / "clang-tidy-15")
+    assert capsys.readouterr().out == ""
+
+
+def test_copy_headers_parallel_install(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Test that headers copied meanwhile by another process are kept."""
+    source = tmp_path / "data" / "lib"
+    (source / "clang" / "21" / "include").mkdir(parents=True)
+    (source / "clang" / "21" / "include" / "stddef.h").write_bytes(b"header")
+    lib = tmp_path / "venv" / "lib"
+    target = lib / "clang" / "21" / "include"
+    copytree = shutil.copytree
+
+    def copy_meanwhile(*args, **kwargs):
+        copied = copytree(*args, **kwargs)
+        if not target.exists():
+            # the other process finished after this one checked
+            target.mkdir(parents=True)
+            (target / "stddef.h").write_bytes(b"from the other process")
+        return copied
+
+    monkeypatch.setattr("clang_tools.install.shutil.copytree", copy_meanwhile)
+    copy_headers(source, lib)
+    assert (target / "stddef.h").read_bytes() == b"from the other process"
+    assert [p.name for p in (lib / "clang").iterdir()] == ["21"]
+
+
+@pytest.mark.parametrize(
+    "os_name,env,expected",
+    [
+        ("linux", {"XDG_DATA_HOME": "xdg"}, "xdg/clang-tools"),
+        ("linux", {}, "home/.local/share/clang-tools"),
+        ("macosx", {}, "home/Library/Application Support/clang-tools"),
+        ("windows", {"LOCALAPPDATA": "local"}, "local/clang-tools"),
+        ("windows", {}, "home/AppData/Local/clang-tools"),
+        ("linux", {"CLANG_TOOLS_DATA_DIR": "custom"}, "custom"),
+    ],
+)
+def test_data_dir_default(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    os_name: str,
+    env: dict,
+    expected: str,
+):
+    """Test the default data directory of each OS."""
+    monkeypatch.chdir(tmp_path)
+    for name in ("CLANG_TOOLS_DATA_DIR", "XDG_DATA_HOME", "LOCALAPPDATA"):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, str(tmp_path / value))
+    monkeypatch.setattr(
+        "os.path.expanduser", lambda p: str(tmp_path / "home" / p.removeprefix("~/"))
+    )
+    monkeypatch.setattr("clang_tools.install.install_os", os_name)
+    assert data_dir() == Path(os.path.realpath(tmp_path / expected))
+
+
+def test_data_dir_not_writable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
+):
+    """Test the message when the data directory can't be created."""
+    not_a_dir = tmp_path / "file"
+    not_a_dir.write_bytes(b"not a directory")
+    monkeypatch.setenv("CLANG_TOOLS_DATA_DIR", str(not_a_dir))
+    with pytest.raises(SystemExit, match="Set CLANG_TOOLS_DATA_DIR"):
+        install_tool("clang-format", "21", str(tmp_path), True)
+
+
+def test_install_clang_tools_replaces_old_copy(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, data_root: Path
+):
+    """Test that a binary copied by an older clang-tools is replaced by a link.
+
+    The old copy has no headers next to it, so it is not used as a native binary.
+    """
+    monkeypatch.chdir(tmp_path)
+    old_copy = tmp_path / f"clang-tidy-21{suffix}"
+    old_copy.write_bytes(b"copied by clang-tools 1.x")
+    monkeypatch.setattr(
+        "clang_tools.install.is_installed", lambda tool, ver: old_copy.resolve()
+    )
+    install_clang_tools(Version("21"), ["clang-tidy"], str(tmp_path), False, True)
+    assert old_copy.is_symlink()
+    assert old_copy.resolve().is_relative_to(data_root)
+
+
+def test_is_managed(tmp_path: Path, data_root: Path):
+    """Test which binaries found in PATH are reinstalled."""
+    install_dir = str(tmp_path / "bin")
+    assert is_managed(tmp_path / "bin" / "clang-tidy-21", install_dir)
+    assert is_managed(data_root / "llvm-21.1.0" / "bin" / "clang-tidy-21", install_dir)
+    assert not is_managed(Path("/usr/lib/llvm-21/bin/clang-tidy"), install_dir)
+
+
+def test_uninstall_tool_removes_dangling_link(tmp_path: Path):
+    """Test that a link to a binary removed from the data directory is removed."""
+    link = tmp_path / f"clang-tidy-21{suffix}"
+    link.symlink_to(tmp_path / "data" / "gone")
+    uninstall_tool("clang-tidy", "21", str(tmp_path))
+    assert not os.path.lexists(link)

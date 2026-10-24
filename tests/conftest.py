@@ -7,11 +7,14 @@ clang-tools-static-binaries releases: it serves deterministic "binaries", a
 them, like the real releases do.
 """
 
+import gzip
 import hashlib
 import io
 import json
+import tarfile
 import urllib.request
 from collections.abc import Iterator
+from pathlib import Path
 from urllib.error import HTTPError
 
 import pytest
@@ -46,6 +49,50 @@ RELEASE_ASSETS = frozenset(
     for version in range(MIN_VERSION, MAX_VERSION + 1)
     for platform in PLATFORMS
 )
+
+#: The clang resource headers archive of every version in the fake release.
+HEADER_ASSETS = frozenset(
+    f"clang-resource-headers-{version}.tar.gz"
+    for version in range(MIN_VERSION, MAX_VERSION + 1)
+)
+
+
+def headers_dir_name(major: int) -> str:
+    """The resource headers directory of a version, like LLVM names it.
+
+    LLVM 15 and older use the full version, later versions the major version only.
+    """
+    return f"{major}.1.0" if major <= 15 else str(major)
+
+
+def make_tar(entries: dict[str, bytes | None]) -> bytes:
+    """A deterministic ``.tar.gz``: a `None` value is a directory, bytes a file."""
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w") as tar:
+        for name, data in entries.items():
+            info = tarfile.TarInfo(name)
+            if data is None:
+                info.type = tarfile.DIRTYPE
+                info.mode = 0o755
+                tar.addfile(info)
+            else:
+                info.size = len(data)
+                tar.addfile(info, io.BytesIO(data))
+    return gzip.compress(buffer.getvalue(), mtime=0)
+
+
+def headers_archive(major: int) -> bytes:
+    """The content of ``clang-resource-headers-<major>.tar.gz``."""
+    root = f"lib/clang/{headers_dir_name(major)}"
+    return make_tar(
+        {
+            "lib": None,
+            "lib/clang": None,
+            root: None,
+            f"{root}/include": None,
+            f"{root}/include/stddef.h": f"/* stddef.h of LLVM {major} */\n".encode(),
+        }
+    )
 
 
 #: The base URL of the fake per-version releases.
@@ -90,6 +137,8 @@ class FakeRelease:
     @staticmethod
     def published(name: str) -> bytes:
         """The content of the asset *name*, as listed in ``SHA512SUMS``."""
+        if name in HEADER_ASSETS:
+            return headers_archive(int(name.rsplit("-", 1)[1].split(".")[0]))
         return f"fake binary {name}\n".encode() * 8
 
     def serve(
@@ -120,7 +169,7 @@ class FakeRelease:
             data, status, length = self._served[name]
         elif name == "SHA512SUMS":
             data, status, length = self._sha512sums().encode(), 200, None
-        elif name in RELEASE_ASSETS:
+        elif name in RELEASE_ASSETS or name in HEADER_ASSETS:
             data, status, length = self.published(name), 200, None
         else:
             data, status, length = b"Not Found", 404, None
@@ -141,6 +190,13 @@ class FakeRelease:
                     "url": f"{RELEASES_URL}/download/{tag}/{name}",
                     "sha512": hashlib.sha512(self.published(name)).hexdigest(),
                 }
+            for version, entry in versions.items():
+                name = f"clang-resource-headers-{version}.tar.gz"
+                entry["resource_headers"] = {
+                    "name": name,
+                    "url": f"{RELEASES_URL}/download/{entry['tag']}/{name}",
+                    "sha512": hashlib.sha512(self.published(name)).hexdigest(),
+                }
             self.index = {"schema_version": 1, "versions": versions}
         return self.index
 
@@ -148,7 +204,7 @@ class FakeRelease:
         if self.sha512sums is None:
             self.sha512sums = "".join(
                 f"{hashlib.sha512(self.published(name)).hexdigest()}  {name}\n"
-                for name in sorted(RELEASE_ASSETS)
+                for name in sorted(RELEASE_ASSETS | HEADER_ASSETS)
             )
         return self.sha512sums
 
@@ -163,3 +219,13 @@ def fake_release(monkeypatch: pytest.MonkeyPatch) -> Iterator[FakeRelease]:
     yield release
     util._fetch_sha512sums.cache_clear()
     util.fetch_index.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def data_root(
+    monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
+) -> Path:
+    """Keep the downloaded binaries and headers out of the user's data directory."""
+    path = tmp_path_factory.mktemp("data")
+    monkeypatch.setenv("CLANG_TOOLS_DATA_DIR", str(path))
+    return path.resolve()

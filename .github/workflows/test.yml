@@ -154,6 +154,30 @@ jobs:
           clang-query-${{ matrix.version }} --version
           clang-apply-replacements-${{ matrix.version }} --version
 
+      - name: Check that clang-tidy finds clang's builtin headers
+        shell: bash
+        run: |
+          cat > builtin-headers.cpp <<'EOF'
+          #include <stddef.h>
+          #if !__has_include(<__clang_cuda_runtime_wrapper.h>)
+          #error "clang resource headers not found"
+          #endif
+          EOF
+          tidy="clang-tidy-${{ matrix.version }}"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            case "${{ matrix.version }}" in
+              15|16|18|20|21|22) tidy=clang-tidy.exe ;;
+              *) tidy="$tidy.exe" ;;
+            esac
+          fi
+          command -v "$tidy"
+          out=$("$tidy" --checks='-*,readability-else-after-return' builtin-headers.cpp -- 2>&1) || true
+          echo "$out"
+          if echo "$out" | grep -E "file not found|resource headers not found"; then
+            echo "::error::$tidy can't find clang's builtin headers"
+            exit 1
+          fi
+
       - name: Install and check wheels
         shell: bash
         run: |

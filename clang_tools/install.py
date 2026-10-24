@@ -5,14 +5,17 @@
 The module that performs the installation of clang-tools.
 """
 
+import filecmp
+import io
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
-from pathlib import Path, PurePath
-from typing import cast
+from pathlib import Path, PurePosixPath
+from typing import NamedTuple, cast
 
 from . import (
     MAX_VERSION,
@@ -39,6 +42,8 @@ from .util import (
 RE_PARSE_VERSION = re.compile(rb"version\s([\d\.]+)", re.MULTILINE)
 #: A binary's file name: no path separators, and not ``.`` or ``..``.
 RE_FILE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*")
+#: A file or directory name in an archive, such as ``__stddef_max_align_t.h``.
+RE_ENTRY_NAME = re.compile(r"[A-Za-z0-9_.+-]+")
 
 
 def is_installed(tool_name: str, version: Version) -> Path | None:
@@ -95,19 +100,49 @@ def available_versions() -> list[int]:
     return sorted(int(v) for v in fetch_index(index_url)["versions"])
 
 
-def find_binary(tool: str, version: str) -> tuple[str, str]:
+#: The tools that parse C and C++ code. They need clang's builtin headers, such as
+#: ``stddef.h``, which clang looks for in ``<bin>/../lib/clang/<version>/include``.
+HEADER_TOOLS = frozenset(
+    {"clang-tidy", "clang-query", "clang-include-cleaner", "clang-scan-deps"}
+)
+
+
+class Binary(NamedTuple):
+    """Where to download a static binary from, and what it must match."""
+
+    #: The download URL of the binary.
+    url: str
+    #: The SHA512 checksum of the binary.
+    sha512: str
+    #: The tag of the release that holds the binary.
+    tag: str
+    #: The download URL and SHA512 checksum of the release's clang resource headers,
+    #: or `None` if the release has none.
+    headers: tuple[str, str] | None
+
+
+def find_binary(tool: str, version: str) -> Binary:
     """Find where to download a binary and the checksum it must match.
 
     :param tool: The name of the tool to download.
     :param version: The version of the tool to download.
 
-    :returns: The download URL and the expected SHA512 checksum.
+    :returns: The binary's download URL, checksum and release.
     :raises PyPIFallback: If the binary is not available.
     """
+    major = version.split(".", 1)[0]
     if binary_tag:
         url = clang_tools_binary_url(tool, version)
-        return url, get_sha_checksum(url)
-    major = version.split(".", 1)[0]
+        base_url = url.rsplit("/", 1)[0]
+        headers_url = f"{base_url}/clang-resource-headers-{major}.tar.gz"
+        try:
+            headers: tuple[str, str] | None = (
+                headers_url,
+                get_sha_checksum(headers_url),
+            )
+        except PyPIFallback:  # older releases have no headers
+            headers = None
+        return Binary(url, get_sha_checksum(url), binary_tag, headers)
     entry = fetch_index(index_url)["versions"].get(major)
     if entry is None:
         raise PyPIFallback(
@@ -120,7 +155,9 @@ def find_binary(tool: str, version: str) -> tuple[str, str]:
             f"{tool} {major} is not available in static binary builds"
             f" for {platform_name()}."
         )
-    return binary["url"], binary["sha512"]
+    archive = entry.get("resource_headers")
+    headers = None if archive is None else (archive["url"], archive["sha512"])
+    return Binary(binary["url"], binary["sha512"], entry["tag"], headers)
 
 
 def clang_tools_binary_url(tool: str, version: str) -> str:
@@ -132,7 +169,7 @@ def clang_tools_binary_url(tool: str, version: str) -> str:
     :returns: The URL used to download the specified tool.
     """
     if not binary_tag:
-        return find_binary(tool, version)[0]
+        return find_binary(tool, version).url
     base_url = f"{binary_repo}/releases/download/{binary_tag}"
     download_url = f"{base_url}/{tool}-{version}_{platform_name()}{suffix}"
     return download_url.replace(" ", "")
@@ -152,44 +189,262 @@ def binary_file_name(tool_name: str, version: str) -> str:
     return file_name
 
 
+def data_dir() -> Path:
+    """The directory that keeps the downloaded binaries and headers (resolved).
+
+    Set ``CLANG_TOOLS_DATA_DIR`` to use another directory. Otherwise it is
+    ``$XDG_DATA_HOME/clang-tools`` (``~/.local/share/clang-tools``) on Linux,
+    ``~/Library/Application Support/clang-tools`` on macOS and
+    ``%LOCALAPPDATA%\\clang-tools`` on Windows.
+    """
+    configured = os.getenv("CLANG_TOOLS_DATA_DIR")
+    if configured:
+        return Path(os.path.realpath(configured))
+    if install_os == "windows":
+        base = os.getenv("LOCALAPPDATA") or os.path.expanduser("~/AppData/Local")
+    elif install_os == "macosx":
+        base = os.path.expanduser("~/Library/Application Support")
+    else:
+        base = os.getenv("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    return Path(os.path.realpath(base), "clang-tools")
+
+
+def make_dir(path: Path) -> None:
+    """Create a directory in the data directory, and its parents."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise SystemExit(
+            f"Can't create {path}: {exc.strerror or exc}."
+            " Set CLANG_TOOLS_DATA_DIR to a writable directory."
+        ) from exc
+
+
+def download_verified(
+    url: str, checksum: str, destination: Path, no_progress_bar: bool
+) -> bool:
+    """Download a file unless ``destination`` already holds it.
+
+    The file is downloaded next to ``destination`` and only moved there once its
+    checksum matches, so ``destination`` is never a partial or corrupted file.
+
+    :param url: The URL to download from.
+    :param checksum: The SHA512 checksum that the file must match.
+    :param destination: Where to put the file.
+    :param no_progress_bar: A flag used to disable the downloads' progress bar.
+
+    :returns: `True` if the file had to be downloaded.
+    :raises PyPIFallback: If the file could not be downloaded or is corrupted.
+    """
+    if destination.is_file() and verify_sha512(checksum, destination.read_bytes()):
+        return False
+    make_dir(destination.parent)
+    print("Downloading", url)
+    with tempfile.TemporaryDirectory(dir=destination.parent) as download_dir:
+        downloaded = Path(download_dir, destination.name)
+        download_file(url, str(downloaded), no_progress_bar)
+        if not verify_sha512(checksum, downloaded.read_bytes()):
+            raise PyPIFallback(f"File was corrupted during download from {url}")
+        downloaded.chmod(0o755)
+        os.replace(downloaded, destination)
+    return True
+
+
+def has_headers(prefix: Path, major: str) -> bool:
+    """Check if the clang resource headers of a version are in ``prefix``.
+
+    LLVM 15 and older name the directory with the full version (``lib/clang/15.0.2``),
+    later versions with the major version only (``lib/clang/16``).
+    """
+    clang_dir = prefix / "lib" / "clang"
+    return clang_dir.is_dir() and any(
+        d.name == major or d.name.startswith(f"{major}.") for d in clang_dir.iterdir()
+    )
+
+
+def extract_headers(archive: Path, destination: Path) -> PurePosixPath:
+    """Extract the clang resource headers archive.
+
+    Only directories and regular files under ``lib/clang/<version>/`` are accepted,
+    so the archive can't write anywhere else.
+
+    :param archive: The ``clang-resource-headers-<major>.tar.gz`` file.
+    :param destination: The directory to extract into.
+
+    :returns: The extracted ``lib/clang/<version>`` directory, relative to
+        ``destination``.
+    :raises PyPIFallback: If the archive has any other entry.
+    """
+    expected = ("lib", "clang")
+    with tarfile.open(archive, "r:gz") as tar:
+        members = tar.getmembers()
+        versions = set()
+        for member in members:
+            parts = PurePosixPath(member.name).parts
+            # plain names only: no "..", and no "\\" or ":" that Windows reads as
+            # a separator or a drive
+            inside = parts[:2] == expected[: len(parts)] and all(
+                RE_ENTRY_NAME.fullmatch(part) and part != ".." for part in parts
+            )
+            if not inside or not (member.isdir() or len(parts) > 3 and member.isfile()):
+                raise PyPIFallback(
+                    f"Unexpected entry {member.name!r} in {archive.name}"
+                )
+            if len(parts) > 2:
+                versions.add(parts[2])
+        if len(versions) != 1:
+            raise PyPIFallback(f"{archive.name} must hold the headers of one version")
+        for member in members:
+            target = destination.joinpath(*PurePosixPath(member.name).parts)
+            if member.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(
+                    cast(io.BufferedReader, tar.extractfile(member)).read()
+                )
+    return PurePosixPath(*expected, versions.pop())
+
+
+def install_headers(
+    headers: tuple[str, str], prefix: Path, major: str, no_progress_bar: bool
+) -> None:
+    """Install the clang resource headers of a version in ``prefix``, once.
+
+    :param headers: The download URL and SHA512 checksum of the headers archive.
+    :param prefix: The directory that holds ``bin/`` with the binaries.
+    :param major: The major version of the headers.
+    :param no_progress_bar: A flag used to disable the downloads' progress bar.
+
+    :raises PyPIFallback: If the headers could not be downloaded or extracted.
+    """
+    if has_headers(prefix, major):
+        return
+    url, checksum = headers
+    make_dir(prefix)
+    with tempfile.TemporaryDirectory(dir=prefix) as work_dir:
+        archive = Path(work_dir, "headers.tar.gz")
+        download_verified(url, checksum, archive, no_progress_bar)
+        extracted = Path(work_dir, "extracted")
+        version_dir = extract_headers(archive, extracted)
+        final = prefix.joinpath(*version_dir.parts)
+        final.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            # one rename, so the directory is either complete or not there
+            Path(extracted, *version_dir.parts).rename(final)
+        except OSError:
+            if not final.is_dir():
+                raise  # pragma: no cover (not a parallel install of the same version)
+
+
+def link_binary(stored: Path, destination: Path) -> None:
+    """Make ``destination`` run the binary ``stored`` in the data directory.
+
+    ``destination`` becomes a symbolic link, or a copy where links can't be created
+    (Windows without Developer Mode). clang looks for its resource headers in
+    ``../lib/clang`` from the binary it runs. Through a link, that is next to
+    ``stored`` on Linux and macOS, but next to the link on Windows (LLVM 12 to 17 at
+    least). So for a copy, and on Windows, the headers are also copied to
+    ``<destination>/../../lib``.
+    """
+    copied = False
+    try:
+        if destination.is_symlink():
+            current = destination.resolve() == stored.resolve()
+        else:
+            copied = current = destination.is_file() and filecmp.cmp(
+                destination, stored
+            )
+        if not current:
+            print("Installing", destination.name, "to", str(destination.parent))
+            # made next to `destination` and moved there in one step, which also
+            # replaces an older link or copy
+            with tempfile.TemporaryDirectory(dir=destination.parent) as work_dir:
+                staged = Path(work_dir, destination.name)
+                try:
+                    staged.symlink_to(stored)
+                except OSError:
+                    shutil.copy2(stored, staged)
+                    copied = True
+                os.replace(staged, destination)
+        if copied or install_os == "windows":
+            copy_headers(
+                stored.parent.parent / "lib", destination.parent.parent / "lib"
+            )
+    except PermissionError as exc:
+        raise SystemExit(
+            f"Don't have permission to install {destination.name} to"
+            f" {destination.parent}. Try to run with the appropriate permissions."
+        ) from exc
+
+
+def copy_headers(source: Path, lib: Path) -> None:
+    """Copy each version of the clang resource headers in ``source`` that ``lib``
+    doesn't have yet.
+
+    :param source: The ``lib`` directory next to a stored binary's ``bin``.
+    :param lib: The ``lib`` directory next to the install directory.
+    """
+    if not (source / "clang").is_dir():
+        return
+    for version_dir in (source / "clang").iterdir():
+        target = lib / "clang" / version_dir.name
+        if target.is_dir():
+            continue
+        print("Copying the clang resource headers to", str(lib))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        # copied next to `target` and renamed, so `target` is complete or not there
+        with tempfile.TemporaryDirectory(dir=target.parent) as work_dir:
+            staged = Path(work_dir, version_dir.name)
+            shutil.copytree(version_dir, staged)
+            try:
+                staged.rename(target)
+            except OSError:
+                if not target.is_dir():
+                    raise  # pragma: no cover (not a parallel install)
+
+
 def install_tool(
     tool_name: str, version: str, directory: str, no_progress_bar: bool
 ) -> bool:
-    """An abstract function that can install either clang-tidy or clang-format.
+    """Install a static binary of a clang tool.
+
+    The binary is kept in `data_dir()`, in a directory per release, next to the clang
+    resource headers that tools in `HEADER_TOOLS` need. ``directory`` gets a link to
+    it, named like ``clang-tidy-21``.
 
     :param tool_name: The name of the clang-tool to install.
     :param version: The version of the tools to install.
     :param directory: The installation directory.
     :param no_progress_bar: A flag used to disable the downloads' progress bar.
 
-    :returns: `True` if the binary had to be downloaded and installed.
-        `False` if the binary was not downloaded but is installed in ``directory``.
+    :returns: `True` if the binary had to be downloaded, `False` if it was already
+        in the data directory.
     :raises PyPIFallback: If the binary is not available or could not be downloaded.
     """
     try:
         file_name = binary_file_name(tool_name, version)
     except ValueError as exc:  # no static binary has such a name
         raise PyPIFallback(str(exc)) from exc
-    destination = Path(directory, file_name)
-    bin_url, checksum = find_binary(tool_name, version)
-    if destination.exists():
-        print(f"{tool_name}-{version}", "already installed...")
-        print("   checking SHA512...", end=" ")
-        if verify_sha512(checksum, destination.read_bytes()):
-            print("valid")
-            return False
-        print("invalid")
-        uninstall_tool(tool_name, version, directory)
-    print("Downloading", tool_name, f"(version {version})")
-    bin_name = str(PurePath(bin_url).stem)
-    # Download to a private directory and verify the file before installing it.
-    with tempfile.TemporaryDirectory() as download_dir:
-        downloaded = Path(download_dir, bin_name)
-        download_file(bin_url, str(downloaded), no_progress_bar)
-        if not verify_sha512(checksum, downloaded.read_bytes()):
-            raise PyPIFallback(f"File was corrupted during download from {bin_url}")
-        move_and_chmod_bin(str(downloaded), file_name, directory)
-    return True
+    binary = find_binary(tool_name, version)
+    if not RE_FILE_NAME.fullmatch(binary.tag):
+        raise PyPIFallback(f"Invalid release tag {binary.tag!r}")
+    major = version.split(".", 1)[0]
+    prefix = data_dir() / binary.tag
+    stored = prefix / "bin" / f"{tool_name}-{major}{suffix}"
+    downloaded = download_verified(binary.url, binary.sha512, stored, no_progress_bar)
+    if tool_name in HEADER_TOOLS:
+        if binary.headers is None:
+            print(
+                f"{YELLOW}Release {binary.tag} has no clang resource headers, so"
+                f" {tool_name} may report errors like 'stddef.h' file not found."
+                f"{RESET_COLOR}",
+                file=sys.stderr,
+            )
+        else:
+            install_headers(binary.headers, prefix, major, no_progress_bar)
+    link_binary(stored, Path(directory, file_name))
+    return downloaded
 
 
 def default_install_dir() -> str:
@@ -266,25 +521,6 @@ def is_in_path(directory: str) -> bool:
     )
 
 
-def move_and_chmod_bin(old_bin_name: str, new_bin_name: str, install_dir: str) -> None:
-    """Move download clang-tools binary and move to bin dir with right permission.
-
-    :param old_bin_name: The downloaded file's name.
-    :param new_bin_name: The desired name of the file after being moved to
-        the ``install_dir``.
-    :param install_dir: The target installation directory. It must exist.
-    """
-    print("Installing", new_bin_name, "to", install_dir)
-    try:
-        shutil.move(old_bin_name, f"{install_dir}/{new_bin_name}")
-        os.chmod(os.path.join(install_dir, new_bin_name), 0o755)
-    except PermissionError as exc:
-        raise SystemExit(
-            f"Don't have permission to install {new_bin_name} to {install_dir}."
-            + " Try to run with the appropriate permissions."
-        ) from exc
-
-
 def create_sym_link(
     tool_name: str,
     version: str,
@@ -353,7 +589,7 @@ def uninstall_tool(tool_name: str, version: str, directory: str):
         installed clang-tools.
     """
     tool_path = Path(directory, binary_file_name(tool_name, version))
-    if tool_path.exists():
+    if os.path.lexists(tool_path):  # also a link whose target is gone
         print("Removing", tool_path.name, "from", str(tool_path.parent))
         tool_path.unlink()
 
@@ -376,6 +612,18 @@ def uninstall_clang_tools(tools: list[str], version: str, directory: str):
     print(f"Uninstalling version {version} from {install_dir!s}")
     for tool in tools:
         uninstall_tool(tool, version, install_dir)
+
+
+def is_managed(path: Path, install_dir: str) -> bool:
+    """Check if a binary found in ``PATH`` was installed by clang-tools.
+
+    :param path: The resolved path of the binary.
+    :param install_dir: The install directory (in resolved form).
+
+    :returns: `True` if the binary is in the data directory, or is a file in the
+        install directory (as older versions of clang-tools installed them).
+    """
+    return path.parent == Path(install_dir) or path.is_relative_to(data_dir())
 
 
 def install_clang_tools(
@@ -405,6 +653,8 @@ def install_clang_tools(
         )
     for tool_name in tools:
         native_bin = is_installed(tool_name, version)
+        if native_bin is not None and is_managed(native_bin, install_dir):
+            native_bin = None  # installed by clang-tools: check it and its headers
         if native_bin is None:  # (not already installed)
             # only a download needs the list of available versions
             versions = available_versions()

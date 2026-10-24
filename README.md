@@ -65,12 +65,25 @@ clang-tools uninstall clang-format --version 21 --directory .
 ```
 
 - Uses SHA512 checksums to verify downloaded binaries.
+- Keeps each downloaded binary in a data directory, one folder per release, and puts a link
+  to it (e.g., `clang-format-21`) in the install directory. Installing the same version again,
+  in any directory, doesn't download it again.
+- Installs clang's builtin headers (`stddef.h`, `stdarg.h`, ...) next to clang-tidy, clang-query,
+  clang-include-cleaner and clang-scan-deps, so they can parse code that includes system headers.
 - Creates unversioned symlinks (e.g., `clang-format`) alongside versioned binaries (`clang-format-21`) for convenience.
 - If the versioned binary (e.g., `clang-format-21`) is already on your PATH, links to it instead of downloading.
+
+The data directory is `~/.local/share/clang-tools` on Linux (or `$XDG_DATA_HOME/clang-tools`),
+`~/Library/Application Support/clang-tools` on macOS and `%LOCALAPPDATA%\clang-tools` on Windows.
+Set `CLANG_TOOLS_DATA_DIR` to use another directory. `clang-tools uninstall` removes the links, not
+the data directory; delete it to free the space.
 
 > [!NOTE]
 > To create symbolic links on Windows, you must enable
 > [Developer Mode](https://learn.microsoft.com/en-us/windows/advanced-settings/developer-mode).
+> Without it, the binaries are copied to the install directory. On Windows, clang's builtin
+> headers are also copied to `<install directory>\..\lib\clang`, because clang (LLVM 12 to 17 at
+> least) looks for them next to the link rather than next to the binary it points to.
 
 > [!IMPORTANT]
 > This package only manages binary executables

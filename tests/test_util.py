@@ -185,12 +185,20 @@ def test_check_install_os_names(
         ("ARM64", "arm64"),
         ("AMD64", "amd64"),
         ("x86_64", "amd64"),
+        ("i686", "i686"),
+        ("x86", "i686"),
+        ("ppc64le", "ppc64le"),
+        ("s390x", "s390x"),
+        ("armv7l", "armv7l"),
     ],
 )
 def test_check_install_arch_names(
     monkeypatch: pytest.MonkeyPatch, machine: str, expected: str
 ):
-    """Tests that the CPU name is normalized for the release asset names."""
+    """Tests that the CPU name is normalized for the release asset names.
+
+    Architectures without static binaries keep their name, for the wheel tags.
+    """
     monkeypatch.setattr("platform.machine", lambda: machine)
     assert check_install_arch() == expected
 

@@ -345,7 +345,9 @@ def test_main_install_invalid_version(
 
 def test_main_install_newest_binary(monkeypatch: pytest.MonkeyPatch, tmp_path):
     """Without --version, any tool in the index installs its newest binary."""
-    monkeypatch.setattr("clang_tools.install.is_installed", lambda tool, ver: None)
+    monkeypatch.setattr(
+        "clang_tools.install.is_installed", lambda tool, ver, directory=None: None
+    )
     monkeypatch.setattr(
         sys,
         "argv",

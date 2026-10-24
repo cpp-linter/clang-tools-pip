@@ -35,12 +35,19 @@ class PyPIFallback(Exception):
 def check_install_arch() -> str:
     """Identify the CPU architecture.
 
-    :returns: ``"arm64"`` for ARM processors, ``"amd64"`` otherwise.
+    :returns: ``"amd64"`` for x86-64 and ``"arm64"`` for 64-bit ARM processors, as in
+        the static binaries' file names. Any other architecture keeps its own name in
+        lower case, such as ``"ppc64le"``, ``"s390x"`` or ``"i686"``. No static binary
+        is built for those, so only wheels can be installed on them.
     """
     machine = platform.machine().lower()
     if machine in ("arm64", "aarch64"):
         return "arm64"
-    return "amd64"
+    if machine in ("x86_64", "amd64", "x64"):
+        return "amd64"
+    if machine in ("i386", "i486", "i586", "i686", "x86"):
+        return "i686"
+    return machine
 
 
 def check_install_os() -> str:
@@ -61,17 +68,26 @@ def check_install_os() -> str:
     return this_os
 
 
-def download_file(url: str, file_name: str, no_progress_bar: bool) -> str:
+def download_file(
+    url: str,
+    file_name: str,
+    no_progress_bar: bool,
+    headers: dict[str, str] | None = None,
+) -> str:
     """Download the given file_name from the given url.
 
     :param url: The URL to download from.
     :param file_name: The file name to download.
+    :param headers: HTTP headers to send, such as ``Authorization``.
 
     :returns: The path to downloaded file.
     :raises PyPIFallback: If the file could not be downloaded completely.
     """
     try:
-        response: HTTPResponse = urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT)
+        response: HTTPResponse = urllib.request.urlopen(
+            urllib.request.Request(url, headers=headers) if headers else url,
+            timeout=DOWNLOAD_TIMEOUT,
+        )
     except DOWNLOAD_ERRORS as exc:
         raise PyPIFallback(f"Failed to download {url}: {exc}") from exc
 

@@ -86,6 +86,15 @@ The data directory is `~/.local/share/clang-tools` on Linux (or `$XDG_DATA_HOME/
 Set `CLANG_TOOLS_DATA_DIR` to use another directory. `clang-tools uninstall` removes the links, not
 the data directory; delete it to free the space.
 
+An install directory outside your home directory, such as `/usr/local/bin` with `sudo` or in a
+Docker image, gets a copy of each tool instead of a link, because other users may not be able to
+read your home directory. The builtin headers then go to `<install directory>/../lib/clang` (such
+as `/usr/local/lib/clang`), where clang looks for them. Setting `CLANG_TOOLS_DATA_DIR` keeps the
+links.
+
+A tool installed by `clang-tools` is checked against the index each time it is installed again. If
+the index can't be reached (for example, offline), the installed tool is kept.
+
 > [!NOTE]
 > To create symbolic links on Windows, you must enable
 > [Developer Mode](https://learn.microsoft.com/en-us/windows/advanced-settings/developer-mode).
@@ -113,8 +122,11 @@ the same as for binaries.
 clang-tools install clang-format --version 10
 ```
 
-Set `CLANG_TOOLS_PYPI_URL` to use a mirror of the PyPI JSON API
-(default: `https://pypi.org/pypi`).
+Wheels are found with the simple repository API of the package index (PEP 691 or PEP 503), so a
+mirror of PyPI works too. The index is `CLANG_TOOLS_PYPI_URL`, else the one set with
+`UV_DEFAULT_INDEX`, `UV_INDEX_URL` or `PIP_INDEX_URL` (default: `https://pypi.org/simple`). The URL
+may hold a user name and password, which are only sent to that server. Configuration files such as
+`pip.conf` and `uv.toml` are not read.
 
 ### Install the development version
 
@@ -149,9 +161,9 @@ For more details, visit [clang-tools-static-binaries](https://github.com/cpp-lin
 - [clang-include-cleaner](https://pypi.org/project/clang-include-cleaner/#history) (LLVM 22)
 - [clang-apply-replacements](https://pypi.org/project/clang-apply-replacements/#history) (LLVM 16 and later)
 
-Wheels are used for versions and platforms that have no static binary, such as clang-format 10 or
-Linux on i686, ppc64le and s390x. Check the respective PyPI pages for available versions and platform
-support.
+Wheels are used for versions and platforms that have no static binary, such as clang-format 10,
+32-bit Windows, or Linux on i686 and ARMv7 (and on ppc64le and s390x for clang-format). Check the
+respective PyPI pages for available versions and platform support.
 
 ## Contributing
 

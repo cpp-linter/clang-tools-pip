@@ -78,15 +78,18 @@ def download_file(
 
     :param url: The URL to download from.
     :param file_name: The file name to download.
-    :param headers: HTTP headers to send, such as ``Authorization``.
+    :param headers: HTTP headers to send, such as ``Authorization``. They are sent to
+        ``url`` only, not to where it redirects.
 
     :returns: The path to downloaded file.
     :raises PyPIFallback: If the file could not be downloaded completely.
     """
     try:
+        request = urllib.request.Request(url)
+        for name, value in (headers or {}).items():
+            request.add_unredirected_header(name, value)  # not sent to a redirect
         response: HTTPResponse = urllib.request.urlopen(
-            urllib.request.Request(url, headers=headers) if headers else url,
-            timeout=DOWNLOAD_TIMEOUT,
+            request, timeout=DOWNLOAD_TIMEOUT
         )
     except DOWNLOAD_ERRORS as exc:
         raise PyPIFallback(f"Failed to download {url}: {exc}") from exc
@@ -236,6 +239,11 @@ RE_VERSION = re.compile(r"\d+(\.\d+)*", re.ASCII)
 def major_version(version: str) -> str:
     """The major version of a version, such as ``21`` for ``21.1.8``."""
     return version.split(".", 1)[0]
+
+
+def version_key(version: str) -> tuple[int, ...]:
+    """The numbers of a version, to sort or compare versions such as ``21.1.8``."""
+    return tuple(map(int, version.split(".")))
 
 
 def version_matches(wanted: str, actual: str) -> bool:

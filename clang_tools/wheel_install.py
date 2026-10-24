@@ -41,6 +41,7 @@ from .util import (
     PyPIFallback,
     download_file,
     major_version,
+    version_key,
     version_matches,
 )
 
@@ -220,10 +221,10 @@ def pypi_releases(tool: str) -> dict[str, list[WheelFile]]:
     """
     index, credentials = split_credentials(pypi_url)
     url = f"{index}/{tool}/"
-    request = urllib.request.Request(
-        url, headers={"Accept": SIMPLE_API_ACCEPT, **credentials}
-    )
     try:
+        request = urllib.request.Request(url, headers={"Accept": SIMPLE_API_ACCEPT})
+        for name, value in credentials.items():
+            request.add_unredirected_header(name, value)  # not sent to a redirect
         with urllib.request.urlopen(request, timeout=DOWNLOAD_TIMEOUT) as response:
             body = response.read().decode(encoding="utf-8")
             files = parse_project_page(
@@ -239,10 +240,6 @@ def pypi_releases(tool: str) -> dict[str, list[WheelFile]]:
     return releases
 
 
-def _version_key(version: str) -> tuple[int, ...]:
-    return tuple(map(int, version.split(".")))
-
-
 def runs_here(file: WheelFile) -> bool:
     """Check if a wheel runs on this machine and was not yanked."""
     tags = file.filename.removesuffix(".whl").rsplit("-", 1)[-1].split(".")
@@ -255,12 +252,12 @@ def no_such_version(tool: str, version: str | None, versions: list[str]) -> Syst
     :param versions: The versions that the index has, listed in the message: those
         of the same major version, else every major version.
     """
-    wanted = f"{tool} {version}" if version else f"a release of {tool}"
+    wanted = f"{tool} {version}" if version else f"releases of {tool}"
     same_major = [
         v for v in versions if version and major_version(v) == major_version(version)
     ]
     available = sorted(
-        same_major or {major_version(v) for v in versions}, key=_version_key
+        same_major or {major_version(v) for v in versions}, key=version_key
     )
     return SystemExit(
         f"{pypi_url_shown()} has no {wanted}."
@@ -280,7 +277,7 @@ def find_wheel(tool: str, version: str | None) -> tuple[str, WheelFile]:
     releases = pypi_releases(tool)
     candidates = sorted(
         (v for v in releases if version is None or version_matches(version, v)),
-        key=_version_key,
+        key=version_key,
         reverse=True,
     )
     if not candidates:

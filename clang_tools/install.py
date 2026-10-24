@@ -36,6 +36,7 @@ from .util import (
     get_sha_checksum,
     major_version,
     verify_sha512,
+    version_key,
     version_matches,
 )
 
@@ -67,19 +68,9 @@ def is_installed(
     if directory is not None:
         path = Path(directory, f"{tool_name}-{major_version(version)}{suffix}")
         installed = str(path) if path.is_file() else None
-    try:
-        result = subprocess.run(
-            [installed or exe_name, "--version"],
-            capture_output=True,
-            check=True,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        # not installed, or it can't run: not allowed, or a broken file
+    ver_match = tool_version(installed or exe_name)
+    if ver_match is None:
         return None
-    ver_num = RE_PARSE_VERSION.search(result.stdout)
-    if ver_num is None:
-        return None  # not a clang tool
-    ver_match = cast(bytes, ver_num.groups(0)[0]).decode(encoding="utf-8")
     print(
         f"Found a installed version of {tool_name}:",
         ver_match,
@@ -94,6 +85,24 @@ def is_installed(
     if not version_matches(version, ver_match):
         return None  # not the desired version
     return path
+
+
+def tool_version(command: str) -> str | None:
+    """The version that a clang tool prints, such as ``21.1.8``.
+
+    :param command: The tool's name in ``PATH``, or its path.
+
+    :returns: `None` if the tool isn't found, can't run (not allowed, or a broken
+        file), or isn't a clang tool.
+    """
+    try:
+        result = subprocess.run([command, "--version"], capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    ver_num = RE_PARSE_VERSION.search(result.stdout)
+    if ver_num is None:
+        return None
+    return cast(bytes, ver_num.groups(0)[0]).decode(encoding="utf-8")
 
 
 def platform_name() -> str:
@@ -716,11 +725,20 @@ def keep_or_update(
     """Check a tool that clang-tools installed, and its headers, or update it.
 
     If the static binary can't be checked, such as when offline, the installed tool
-    is kept, since it is the version asked for.
+    is kept, since it is the version asked for. So is a newer patch release than the
+    static binary (a copy of a wheel, outside the home directory).
 
     :param path: The resolved path of the installed tool.
     """
     try:
+        static = find_binary(tool_name, version).version
+        installed = tool_version(str(path))
+        if "." in static and installed and version_key(installed) > version_key(static):
+            print(
+                f"Keeping the installed {tool_name} {installed} at {path}, which is"
+                f" newer than the static binary ({static})."
+            )
+            return
         install_tool(tool_name, version, directory, no_progress_bar)
     except PyPIFallback as exc:
         print(
@@ -770,6 +788,14 @@ def install_clang_tools(
                     keep_or_update(
                         tool_name, wanted, install_dir, no_progress_bar, installed
                     )
+                exe = Path(install_dir, f"{tool_name}-{major_version(wanted)}{suffix}")
+                if not exe.exists():  # it was found in another directory in PATH
+                    if uses_data_dir(install_dir):
+                        link_binary(installed, exe)
+                    else:  # a copy, with the headers
+                        wanted = install_wheel(
+                            tool_name, wanted, install_dir, no_progress_bar
+                        )
         except PyPIFallback as exc:
             print(
                 f"{YELLOW}No static binary of {tool_name} ({str(exc).rstrip('.')})."

@@ -48,16 +48,25 @@ RE_FILE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*")
 RE_ENTRY_NAME = re.compile(r"[A-Za-z0-9_.+-]+")
 
 
+class Found(NamedTuple):
+    """An installed tool, found by `is_installed()`."""
+
+    #: The resolved path of the tool.
+    path: Path
+    #: The version that the tool prints, such as ``21.1.8``.
+    version: str
+
+
 def is_installed(
     tool_name: str, version: str, directory: str | None = None
-) -> Path | None:
+) -> Found | None:
     """Detect if the specified tool is installed.
 
     :param tool_name: The name of the specified tool.
     :param version: The version to expect, such as ``21`` or ``21.1.8``.
     :param directory: The install directory, which is looked in before ``PATH``.
 
-    :returns: The path to the detected tool (if found), otherwise `None`.
+    :returns: The detected tool (if found), otherwise `None`.
     """
     exe_name = (
         f"{tool_name}"
@@ -68,9 +77,19 @@ def is_installed(
     if directory is not None:
         path = Path(directory, f"{tool_name}-{major_version(version)}{suffix}")
         installed = str(path) if path.is_file() else None
-    ver_match = tool_version(installed or exe_name)
-    if ver_match is None:
+    try:
+        result = subprocess.run(
+            [installed or exe_name, "--version"],
+            capture_output=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        # not installed, or it can't run: not allowed, or a broken file
         return None
+    ver_num = RE_PARSE_VERSION.search(result.stdout)
+    if ver_num is None:
+        return None  # not a clang tool
+    ver_match = cast(bytes, ver_num.groups(0)[0]).decode(encoding="utf-8")
     print(
         f"Found a installed version of {tool_name}:",
         ver_match,
@@ -84,25 +103,7 @@ def is_installed(
     print("at", str(path))
     if not version_matches(version, ver_match):
         return None  # not the desired version
-    return path
-
-
-def tool_version(command: str) -> str | None:
-    """The version that a clang tool prints, such as ``21.1.8``.
-
-    :param command: The tool's name in ``PATH``, or its path.
-
-    :returns: `None` if the tool isn't found, can't run (not allowed, or a broken
-        file), or isn't a clang tool.
-    """
-    try:
-        result = subprocess.run([command, "--version"], capture_output=True, check=True)
-    except (OSError, subprocess.CalledProcessError):
-        return None
-    ver_num = RE_PARSE_VERSION.search(result.stdout)
-    if ver_num is None:
-        return None
-    return cast(bytes, ver_num.groups(0)[0]).decode(encoding="utf-8")
+    return Found(path, ver_match)
 
 
 def platform_name() -> str:
@@ -720,32 +721,45 @@ def is_wheel(path: Path) -> bool:
 
 
 def keep_or_update(
-    tool_name: str, version: str, directory: str, no_progress_bar: bool, path: Path
+    tool_name: str, version: str, directory: str, no_progress_bar: bool, found: Found
 ) -> None:
     """Check a tool that clang-tools installed, and its headers, or update it.
 
     If the static binary can't be checked, such as when offline, the installed tool
     is kept, since it is the version asked for. So is a newer patch release than the
     static binary (a copy of a wheel, outside the home directory).
-
-    :param path: The resolved path of the installed tool.
     """
     try:
         static = find_binary(tool_name, version).version
-        installed = tool_version(str(path))
-        if "." in static and installed and version_key(installed) > version_key(static):
+        if "." in static and version_key(found.version) > version_key(static):
             print(
-                f"Keeping the installed {tool_name} {installed} at {path}, which is"
-                f" newer than the static binary ({static})."
+                f"Keeping the installed {tool_name} {found.version} at {found.path},"
+                f" which is newer than the static binary ({static})."
             )
             return
         install_tool(tool_name, version, directory, no_progress_bar)
     except PyPIFallback as exc:
         print(
-            f"{YELLOW}Keeping the installed {tool_name} at {path}"
+            f"{YELLOW}Keeping the installed {tool_name} at {found.path}"
             f" ({str(exc).rstrip('.')}).{RESET_COLOR}",
             file=sys.stderr,
         )
+
+
+def reinstall(
+    tool_name: str, version: str, directory: str, no_progress_bar: bool, found: Found
+) -> None:
+    """Install again a tool that clang-tools installed.
+
+    A static binary is checked with `keep_or_update()`, and a wheel is kept. A tool
+    found in another directory in ``PATH`` is also linked (or copied) into
+    ``directory``.
+    """
+    if not is_wheel(found.path):
+        keep_or_update(tool_name, version, directory, no_progress_bar, found)
+    exe = Path(directory, f"{tool_name}-{major_version(version)}{suffix}")
+    if not exe.exists():  # found in another directory in PATH
+        link_binary(found.path, exe, copy=not uses_data_dir(directory))
 
 
 def install_clang_tools(
@@ -779,23 +793,13 @@ def install_clang_tools(
         try:
             # the newest static binaries, when no version is given
             wanted = version or str(max(available_versions()))
-            native_bin = is_installed(tool_name, wanted, install_dir)
-            if native_bin is None:  # (not already installed)
+            found = is_installed(tool_name, wanted, install_dir)
+            if found is None:  # (not already installed)
                 install_tool(tool_name, wanted, install_dir, no_progress_bar)
-            elif is_managed(native_bin, install_dir):
-                installed, native_bin = native_bin, None
-                if not is_wheel(installed):
-                    keep_or_update(
-                        tool_name, wanted, install_dir, no_progress_bar, installed
-                    )
-                exe = Path(install_dir, f"{tool_name}-{major_version(wanted)}{suffix}")
-                if not exe.exists():  # it was found in another directory in PATH
-                    if uses_data_dir(install_dir):
-                        link_binary(installed, exe)
-                    else:  # a copy, with the headers
-                        wanted = install_wheel(
-                            tool_name, wanted, install_dir, no_progress_bar
-                        )
+            elif is_managed(found.path, install_dir):
+                reinstall(tool_name, wanted, install_dir, no_progress_bar, found)
+            else:  # installed some other way, such as by a package manager
+                native_bin = found.path
         except PyPIFallback as exc:
             print(
                 f"{YELLOW}No static binary of {tool_name} ({str(exc).rstrip('.')})."

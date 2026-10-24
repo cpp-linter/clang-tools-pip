@@ -226,7 +226,7 @@ def test_find_wheel_no_such_version(
             wheels.add_wheel("clang-format", v)
     else:
         wheels.pypi["clang-format"] = []
-    wanted = f"clang-format {version}" if version else "a release of clang-format"
+    wanted = f"clang-format {version}" if version else "releases of clang-format"
     with pytest.raises(SystemExit) as error:
         find_wheel("clang-format", version)
     assert str(error.value) == f"{pypi_url} has no {wanted}." + (
@@ -401,7 +401,10 @@ def test_install_wheel_mirror_credentials(
     plain = split_credentials(mirror)[0]
     real_urlopen = wheels.urlopen
 
+    requests = []
+
     def urlopen(request, timeout=None):
+        requests.append(request)
         url = getattr(request, "full_url", request)
         if url.startswith(f"{plain}/"):  # the mirror's project page
             url = url.replace(plain, "https://pypi.org/simple")
@@ -415,6 +418,8 @@ def test_install_wheel_mirror_credentials(
     page, download = wheels.request_headers
     assert "Authorization" in page
     assert ("Authorization" in download) is same_server
+    # a redirect gets only the headers that aren't "unredirected"
+    assert not any("Authorization" in request.headers for request in requests)
     out = capsys.readouterr()
     assert "secret" not in out.out + out.err
 

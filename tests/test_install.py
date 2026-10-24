@@ -1481,6 +1481,91 @@ def test_install_clang_tools_keeps_wheel(
     assert (tmp_path / f"clang-format{suffix}").resolve() == exe.resolve()
 
 
+def test_install_clang_tools_links_wheel_found_in_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, data_root: Path
+):
+    """Test that a wheel installed in another directory in PATH is linked here too."""
+    exe = data_root / "pypi-clang-format-21.1.8" / "bin" / f"clang-format{suffix}"
+    exe.parent.mkdir(parents=True)
+    exe.write_bytes(b"clang-format 21.1.8")
+    monkeypatch.setattr(
+        "clang_tools.install.is_installed", lambda tool, ver, directory=None: exe
+    )
+    install_dir = tmp_path / "other"
+    install_clang_tools("21.1.8", ["clang-format"], str(install_dir), False, True)
+    assert (install_dir / f"clang-format-21{suffix}").resolve() == exe.resolve()
+    assert (install_dir / f"clang-format{suffix}").resolve() == exe.resolve()
+
+
+def test_install_clang_tools_links_binary_found_in_path_offline(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
+):
+    """Test that a static binary in another directory in PATH is linked offline."""
+    first = tmp_path / "first"
+    install_clang_tools("21", ["clang-tidy"], str(first), False, True)
+    target = (first / f"clang-tidy-21{suffix}").resolve()
+    monkeypatch.setattr(
+        "clang_tools.install.is_installed", lambda tool, ver, directory=None: target
+    )
+
+    def offline(url):
+        raise PyPIFallback("Failed to download the index: Network is unreachable")
+
+    monkeypatch.setattr("clang_tools.install.fetch_index", offline)
+    second = tmp_path / "second"
+    install_clang_tools("21", ["clang-tidy"], str(second), False, True)
+    assert (second / f"clang-tidy-21{suffix}").resolve() == target
+
+
+def test_install_clang_tools_copies_wheel_found_in_path(
+    monkeypatch: pytest.MonkeyPatch, outside_home: Path
+):
+    """Test that a wheel found in PATH is installed again, as a copy with headers."""
+    exe = data_dir() / "pypi-clang-tidy-21.1.8" / "bin" / f"clang-tidy{suffix}"
+    exe.parent.mkdir(parents=True)
+    exe.write_bytes(b"clang-tidy 21.1.8")
+    monkeypatch.setattr(
+        "clang_tools.install.is_installed", lambda tool, ver, directory=None: exe
+    )
+
+    def install_wheel(tool, version, directory, no_progress_bar):
+        Path(directory, f"{tool}-21{suffix}").write_bytes(b"copy")
+        return "21.1.8"
+
+    monkeypatch.setattr("clang_tools.wheel_install.install_wheel", install_wheel)
+    install_clang_tools("21.1.8", ["clang-tidy"], str(outside_home), False, True)
+    assert (outside_home / f"clang-tidy-21{suffix}").read_bytes() == b"copy"
+
+
+@pytest.mark.parametrize("installed,kept", [("21.1.8", True), ("21.1.0", False)])
+def test_install_clang_tools_keeps_newer_copy(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_release,
+    outside_home: Path,
+    capsys,
+    installed: str,
+    kept: bool,
+):
+    """Test that a copy of a newer wheel than the static binary is kept.
+
+    ``--version 21`` after ``--version 21.1.8`` keeps 21.1.8 outside the home
+    directory too, where the wheel is a copy.
+    """
+    copy = outside_home / f"clang-format-21{suffix}"
+    copy.write_bytes(b"copied from a wheel")
+    monkeypatch.setattr(
+        "clang_tools.install.is_installed", lambda tool, ver, directory=None: copy
+    )
+    monkeypatch.setattr("clang_tools.install.tool_version", lambda path: installed)
+    install_clang_tools("21", ["clang-format"], str(outside_home), False, True)
+    assert (copy.read_bytes() == b"copied from a wheel") is kept
+    out = capsys.readouterr().out
+    assert (
+        f"Keeping the installed clang-format 21.1.8 at {copy}, which is newer than"
+        " the static binary (21.1.0)." in out
+    ) is kept
+
+
 def test_is_wheel(tmp_path: Path, data_root: Path):
     """Test which installed binaries come from a wheel."""
     assert is_wheel(data_root / "pypi-clang-format-21.1.8" / "bin" / "clang-format")

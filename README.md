@@ -92,8 +92,9 @@ read your home directory. The builtin headers then go to `<install directory>/..
 as `/usr/local/lib/clang`), where clang looks for them. Setting `CLANG_TOOLS_DATA_DIR` keeps the
 links.
 
-A tool installed by `clang-tools` is checked against the index each time it is installed again. If
-the index can't be reached (for example, offline), the installed tool is kept.
+A static binary installed by `clang-tools` is checked against the index each time it is installed
+again. If the index can't be reached (for example, offline), the installed binary is kept. A wheel
+of the version asked for is kept as it is, without checking the package index.
 
 > [!NOTE]
 > To create symbolic links on Windows, you must enable
@@ -125,8 +126,10 @@ clang-tools install clang-format --version 10
 Wheels are found with the simple repository API of the package index (PEP 691 or PEP 503), so a
 mirror of PyPI works too. The index is `CLANG_TOOLS_PYPI_URL`, else the one set with
 `UV_DEFAULT_INDEX`, `UV_INDEX_URL` or `PIP_INDEX_URL` (default: `https://pypi.org/simple`). The URL
-may hold a user name and password, which are only sent to that server. Configuration files such as
-`pip.conf` and `uv.toml` are not read.
+may hold a user name and password, which are only sent to that server (not after a redirect to
+another URL). Configuration files such as `pip.conf` and `uv.toml` are not read, and neither are
+extra indexes, so an index that doesn't have the tools needs `CLANG_TOOLS_PYPI_URL` set to
+`https://pypi.org/simple` or a mirror of it.
 
 ### Install the development version
 

@@ -11,12 +11,15 @@ import gzip
 import hashlib
 import io
 import json
+import os
 import tarfile
 import urllib.request
 import zipfile
 from collections.abc import Iterator
+from email.message import Message
 from pathlib import Path
 from urllib.error import HTTPError
+from urllib.request import Request
 
 import pytest
 
@@ -131,11 +134,25 @@ class FakeResponse(io.BytesIO):
     :param length: The advertised ``Content-Length`` (defaults to ``len(data)``).
     """
 
-    def __init__(self, data: bytes, status: int = 200, length: int | None = None):
+    def __init__(
+        self,
+        data: bytes,
+        status: int = 200,
+        length: int | None = None,
+        content_type: str = "application/octet-stream",
+        url: str = "",
+    ):
         super().__init__(data)
         self.status = status
         self.length = len(data) if length is None else length
         self.empty_reads = 0
+        self.headers = Message()
+        self.headers["Content-Type"] = content_type
+        self.url = url
+
+    def geturl(self) -> str:
+        """The URL of the response, after redirects."""
+        return self.url
 
     def read(self, size: int | None = -1) -> bytes:
         """Read like a socket, but fail instead of looping forever at the end."""
@@ -152,13 +169,17 @@ class FakeRelease:
     def __init__(self) -> None:
         #: Every ``(url, timeout)`` passed to ``urlopen``, in order.
         self.requests: list[tuple[str, float | None]] = []
+        #: The HTTP headers of each request, in the same order.
+        self.request_headers: list[dict[str, str]] = []
         #: Replaces the generated ``SHA512SUMS`` content when not `None`.
         self.sha512sums: str | None = None
         #: Replaces the generated ``index.json`` content when not `None`.
         self.index: dict | None = None
         self._served: dict[str, tuple[bytes, int, int | None]] = {}
-        #: The releases of each project on the fake PyPI, as in its JSON API.
-        self.pypi: dict[str, dict[str, list[dict]]] = {}
+        #: The files of each project on the fake PyPI, as in its simple JSON API.
+        self.pypi: dict[str, list[dict]] = {}
+        #: Serve the PEP 503 HTML pages instead of the PEP 691 JSON ones.
+        self.pypi_html = False
         self._wheels: dict[str, bytes] = {}
 
     def add_wheel(
@@ -180,12 +201,33 @@ class FakeRelease:
         file = {
             "filename": name,
             "url": f"{WHEELS_URL}/{name}",
-            "digests": {"sha256": hashlib.sha256(data).hexdigest()},
+            "hashes": {"sha256": hashlib.sha256(data).hexdigest()},
             "yanked": False,
             **info,
         }
-        self.pypi.setdefault(tool, {}).setdefault(version, []).append(file)
+        self.pypi.setdefault(tool, []).append(file)
         return file
+
+    def _project_page(self, project: str, url: str) -> FakeResponse:
+        """A project page of the simple repository API (PEP 691 or PEP 503)."""
+        files = self.pypi[project]
+        if not self.pypi_html:
+            body = {"meta": {"api-version": "1.1"}, "name": project, "files": files}
+            return FakeResponse(
+                json.dumps(body).encode(),
+                content_type="application/vnd.pypi.simple.v1+json",
+                url=url,
+            )
+        links = "".join(
+            f'<a href="{file["url"]}'
+            + (f"#sha256={file['hashes']['sha256']}" if file["hashes"] else "")
+            + '"'
+            + (' data-yanked=""' if file["yanked"] else "")
+            + f">{file['filename']}</a><br/>\n"
+            for file in files
+        )
+        page = f"<!DOCTYPE html><html><body><h1>{project}</h1>{links}</body></html>"
+        return FakeResponse(page.encode(), content_type="text/html", url=url)
 
     @staticmethod
     def published(name: str) -> bytes:
@@ -206,20 +248,23 @@ class FakeRelease:
 
     def downloads(self) -> list[str]:
         """The names of the assets (including ``SHA512SUMS``) requested so far."""
-        return [url.rsplit("/", 1)[-1] for url, _ in self.requests]
+        return [url.rstrip("/").rsplit("/", 1)[-1] for url, _ in self.requests]
 
-    def urlopen(self, url: str, timeout: float | None = None) -> FakeResponse:
+    def urlopen(self, url: str | Request, timeout: float | None = None) -> FakeResponse:
         """Answer like ``urllib.request.urlopen`` would for a release URL."""
+        headers = dict(url.header_items()) if isinstance(url, Request) else {}
+        url = url.full_url if isinstance(url, Request) else url
         self.requests.append((url, timeout))
+        self.request_headers.append(headers)
         if not url.startswith(("https://", "http://")):
             raise ValueError(f"unknown url type: {url!r}")
         if url == index_url:
             return FakeResponse(json.dumps(self._index()).encode())
-        if url.startswith(f"{pypi_url}/") and url.endswith("/json"):
+        if url.startswith(f"{pypi_url}/") and url.endswith("/"):
             project = url.split("/")[-2]
             if project not in self.pypi:
-                raise HTTPError(url, 404, "Not Found", {}, None)
-            return FakeResponse(json.dumps({"releases": self.pypi[project]}).encode())
+                raise HTTPError(url, 404, "Not Found", Message(), None)
+            return self._project_page(project, url)
         if url.startswith(f"{WHEELS_URL}/"):
             name = url.rsplit("/", 1)[-1]
             if name in self._served:
@@ -294,3 +339,23 @@ def data_root(
     path = tmp_path_factory.mktemp("data")
     monkeypatch.setenv("CLANG_TOOLS_DATA_DIR", str(path))
     return path.resolve()
+
+
+@pytest.fixture
+def outside_home(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, data_root: Path
+) -> Path:
+    """An install directory outside the home directory, like ``/usr/local/bin``.
+
+    ``CLANG_TOOLS_DATA_DIR`` is not set, so the tools are copied there.
+
+    :returns: The install directory, ``<tmp_path>/usr/bin``.
+    """
+    monkeypatch.delenv("CLANG_TOOLS_DATA_DIR")
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    install_dir = tmp_path / "usr" / "bin"
+    install_dir.mkdir(parents=True)
+    return Path(os.path.realpath(install_dir))

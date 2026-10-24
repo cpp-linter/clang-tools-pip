@@ -8,13 +8,15 @@ from pathlib import Path
 import pytest
 from conftest import WHEEL_TAG, FakeRelease
 
-from clang_tools import suffix
+from clang_tools import pypi_url, suffix
 from clang_tools.wheel_install import (
+    WheelFile,
     extract_wheel,
     find_wheel,
     install_wheel,
     is_compatible,
     pypi_releases,
+    split_credentials,
 )
 
 
@@ -57,6 +59,13 @@ def wheels(monkeypatch: pytest.MonkeyPatch, fake_release: FakeRelease) -> FakeRe
         ("linux", "amd64", ("", ""), "", "manylinux_2_28_x86_64", False),
         ("linux", "amd64", ("glibc", "2.39"), "", "linux_x86_64", False),
         ("linux", "amd64", ("glibc", "2.39"), "", "any", False),
+        ("linux", "ppc64le", ("glibc", "2.39"), "", "manylinux_2_17_ppc64le", True),
+        ("linux", "ppc64le", ("glibc", "2.39"), "", "manylinux_2_17_x86_64", False),
+        ("linux", "s390x", ("glibc", "2.39"), "", "manylinux2014_s390x", True),
+        ("linux", "i686", ("glibc", "2.39"), "", "manylinux1_i686", True),
+        ("windows", "i686", ("", ""), "", "win32", True),
+        ("windows", "i686", ("", ""), "", "win_amd64", False),
+        ("macosx", "ppc64le", ("", ""), "14.5", "macosx_10_9_x86_64", False),
     ],
 )
 def test_is_compatible(
@@ -81,24 +90,70 @@ def test_is_compatible(
 # ---------------------------------------------------------------------------
 
 
-def test_pypi_releases_only_stable(wheels: FakeRelease):
-    """Test that pre-releases are left out."""
+@pytest.mark.parametrize("html", [False, True], ids=["json", "html"])
+def test_pypi_releases_only_stable(wheels: FakeRelease, html: bool):
+    """Test that pre-releases, sdists and other projects' files are left out."""
+    wheels.pypi_html = html
     for version in ("21.1.8", "22.1.0rc1", "22.1.0.dev1", "13.0.1.1"):
         wheels.add_wheel("clang-format", version)
+    for name in (
+        "clang_format-21.1.6.tar.gz",
+        "clang_format_x-21.1.5-py3-none-any.whl",
+        "clang_format-21.1.4.whl",
+    ):
+        wheels.pypi["clang-format"].append(
+            {"filename": name, "url": "x", "hashes": {}, "yanked": False}
+        )
     assert sorted(pypi_releases("clang-format")) == ["13.0.1.1", "21.1.8"]
 
 
+@pytest.mark.parametrize("html", [False, True], ids=["json", "html"])
+def test_pypi_releases_files(wheels: FakeRelease, html: bool):
+    """Test that both forms of the simple API give the same files."""
+    wheels.pypi_html = html
+    file = wheels.add_wheel("clang-format", "21.1.8")
+    wheels.add_wheel("clang-format", "21.1.7", yanked=True)
+    wheels.pypi["clang-format"].append(
+        {
+            "filename": "clang_format-21.1.6-py2.py3-none-any.whl",
+            "url": "../../files/clang_format-21.1.6-py2.py3-none-any.whl",
+            "hashes": {},
+            "yanked": "broken",
+        }
+    )
+    releases = pypi_releases("clang-format")
+    assert releases["21.1.8"] == [
+        WheelFile(file["filename"], file["url"], file["hashes"]["sha256"], False)
+    ]
+    assert releases["21.1.7"][0].yanked
+    # a relative URL is resolved against the page
+    assert releases["21.1.6"] == [
+        WheelFile(
+            "clang_format-21.1.6-py2.py3-none-any.whl",
+            f"{pypi_url.rsplit('/', 1)[0]}/files/clang_format-21.1.6-py2.py3-none-any.whl",
+            "",
+            True,
+        )
+    ]
+    assert wheels.request_headers[-1]["Accept"].startswith(
+        "application/vnd.pypi.simple.v1+json"
+    )
+
+
 @pytest.mark.parametrize(
-    "body", [b"not json", b'{"no": "releases"}', b"[]"], ids=["json", "key", "type"]
+    "body", [b"not json", b'{"no": "files"}', b"[]"], ids=["json", "key", "type"]
 )
 def test_pypi_releases_unusable(
     monkeypatch: pytest.MonkeyPatch, wheels: FakeRelease, body: bytes
 ):
-    """Test the message when PyPI answers with something unexpected."""
+    """Test the message when the index answers with something unexpected."""
     from conftest import FakeResponse
 
     monkeypatch.setattr(
-        "urllib.request.urlopen", lambda url, timeout=None: FakeResponse(body)
+        "urllib.request.urlopen",
+        lambda url, timeout=None: FakeResponse(
+            body, content_type="application/vnd.pypi.simple.v1+json"
+        ),
     )
     with pytest.raises(SystemExit, match="Can't get the releases of clang-format"):
         pypi_releases("clang-format")
@@ -126,12 +181,17 @@ def test_find_wheel_skips_unusable_files(wheels: FakeRelease):
     wheels.add_wheel("clang-format", "21.1.0")
     wheels.add_wheel("clang-format", "21.1.8", tag="other_platform")
     wheels.add_wheel("clang-format", "21.1.7", yanked=True)
-    wheels.pypi["clang-format"]["21.1.6"] = [
-        {"filename": "clang_format-21.1.6.tar.gz", "url": "x", "yanked": False}
-    ]
+    wheels.pypi["clang-format"].append(
+        {
+            "filename": "clang_format-21.1.6.tar.gz",
+            "url": "x",
+            "hashes": {},
+            "yanked": False,
+        }
+    )
     version, file = find_wheel("clang-format", "21")
     assert version == "21.1.0"
-    assert file["filename"].endswith(f"-{WHEEL_TAG}.whl")
+    assert file.filename.endswith(f"-{WHEEL_TAG}.whl")
 
 
 def test_find_wheel_multiple_tags(wheels: FakeRelease):
@@ -140,13 +200,38 @@ def test_find_wheel_multiple_tags(wheels: FakeRelease):
     assert find_wheel("clang-format", None)[0] == "21.1.8"
 
 
-@pytest.mark.parametrize("version", ["99", None])
+@pytest.mark.parametrize("version", ["21", None])
 def test_find_wheel_none(wheels: FakeRelease, version: str | None):
     """Test the message when no wheel runs on this machine."""
     wheels.add_wheel("clang-format", "21.1.8", tag="other_platform")
-    wanted = "clang-format 99" if version else "clang-format on"
+    wanted = "clang-format 21" if version else "clang-format on"
     with pytest.raises(SystemExit, match=f"No wheel of {wanted}"):
         find_wheel("clang-format", version)
+
+
+@pytest.mark.parametrize(
+    "version,available",
+    [
+        ("21.1.8", "Available versions: 21.1.0, 21.1.6."),
+        ("99", "Available versions: 13, 21."),
+        (None, ""),
+    ],
+)
+def test_find_wheel_no_such_version(
+    wheels: FakeRelease, version: str | None, available: str
+):
+    """Test the message when the index has no such version."""
+    if version is not None:
+        for v in ("21.1.6", "13.0.1", "21.1.0"):
+            wheels.add_wheel("clang-format", v)
+    else:
+        wheels.pypi["clang-format"] = []
+    wanted = f"clang-format {version}" if version else "a release of clang-format"
+    with pytest.raises(SystemExit) as error:
+        find_wheel("clang-format", version)
+    assert str(error.value) == f"{pypi_url} has no {wanted}." + (
+        f" {available}" if available else ""
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -172,7 +257,7 @@ def test_install_wheel(wheels: FakeRelease, tmp_path: Path, data_root: Path, cap
     other = tmp_path / "other"
     other.mkdir()
     install_wheel("clang-format", "21", str(other), True)
-    assert wheels.downloads()[downloads:] == ["json"]  # only the release list
+    assert wheels.downloads()[downloads:] == ["clang-format"]  # only the file list
     assert (other / f"clang-format-21{suffix}").resolve() == exe.resolve()
 
 
@@ -202,7 +287,7 @@ def test_install_wheel_download_error(
     real_urlopen = wheels.urlopen
 
     def urlopen(url, timeout=None):
-        if url == file["url"]:
+        if getattr(url, "full_url", url) == file["url"]:
             raise OSError("network is down")
         return real_urlopen(url, timeout)
 
@@ -264,3 +349,113 @@ def test_install_wheel_parallel_install(
     assert (
         tmp_path / f"clang-format-21{suffix}"
     ).read_text() == "from the other process"
+
+
+# ---------------------------------------------------------------------------
+#  Mirrors and installing outside the home directory
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "url,expected,auth",
+    [
+        ("https://pypi.org/simple", "https://pypi.org/simple", None),
+        (
+            "https://me:p%40ss@mirror.example:8443/simple",
+            "https://mirror.example:8443/simple",
+            "me:p@ss",
+        ),
+        (
+            "https://token@mirror.example/simple",
+            "https://mirror.example/simple",
+            "token:",
+        ),
+    ],
+)
+def test_split_credentials(url: str, expected: str, auth: str | None):
+    """Test that a user name and password become an Authorization header."""
+    import base64
+
+    plain, headers = split_credentials(url)
+    assert plain == expected
+    if auth is None:
+        assert headers == {}
+    else:
+        token = base64.b64encode(auth.encode()).decode()
+        assert headers == {"Authorization": f"Basic {token}"}
+
+
+@pytest.mark.parametrize("same_server", [True, False])
+def test_install_wheel_mirror_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    wheels: FakeRelease,
+    tmp_path: Path,
+    same_server: bool,
+    capsys,
+):
+    """Test that the password is sent to the mirror only, and never printed."""
+    mirror = "https://me:secret@files.pythonhosted.org/simple"
+    if not same_server:
+        mirror = "https://me:secret@mirror.example/simple"
+    monkeypatch.setattr("clang_tools.wheel_install.pypi_url", mirror)
+    plain = split_credentials(mirror)[0]
+    real_urlopen = wheels.urlopen
+
+    def urlopen(request, timeout=None):
+        url = getattr(request, "full_url", request)
+        if url.startswith(f"{plain}/"):  # the mirror's project page
+            url = url.replace(plain, "https://pypi.org/simple")
+            request.full_url = url
+        return real_urlopen(request, timeout)
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    monkeypatch.setattr("clang_tools.wheel_install.pypi_url", mirror)
+    wheels.add_wheel("clang-format", "21.1.8")
+    install_wheel("clang-format", "21", str(tmp_path), True)
+    page, download = wheels.request_headers
+    assert "Authorization" in page
+    assert ("Authorization" in download) is same_server
+    out = capsys.readouterr()
+    assert "secret" not in out.out + out.err
+
+
+def test_install_wheel_no_checksum(wheels: FakeRelease, tmp_path: Path):
+    """Test that a wheel without a SHA256 checksum is not installed."""
+    wheels.add_wheel("clang-format", "21.1.8", hashes={})
+    with pytest.raises(SystemExit, match="gives no SHA256 checksum"):
+        install_wheel("clang-format", "21", str(tmp_path), True)
+
+
+def test_install_wheel_outside_home(
+    wheels: FakeRelease, tmp_path: Path, outside_home: Path, capsys
+):
+    """Test that the wheel's executable and headers are copied, not linked to HOME."""
+    wheels.add_wheel("clang-tidy", "21.1.8")
+    install_wheel("clang-tidy", "21", str(outside_home), True)
+    exe = outside_home / f"clang-tidy-21{suffix}"
+    assert not exe.is_symlink()
+    assert exe.read_text() == "clang-tidy 21.1.8\n"
+    assert (
+        tmp_path / "usr" / "lib" / "clang" / "21" / "include" / "stddef.h"
+    ).is_file()
+    assert list((tmp_path / "home").iterdir()) == []
+    assert sorted(p.name for p in outside_home.iterdir()) == [exe.name]
+    capsys.readouterr()
+
+    # installing again changes nothing
+    install_wheel("clang-tidy", "21", str(outside_home), True)
+    assert "Installing" not in capsys.readouterr().out
+
+
+def test_install_wheel_outside_home_not_allowed(
+    monkeypatch: pytest.MonkeyPatch, wheels: FakeRelease, outside_home: Path
+):
+    """Test the message when the install directory can't be written."""
+    wheels.add_wheel("clang-format", "21.1.8")
+
+    def refuse(*args, **kwargs):
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr("tempfile.TemporaryDirectory", refuse)
+    with pytest.raises(SystemExit, match="Don't have permission to install"):
+        install_wheel("clang-format", "21", str(outside_home), True)

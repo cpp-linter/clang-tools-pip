@@ -47,11 +47,14 @@ RE_FILE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*")
 RE_ENTRY_NAME = re.compile(r"[A-Za-z0-9_.+-]+")
 
 
-def is_installed(tool_name: str, version: str) -> Path | None:
+def is_installed(
+    tool_name: str, version: str, directory: str | None = None
+) -> Path | None:
     """Detect if the specified tool is installed.
 
     :param tool_name: The name of the specified tool.
     :param version: The version to expect, such as ``21`` or ``21.1.8``.
+    :param directory: The install directory, which is looked in before ``PATH``.
 
     :returns: The path to the detected tool (if found), otherwise `None`.
     """
@@ -60,23 +63,29 @@ def is_installed(tool_name: str, version: str) -> Path | None:
         + (f"-{major_version(version)}" if install_os != "windows" else "")
         + suffix
     )
+    installed = None
+    if directory is not None:
+        path = Path(directory, f"{tool_name}-{major_version(version)}{suffix}")
+        installed = str(path) if path.is_file() else None
     try:
         result = subprocess.run(
-            [exe_name, "--version"],
+            [installed or exe_name, "--version"],
             capture_output=True,
             check=True,
         )
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return None  # tool is not installed
+    except (OSError, subprocess.CalledProcessError):
+        # not installed, or it can't run: not allowed, or a broken file
+        return None
     ver_num = RE_PARSE_VERSION.search(result.stdout)
-    assert ver_num is not None, "Failed to parse version from tool output"
+    if ver_num is None:
+        return None  # not a clang tool
     ver_match = cast(bytes, ver_num.groups(0)[0]).decode(encoding="utf-8")
     print(
         f"Found a installed version of {tool_name}:",
         ver_match,
         end=" ",
     )
-    exe_path = shutil.which(exe_name)  # find the installed binary
+    exe_path = installed or shutil.which(exe_name)  # find the installed binary
     if exe_path is None:
         print()  # print end-of-line
         return None  # failed to locate the binary
@@ -93,9 +102,16 @@ def platform_name() -> str:
     return f"{os_name}-{install_arch}"
 
 
+#: A release that holds one LLVM version, such as ``llvm-21.1.0-3``.
+RE_VERSION_TAG = re.compile(r"llvm-(\d+)\.[\d.]+(-\d+)?")
+
+
 def available_versions() -> list[int]:
     """The major versions that can be installed as static binaries."""
     if binary_tag:
+        match = RE_VERSION_TAG.fullmatch(binary_tag)
+        if match is not None:
+            return [int(match[1])]
         return list(range(MIN_VERSION, MAX_VERSION + 1))
     return sorted(int(v) for v in fetch_index(index_url)["versions"])
 
@@ -250,7 +266,11 @@ def download_verified(
     :returns: `True` if the file had to be downloaded.
     :raises PyPIFallback: If the file could not be downloaded or is corrupted.
     """
-    if destination.is_file() and verify_sha512(checksum, destination.read_bytes()):
+    if (
+        destination.is_file()
+        and not destination.is_symlink()
+        and verify_sha512(checksum, destination.read_bytes())
+    ):
         return False
     make_dir(destination.parent)
     print("Downloading", url)
@@ -351,20 +371,44 @@ def install_headers(
                 raise  # pragma: no cover (not a parallel install of the same version)
 
 
-def link_binary(stored: Path, destination: Path) -> None:
-    """Make ``destination`` run the binary ``stored`` in the data directory.
+def no_permission(destination: Path) -> SystemExit:
+    """The error for an install directory that can't be written to."""
+    return SystemExit(
+        f"Don't have permission to install {destination.name} to"
+        f" {destination.parent}. Try to run with the appropriate permissions."
+    )
+
+
+def uses_data_dir(directory: str) -> bool:
+    """Check if the tools installed in ``directory`` link to `data_dir()`.
+
+    They do when ``CLANG_TOOLS_DATA_DIR`` is set, or when ``directory`` is in the
+    home directory. Elsewhere, such as ``/usr/local/bin`` or a Docker image's
+    directory, other users may not be able to read the home directory, so the tools
+    are copied there instead, with their resource headers in ``<directory>/../lib``.
+
+    :param directory: The install directory (in resolved form).
+    """
+    if os.getenv("CLANG_TOOLS_DATA_DIR"):
+        return True
+    home = Path(os.path.realpath(os.path.expanduser("~")))
+    return home != Path(home.anchor) and Path(directory).is_relative_to(home)
+
+
+def link_binary(stored: Path, destination: Path, copy: bool = False) -> None:
+    """Make ``destination`` run the binary ``stored``.
 
     ``destination`` becomes a symbolic link, or a copy where links can't be created
-    (Windows without Developer Mode). clang looks for its resource headers in
-    ``../lib/clang`` from the binary it runs. Through a link, that is next to
-    ``stored`` on Linux and macOS, but next to the link on Windows (LLVM 12 to 17 at
-    least). So for a copy, and on Windows, the headers are also copied to
-    ``<destination>/../../lib``.
+    (Windows without Developer Mode) or ``copy`` is set. clang looks for its
+    resource headers in ``../lib/clang`` from the binary it runs. Through a link,
+    that is next to ``stored`` on Linux and macOS, but next to the link on Windows
+    (LLVM 12 to 17 at least). So for a copy, and on Windows, the headers are also
+    copied to ``<destination>/../../lib``.
     """
     copied = False
     try:
         if destination.is_symlink():
-            current = destination.resolve() == stored.resolve()
+            current = not copy and destination.resolve() == stored.resolve()
         else:
             copied = current = destination.is_file() and filecmp.cmp(
                 destination, stored
@@ -376,6 +420,8 @@ def link_binary(stored: Path, destination: Path) -> None:
             with tempfile.TemporaryDirectory(dir=destination.parent) as work_dir:
                 staged = Path(work_dir, destination.name)
                 try:
+                    if copy:
+                        raise OSError("copy instead of linking")
                     staged.symlink_to(stored)
                 except OSError:
                     shutil.copy2(stored, staged)
@@ -386,10 +432,7 @@ def link_binary(stored: Path, destination: Path) -> None:
                 stored.parent.parent / "lib", destination.parent.parent / "lib"
             )
     except PermissionError as exc:
-        raise SystemExit(
-            f"Don't have permission to install {destination.name} to"
-            f" {destination.parent}. Try to run with the appropriate permissions."
-        ) from exc
+        raise no_permission(destination) from exc
 
 
 def copy_headers(source: Path, lib: Path) -> None:
@@ -425,7 +468,8 @@ def install_tool(
 
     The binary is kept in `data_dir()`, in a directory per release, next to the clang
     resource headers that tools in `HEADER_TOOLS` need. ``directory`` gets a link to
-    it, named like ``clang-tidy-21``.
+    it, named like ``clang-tidy-21``. Where `uses_data_dir()` is false, the binary is
+    downloaded into ``directory`` instead, and the headers into ``<directory>/../lib``.
 
     :param tool_name: The name of the clang-tool to install.
     :param version: The version of the tool to install, such as ``21`` or ``21.1.8``.
@@ -445,9 +489,18 @@ def install_tool(
     binary = find_binary(tool_name, version)
     if not RE_FILE_NAME.fullmatch(binary.tag):
         raise PyPIFallback(f"Invalid release tag {binary.tag!r}")
-    prefix = data_dir() / binary.tag
-    stored = prefix / "bin" / f"{tool_name}-{major}{suffix}"
-    downloaded = download_verified(binary.url, binary.sha512, stored, no_progress_bar)
+    destination = Path(directory, file_name)
+    if uses_data_dir(directory):
+        prefix = data_dir() / binary.tag
+        stored = prefix / "bin" / file_name
+    else:  # a copy, with the headers where clang looks for them
+        prefix, stored = destination.parent.parent, destination
+    try:
+        downloaded = download_verified(
+            binary.url, binary.sha512, stored, no_progress_bar
+        )
+    except PermissionError as exc:
+        raise no_permission(destination) from exc
     if tool_name in HEADER_TOOLS:
         if binary.headers is None:
             print(
@@ -457,9 +510,15 @@ def install_tool(
                 file=sys.stderr,
             )
         else:
-            install_headers(binary.headers, prefix, major, no_progress_bar)
-    destination = Path(directory, file_name)
-    link_binary(stored, destination)
+            try:
+                install_headers(binary.headers, prefix, major, no_progress_bar)
+            except PermissionError as exc:
+                raise SystemExit(
+                    "Don't have permission to install the clang resource headers to"
+                    f" {prefix / 'lib'}. Try to run with the appropriate permissions."
+                ) from exc
+    if stored != destination:
+        link_binary(stored, destination)
     print(f"Installed {tool_name} {binary.version} as {destination}")
     return downloaded
 
@@ -643,6 +702,34 @@ def is_managed(path: Path, install_dir: str) -> bool:
     return path.parent == Path(install_dir) or path.is_relative_to(data_dir())
 
 
+def is_wheel(path: Path) -> bool:
+    """Check if a binary was installed from a wheel, by `install_wheel()`."""
+    data = data_dir()
+    return path.is_relative_to(data) and path.relative_to(data).parts[0].startswith(
+        "pypi-"
+    )
+
+
+def keep_or_update(
+    tool_name: str, version: str, directory: str, no_progress_bar: bool, path: Path
+) -> None:
+    """Check a tool that clang-tools installed, and its headers, or update it.
+
+    If the static binary can't be checked, such as when offline, the installed tool
+    is kept, since it is the version asked for.
+
+    :param path: The resolved path of the installed tool.
+    """
+    try:
+        install_tool(tool_name, version, directory, no_progress_bar)
+    except PyPIFallback as exc:
+        print(
+            f"{YELLOW}Keeping the installed {tool_name} at {path}"
+            f" ({str(exc).rstrip('.')}).{RESET_COLOR}",
+            file=sys.stderr,
+        )
+
+
 def install_clang_tools(
     version: str | None,
     tools: list[str],
@@ -674,11 +761,15 @@ def install_clang_tools(
         try:
             # the newest static binaries, when no version is given
             wanted = version or str(max(available_versions()))
-            native_bin = is_installed(tool_name, wanted)
-            if native_bin is not None and is_managed(native_bin, install_dir):
-                native_bin = None  # installed by clang-tools: check it and its headers
+            native_bin = is_installed(tool_name, wanted, install_dir)
             if native_bin is None:  # (not already installed)
                 install_tool(tool_name, wanted, install_dir, no_progress_bar)
+            elif is_managed(native_bin, install_dir):
+                installed, native_bin = native_bin, None
+                if not is_wheel(installed):
+                    keep_or_update(
+                        tool_name, wanted, install_dir, no_progress_bar, installed
+                    )
         except PyPIFallback as exc:
             print(
                 f"{YELLOW}No static binary of {tool_name} ({str(exc).rstrip('.')})."

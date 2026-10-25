@@ -46,7 +46,8 @@ tracker = "https://github.com/cpp-linter/clang-tools-pip/issues"
 [project.optional-dependencies]
 dev = [
     "coverage",
-    "pre-commit",
+    # filelock, which pre-commit needs, has no fixed release for Python 3.10
+    "pre-commit; python_version >= '3.11'",
     "pygments>=2.20.0",
     "pytest",
 ]

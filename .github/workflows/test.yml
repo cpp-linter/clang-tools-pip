@@ -57,7 +57,8 @@ jobs:
     permissions:
       contents: read
     uses: cpp-linter/.github/.github/workflows/py-coverage.yml@main
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     permissions:

@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from conftest import RELEASED_TOOLS, FakeRelease
 
 from clang_tools import MAX_VERSION, MIN_VERSION, listing, suffix
 from clang_tools.install import install_clang_tools, platform_name
@@ -17,8 +18,6 @@ from clang_tools.listing import (
 )
 from clang_tools.main import main
 from clang_tools.util import PyPIFallback
-
-from conftest import RELEASED_TOOLS, FakeRelease
 
 
 @pytest.fixture

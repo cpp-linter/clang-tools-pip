@@ -22,6 +22,17 @@ binaries from static binary releases.
 
 ---
 
+## `clang_tools.listing`
+
+The lists behind `clang-tools list`.
+
+[:octicons-code-16: View source](https://github.com/cpp-linter/clang-tools-pip/blob/main/clang_tools/listing.py)
+
+Finds the versioned tools in an install directory, and the static binaries
+that the index has for this platform.
+
+---
+
 ## `clang_tools.util`
 
 Utility functions shared across the package.

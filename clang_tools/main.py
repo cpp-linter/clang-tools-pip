@@ -14,14 +14,25 @@ Usage::
 
     # Uninstall
     clang-tools uninstall clang-format --version 21
+
+    # Show the installed tools, or the versions that can be installed
+    clang-tools list
+    clang-tools list --available
 """
 
 import argparse
+import json
 import sys
 
 from . import RESET_COLOR, YELLOW
-from .install import install_clang_tools, uninstall_clang_tools
-from .util import RE_VERSION
+from .install import (
+    install_clang_tools,
+    install_dir_name,
+    platform_name,
+    uninstall_clang_tools,
+)
+from .listing import available_tools, installed_tools
+from .util import RE_VERSION, PyPIFallback
 
 
 def _handle_install(args: argparse.Namespace) -> int:
@@ -40,6 +51,43 @@ def _handle_install(args: argparse.Namespace) -> int:
     install_clang_tools(
         version, args.tools, args.directory, args.overwrite, args.no_progress_bar
     )
+    return 0
+
+
+def _handle_list(args: argparse.Namespace) -> int:
+    """Handle the ``list`` subcommand.
+
+    :returns: exit code (0 on success, 1 on failure).
+    """
+    if args.available:
+        try:
+            available = available_tools()
+        except PyPIFallback as exc:
+            print(f"{YELLOW}{exc}{RESET_COLOR}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(available, indent=2))
+            return 0
+        print(f"Static binaries for {platform_name()}:")
+        for entry in available:
+            print(f"  {entry['version']:<9} {', '.join(entry['tools'])}")
+        return 0
+    installed = installed_tools(args.directory)
+    if args.json:
+        print(json.dumps([tool._asdict() for tool in installed], indent=2))
+        return 0
+    install_dir = install_dir_name(args.directory)
+    if not installed:
+        print(f"No clang tools in {install_dir}")
+        return 0
+    print(f"Tools in {install_dir}:")
+    name_width = max(len(tool.tool) for tool in installed)
+    version_width = max(len(tool.version) for tool in installed)
+    for tool in installed:
+        print(
+            f"  {tool.tool:<{name_width}}  {tool.version:<{version_width}}"
+            f"  {tool.source:<6}  {'default' if tool.default else '':<7}  {tool.path}"
+        )
     return 0
 
 
@@ -115,6 +163,30 @@ def get_parser() -> argparse.ArgumentParser:
         help="The directory from which to uninstall the tools.",
     )
 
+    # --- ``clang-tools list`` ---------------------------------------------
+    list_p = subparsers.add_parser(
+        "list", help="List the installed tools, or the versions that can be installed"
+    )
+    list_p.add_argument(
+        "-d",
+        "--directory",
+        default="",
+        metavar="DIR",
+        help="The install directory to look in.",
+    )
+    list_p.add_argument(
+        "-a",
+        "--available",
+        action="store_true",
+        help="List the static binaries that can be installed on this platform,"
+        " instead of the installed tools.",
+    )
+    list_p.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the list as JSON.",
+    )
+
     # --- ``clang-tools version`` ------------------------------------------
     subparsers.add_parser(
         "version",
@@ -152,7 +224,7 @@ def main() -> int:
 
     if args.command is None:
         print(
-            f"{YELLOW}Nothing to do. Use 'install' or 'uninstall'"
+            f"{YELLOW}Nothing to do. Use 'install', 'uninstall' or 'list'"
             f" subcommand.{RESET_COLOR}",
             file=sys.stderr,
         )
@@ -165,6 +237,9 @@ def main() -> int:
     if args.command == "uninstall":
         uninstall_clang_tools(args.tools, args.version, args.directory)
         return 0
+
+    if args.command == "list":
+        return _handle_list(args)
 
     if args.command == "version":
         _print_version()

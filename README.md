@@ -72,6 +72,24 @@ To uninstall, give the tool names and the version:
 clang-tools uninstall clang-format --version 21 --directory .
 ```
 
+To see what is installed in a directory, and which versions can be installed:
+
+```bash
+clang-tools list
+# Tools in /home/me/.local/bin:
+#   clang-format  21.1.8  binary  default  /home/me/.local/bin/clang-format-21
+#   clang-tidy    21.1.8  binary  default  /home/me/.local/bin/clang-tidy-21
+
+clang-tools list --available
+# Static binaries for linux-amd64:
+#   23.1.5    clang-apply-replacements, clang-format, clang-include-cleaner, ...
+```
+
+Each line shows the tool, the version it prints, where it comes from (`binary` for a static
+binary, `wheel` for a wheel from PyPI, `copy` for a file in the install directory itself) and
+`default` when the name without a version (`clang-format`) runs it. Add `--json` for scripts, and
+`--directory` for another install directory.
+
 - Uses SHA512 checksums to verify downloaded binaries.
 - Keeps each downloaded binary in a data directory, one folder per release, and puts a link
   to it (e.g., `clang-format-21`) in the install directory. Installing the same version again,
@@ -161,7 +179,7 @@ For more details, visit [clang-tools-static-binaries](https://github.com/cpp-lin
 
 - [clang-format](https://pypi.org/project/clang-format/#history)
 - [clang-tidy](https://pypi.org/project/clang-tidy/#history)
-- [clang-include-cleaner](https://pypi.org/project/clang-include-cleaner/#history) (LLVM 22)
+- [clang-include-cleaner](https://pypi.org/project/clang-include-cleaner/#history) (LLVM 22 and later)
 - [clang-apply-replacements](https://pypi.org/project/clang-apply-replacements/#history) (LLVM 16 and later)
 
 Wheels are used for versions and platforms that have no static binary, such as clang-format 10,

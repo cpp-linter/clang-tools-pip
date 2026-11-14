@@ -1474,7 +1474,11 @@ def test_link_binary_copy(tmp_path: Path, capsys):
 
 
 def test_install_clang_tools_keeps_install_offline(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, capsys
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_release,
+    capsys,
+    no_system_tools,
 ):
     """Test that an installed tool is kept when the index can't be fetched."""
     install_clang_tools("21", ["clang-format"], str(tmp_path), False, True)
@@ -1540,7 +1544,7 @@ def test_install_clang_tools_links_wheel_found_in_path(
 
 
 def test_install_clang_tools_links_binary_found_in_path_offline(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, no_system_tools
 ):
     """Test that a static binary in another directory in PATH is linked offline."""
     first = tmp_path / "first"

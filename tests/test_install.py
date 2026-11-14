@@ -1241,7 +1241,11 @@ def test_data_dir_not_writable(
 
 
 def test_install_clang_tools_replaces_old_copy(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, data_root: Path
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_release,
+    data_root: Path,
+    capsys,
 ):
     """Test that a binary copied by an older clang-tools is replaced by a link.
 
@@ -1250,21 +1254,55 @@ def test_install_clang_tools_replaces_old_copy(
     monkeypatch.chdir(tmp_path)
     old_copy = tmp_path / f"clang-tidy-21{suffix}"
     old_copy.write_bytes(b"copied by clang-tools 1.x")
+    found = old_copy.resolve()
     monkeypatch.setattr(
         "clang_tools.install.is_installed",
-        lambda tool, ver, directory=None: Found(old_copy.resolve(), "21.1.0"),
+        lambda tool, ver, directory=None: Found(found, "21.1.0"),
     )
     install_clang_tools("21", ["clang-tidy"], str(tmp_path), False, True)
     assert old_copy.is_symlink()
     assert old_copy.resolve().is_relative_to(data_root)
+    assert (
+        f"Checking the clang-tidy that clang-tools installed at {found}"
+        " against the static binary (21.1.0)."
+    ) in capsys.readouterr().out
 
 
 def test_is_managed(tmp_path: Path, data_root: Path):
     """Test which binaries found in PATH are reinstalled."""
     install_dir = str(tmp_path / "bin")
-    assert is_managed(tmp_path / "bin" / "clang-tidy-21", install_dir)
-    assert is_managed(data_root / "llvm-21.1.0" / "bin" / "clang-tidy-21", install_dir)
-    assert not is_managed(Path("/usr/lib/llvm-21/bin/clang-tidy"), install_dir)
+    name = "clang-tidy-21"
+    assert is_managed(tmp_path / "bin" / name, install_dir, name)
+    stored = data_root / "llvm-21.1.0" / "bin" / name
+    assert is_managed(stored, install_dir, name)
+    assert not is_managed(Path("/usr/lib/llvm-21/bin/clang-tidy"), install_dir, name)
+    # such as a clang-tidy that `pip install --user` put in ~/.local/bin
+    assert not is_managed(tmp_path / "bin" / "clang-tidy", install_dir, name)
+
+
+def test_install_clang_tools_keeps_own_file_in_install_dir(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, capsys
+):
+    """Test that a tool the user put in the install directory is used as it is.
+
+    Such as ``~/.local/bin/clang-format`` from ``pip install --user``, found
+    through a ``clang-format-21`` link to it. It is not downloaded again, and the
+    link is not changed.
+    """
+    monkeypatch.chdir(tmp_path)
+    own = tmp_path / f"clang-format{suffix}"
+    own.write_bytes(b"installed by the user")
+    link = tmp_path / f"clang-format-21{suffix}"
+    link.symlink_to(own.name)
+    monkeypatch.setattr(
+        "clang_tools.install.is_installed",
+        lambda tool, ver, directory=None: Found(own.resolve(), "21.1.0"),
+    )
+    install_clang_tools("21", ["clang-format"], str(tmp_path), False, True)
+    assert fake_release.requests == []
+    assert os.readlink(link) == own.name
+    assert own.read_bytes() == b"installed by the user"
+    assert "Checking the clang-format" not in capsys.readouterr().out
 
 
 def test_uninstall_tool_removes_dangling_link(tmp_path: Path):
@@ -1436,7 +1474,11 @@ def test_link_binary_copy(tmp_path: Path, capsys):
 
 
 def test_install_clang_tools_keeps_install_offline(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, capsys
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_release,
+    capsys,
+    no_system_tools,
 ):
     """Test that an installed tool is kept when the index can't be fetched."""
     install_clang_tools("21", ["clang-format"], str(tmp_path), False, True)
@@ -1502,7 +1544,7 @@ def test_install_clang_tools_links_wheel_found_in_path(
 
 
 def test_install_clang_tools_links_binary_found_in_path_offline(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_release, no_system_tools
 ):
     """Test that a static binary in another directory in PATH is linked offline."""
     first = tmp_path / "first"

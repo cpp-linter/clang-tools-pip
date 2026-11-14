@@ -700,16 +700,21 @@ def uninstall_clang_tools(tools: list[str], version: str, directory: str):
         uninstall_tool(tool, version, install_dir)
 
 
-def is_managed(path: Path, install_dir: str) -> bool:
+def is_managed(path: Path, install_dir: str, file_name: str) -> bool:
     """Check if a binary found in ``PATH`` was installed by clang-tools.
 
     :param path: The resolved path of the binary.
     :param install_dir: The install directory (in resolved form).
+    :param file_name: The name clang-tools gives the binary, such as
+        ``clang-tidy-21``.
 
-    :returns: `True` if the binary is in the data directory, or is a file in the
-        install directory (as older versions of clang-tools installed them).
+    :returns: `True` if the binary is in the data directory, or is a file named
+        ``file_name`` in the install directory (as older versions of clang-tools
+        installed them). Another file there, such as a ``clang-format`` that
+        ``pip install --user`` put in ``~/.local/bin``, was installed some other way.
     """
-    return path.parent == Path(install_dir) or path.is_relative_to(data_dir())
+    in_install_dir = path.parent == Path(install_dir) and path.name == file_name
+    return in_install_dir or path.is_relative_to(data_dir())
 
 
 def is_wheel(path: Path) -> bool:
@@ -737,6 +742,10 @@ def keep_or_update(
                 f" which is newer than the static binary ({static})."
             )
             return
+        print(
+            f"Checking the {tool_name} that clang-tools installed at {found.path}"
+            f" against the static binary ({static})."
+        )
         install_tool(tool_name, version, directory, no_progress_bar)
     except PyPIFallback as exc:
         print(
@@ -796,7 +805,11 @@ def install_clang_tools(
             found = is_installed(tool_name, wanted, install_dir)
             if found is None:  # (not already installed)
                 install_tool(tool_name, wanted, install_dir, no_progress_bar)
-            elif is_managed(found.path, install_dir):
+            elif is_managed(
+                found.path,
+                install_dir,
+                f"{tool_name}-{major_version(wanted)}{suffix}",
+            ):
                 reinstall(tool_name, wanted, install_dir, no_progress_bar, found)
             else:  # installed some other way, such as by a package manager
                 native_bin = found.path

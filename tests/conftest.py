@@ -359,3 +359,15 @@ def outside_home(
     install_dir = tmp_path / "usr" / "bin"
     install_dir.mkdir(parents=True)
     return Path(os.path.realpath(install_dir))
+
+
+@pytest.fixture
+def no_system_tools(
+    monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    """Hide the clang tools of the system, such as the LLVM that a CI runner has.
+
+    For tests whose first install must be a static binary, not a tool found in
+    ``PATH``.
+    """
+    monkeypatch.setenv("PATH", str(tmp_path_factory.mktemp("empty-path")))

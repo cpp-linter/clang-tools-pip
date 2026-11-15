@@ -78,6 +78,8 @@ extra_css:
 
 plugins:
   - search
+  # llms.txt and a Markdown copy of every page, for AI agents (MkDocs NG).
+  - llms_txt
   - include-markdown
   - gen-files:
       scripts:

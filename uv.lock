@@ -6,6 +6,9 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 
+[manifest]
+overrides = [{ name = "mkdocs", marker = "sys_platform == 'never'" }]
+
 [[package]]
 name = "babel"
 version = "2.18.0"
@@ -231,20 +234,20 @@ dev = [
 ]
 docs = [
     { name = "markdown-gfm-admonition" },
-    { name = "mkdocs" },
     { name = "mkdocs-gen-files" },
     { name = "mkdocs-include-markdown-plugin" },
-    { name = "mkdocs-material" },
+    { name = "mkdocs-ng" },
+    { name = "mkdocs-ng-material" },
     { name = "pygments" },
 ]
 
 [package.dev-dependencies]
 docs = [
     { name = "markdown-gfm-admonition" },
-    { name = "mkdocs" },
     { name = "mkdocs-gen-files" },
     { name = "mkdocs-include-markdown-plugin" },
-    { name = "mkdocs-material" },
+    { name = "mkdocs-ng" },
+    { name = "mkdocs-ng-material" },
     { name = "pygments" },
 ]
 
@@ -252,10 +255,10 @@ docs = [
 requires-dist = [
     { name = "coverage", marker = "extra == 'dev'" },
     { name = "markdown-gfm-admonition", marker = "extra == 'docs'", specifier = ">=0.1.1" },
-    { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6" },
     { name = "mkdocs-gen-files", marker = "extra == 'docs'", specifier = ">=0.5" },
     { name = "mkdocs-include-markdown-plugin", marker = "extra == 'docs'", specifier = ">=7.3.0" },
-    { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
+    { name = "mkdocs-ng", marker = "extra == 'docs'", specifier = ">=1.11.2" },
+    { name = "mkdocs-ng-material", marker = "extra == 'docs'", specifier = ">=9.8.1" },
     { name = "pre-commit", marker = "python_full_version >= '3.11' and extra == 'dev'" },
     { name = "pygments", marker = "extra == 'dev'", specifier = ">=2.20.0" },
     { name = "pygments", marker = "extra == 'docs'", specifier = ">=2.20.0" },
@@ -266,10 +269,10 @@ provides-extras = ["dev", "docs"]
 [package.metadata.requires-dev]
 docs = [
     { name = "markdown-gfm-admonition", specifier = ">=0.1.1" },
-    { name = "mkdocs", specifier = ">=1.6" },
     { name = "mkdocs-gen-files", specifier = ">=0.5" },
     { name = "mkdocs-include-markdown-plugin", specifier = ">=7.3.0" },
-    { name = "mkdocs-material", specifier = ">=9.5" },
+    { name = "mkdocs-ng", specifier = ">=1.11.2" },
+    { name = "mkdocs-ng-material", specifier = ">=9.8.1" },
     { name = "pygments", specifier = ">=2.20.0" },
 ]
 
@@ -637,7 +640,7 @@ version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "python_version < '0'" },
     { name = "ghp-import" },
     { name = "jinja2" },
     { name = "markdown", version = "3.10.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -661,7 +664,7 @@ name = "mkdocs-gen-files"
 version = "0.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "mkdocs" },
+    { name = "mkdocs", marker = "sys_platform == 'never'" },
     { name = "properdocs" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/43/43/428f312149c161cae557eecd35f3c4a82b867998b1d47fb29fdfe927be26/mkdocs_gen_files-0.6.1.tar.gz", hash = "sha256:57d7ff2229e23d077e46d14a33db6d37c8823f6ce1a503c874c1764a71679763", size = 8746, upload-time = "2026-03-16T23:26:09.31Z" }
@@ -688,35 +691,12 @@ name = "mkdocs-include-markdown-plugin"
 version = "7.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "mkdocs" },
+    { name = "mkdocs", marker = "sys_platform == 'never'" },
     { name = "wcmatch" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b5/2b/c788fc5c39ccba342eb9067be637327faebbc0e47da41ea79dc2526e693a/mkdocs_include_markdown_plugin-7.3.0.tar.gz", hash = "sha256:2800126746452e31c2e321bbd43c8190b356e0de353e20cbc16a34a3c3d6796c", size = 25527, upload-time = "2026-05-15T18:16:13.946Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/85/84/c0109c5991b89cbf028b8597f73fa7bd6a6b092407be2369a354b52737ab/mkdocs_include_markdown_plugin-7.3.0-py3-none-any.whl", hash = "sha256:5b5c99b5d3c9b9ce0114a9e60353bbafb6be53a26c2d3b74ec6b767a7a8e55ca", size = 29675, upload-time = "2026-05-15T18:16:12.654Z" },
-]
-
-[[package]]
-name = "mkdocs-material"
-version = "9.7.7"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "babel" },
-    { name = "backrefs" },
-    { name = "colorama" },
-    { name = "jinja2" },
-    { name = "markdown", version = "3.10.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "markdown", version = "3.11", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "mkdocs" },
-    { name = "mkdocs-material-extensions" },
-    { name = "paginate" },
-    { name = "pygments" },
-    { name = "pymdown-extensions" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/cd/c05d3a530ba7934f144fb45f7203cd236adc25c7bdcc34673d202f4b0278/mkdocs_material-9.7.7.tar.gz", hash = "sha256:c0649c065b1b0512d60aad8c10f947f8e455284475239b364b610f2deb4d0855", size = 4097923, upload-time = "2026-07-17T16:21:33.156Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/21/17c1bc9e6f47c972ad66fb2ac2568f99f90f1207eeb6fc3b34d094dba7b5/mkdocs_material-9.7.7-py3-none-any.whl", hash = "sha256:8ea9bb1737a5b524a5f9dcf2e1b4ebda8274ae3008aa7845720a97083bef708f", size = 9305438, upload-time = "2026-07-17T16:21:30.017Z" },
 ]
 
 [[package]]
@@ -726,6 +706,53 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/79/9b/9b4c96d6593b2a541e1cb8b34899a6d021d208bb357042823d4d2cabdbe7/mkdocs_material_extensions-1.3.1.tar.gz", hash = "sha256:10c9511cea88f568257f960358a467d12b970e1f7b2c0e5fb2bb48cab1928443", size = 11847, upload-time = "2023-11-22T19:09:45.208Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5b/54/662a4743aa81d9582ee9339d4ffa3c8fd40a4965e033d77b9da9774d3960/mkdocs_material_extensions-1.3.1-py3-none-any.whl", hash = "sha256:adff8b62700b25cb77b53358dad940f3ef973dd6db797907c49e3c2ef3ab4e31", size = 8728, upload-time = "2023-11-22T19:09:43.465Z" },
+]
+
+[[package]]
+name = "mkdocs-ng"
+version = "1.11.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "ghp-import" },
+    { name = "jinja2" },
+    { name = "markdown", version = "3.10.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "markdown", version = "3.11", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "markupsafe" },
+    { name = "mkdocs-get-deps" },
+    { name = "packaging" },
+    { name = "pathspec" },
+    { name = "pyyaml" },
+    { name = "pyyaml-env-tag" },
+    { name = "watchdog" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5b/17/d68ee38cbb4c6f42f00899a5625fe7bf97109b083a4ab6ba5d479d8e41ee/mkdocs_ng-1.11.2.tar.gz", hash = "sha256:a7cb3cc9a036a69f6b8f4baca3549c7f8d075fe29ec5709712d4ccd76961d0c0", size = 4778180, upload-time = "2026-11-11T19:55:06.552Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/af/03/52eb795202373078606bc083352a2a63409b49e2f3707d6626fd7e45ffb1/mkdocs_ng-1.11.2-py3-none-any.whl", hash = "sha256:508abf745e7328282e82c5074de86b074f59e4d34698abcca8bc7cb7b869c1ff", size = 5252992, upload-time = "2026-11-11T19:55:03.792Z" },
+]
+
+[[package]]
+name = "mkdocs-ng-material"
+version = "9.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "babel" },
+    { name = "backrefs" },
+    { name = "colorama" },
+    { name = "jinja2" },
+    { name = "markdown", version = "3.10.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "markdown", version = "3.11", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "mkdocs-material-extensions" },
+    { name = "mkdocs-ng" },
+    { name = "paginate" },
+    { name = "pygments" },
+    { name = "pymdown-extensions" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/00/d1/330313d5023181ba8d9c631f57a8eac21eec843a3f0737ef8c74041442b8/mkdocs_ng_material-9.8.1.tar.gz", hash = "sha256:4c55586883e9e526b1de2852655d81a0a70c6f906b5ab5e57fc6355cd7328fed", size = 4162272, upload-time = "2026-11-11T20:13:01.601Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/d7/1b2b76efa49a8e06de8fca3d7507a3083331a0602b47b0f74849e3abb477/mkdocs_ng_material-9.8.1-py3-none-any.whl", hash = "sha256:4d48514e40c714cca51b632ad7bd0f15bd22118dbd331a073f8220c16ed67878", size = 9862693, upload-time = "2026-11-11T20:12:58.652Z" },
 ]
 
 [[package]]

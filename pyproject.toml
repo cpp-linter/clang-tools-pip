@@ -54,7 +54,7 @@ dev = [
 docs = [
     "markdown-gfm-admonition>=0.1.1",
     "mkdocs-ng>=1.11.2",
-    "mkdocs-ng-material>=9.8.1",
+    "mkdocs-ng-material>=9.8.2",
     "mkdocs-gen-files>=0.5",
     "mkdocs-include-markdown-plugin>=7.3.0",
     "pygments>=2.20.0",
@@ -70,7 +70,7 @@ override-dependencies = ["mkdocs; sys_platform == 'never'"]
 docs = [
     "markdown-gfm-admonition>=0.1.1",
     "mkdocs-ng>=1.11.2",
-    "mkdocs-ng-material>=9.8.1",
+    "mkdocs-ng-material>=9.8.2",
     "mkdocs-gen-files>=0.5",
     "mkdocs-include-markdown-plugin>=7.3.0",
     "pygments>=2.20.0",
